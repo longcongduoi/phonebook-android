@@ -1,15 +1,18 @@
 package com.nbos.phonebook;
 
-import com.nbos.phonebook.contentprovider.Provider;
-import com.nbos.phonebook.database.tables.BookTable;
-
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.util.Log;
+
+import com.nbos.phonebook.contentprovider.Provider;
+import com.nbos.phonebook.database.tables.BookTable;
 
 public class Data {
 	static String tag = "DATA";
@@ -57,4 +60,16 @@ public class Data {
 		    Data.setGroupDirty(groupId, cr);		    
 	}
 	
+	public static String getAccountName(Context ctx, String accountType) {
+        Account[] accounts = AccountManager.get(ctx).getAccounts();
+        Log.i(tag, "There are "+accounts.length+" accounts");
+        for (Account account : accounts) 
+        {
+        	Log.i(tag, "account name: "+account.name+", type: "+account.type);
+        	if(account.type.equals(accountType))
+        		return account.name;
+        }
+        return null;
+	}
+
 }

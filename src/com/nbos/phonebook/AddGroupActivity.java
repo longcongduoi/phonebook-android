@@ -52,9 +52,9 @@ public class AddGroupActivity extends Activity {
         final BatchOperation batchOperation =
             new BatchOperation(context, resolver);
     	
-		String mAccountName = "umesh",
-		mAccountType = "com.example.android.samplesync";
-		Log.i(tag, "Creating a group");
+		String mAccountType = "com.example.android.samplesync",
+			mAccountName = Data.getAccountName(context, mAccountType);
+		Log.i(tag, "Creating group: "+groupName);
 		Uri mEntityUri = ContactsContract.Groups.CONTENT_URI.buildUpon()
 			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_NAME, mAccountName)
 			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_TYPE, mAccountType)
