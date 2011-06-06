@@ -18,6 +18,7 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
 import com.nbos.phonebook.contentprovider.Provider;
+import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.value.ContactRow;
 
@@ -48,7 +49,7 @@ public class SelectContactsToShareWithActivity extends ListActivity {
         
         Cursor dataCursor = Data.getBook(this, id); 
         Log.i(tag, "Book with id "+id+" has "+dataCursor.getCount()+" contacts");
-	    CursorJoiner joiner = new CursorJoiner(
+	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
 	    		dataCursor,	new String[] {BookTable.CONTACTID}
 	    );

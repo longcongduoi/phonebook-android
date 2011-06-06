@@ -5,17 +5,18 @@ import java.util.Collections;
 import java.util.List;
 
 import android.app.ListActivity;
-import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.database.MatrixCursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+
+import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.value.ContactRow;
 
 public class AddContactsActivity extends ListActivity {
@@ -42,21 +43,8 @@ public class AddContactsActivity extends ListActivity {
 
 	private void populateContacts() {
         Cursor contactsCursor = Data.getContacts(this);
-        Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
-        
-        Cursor dataCursor = getContentResolver().query(ContactsContract.Data.CONTENT_URI,
-	    		// null,
-	    	    new String[] {
-	    			ContactsContract.Contacts._ID, 
-	    			ContactsContract.Data.RAW_CONTACT_ID, 
-	    			ContactsContract.RawContacts._ID,
-	    			ContactsContract.Contacts.DISPLAY_NAME
-	    			
-	    		},
-	    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+"="+id,
-	    	    null, ContactsContract.Data.RAW_CONTACT_ID);
-        Log.i(tag, "There are "+dataCursor.getCount()+" contacts in the group");
-	    CursorJoiner joiner = new CursorJoiner(
+        Cursor dataCursor = Data.getContactsInGroup(id, getContentResolver());
+	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
 	    		dataCursor,	new String[] {ContactsContract.Data.RAW_CONTACT_ID}
 	    );
@@ -101,4 +89,11 @@ public class AddContactsActivity extends ListActivity {
 		Data.addToGroup(this.id, contactId, getContentResolver());
 		populateContacts();
 	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		this.populateContacts();
+	}
+	
+	
 }

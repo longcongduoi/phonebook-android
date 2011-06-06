@@ -59,6 +59,20 @@ public class Data {
 		            ContactsContract.Data.CONTENT_URI, values);
 		    Data.setGroupDirty(groupId, cr);		    
 	}
+
+	public static Cursor getContactsInGroup(String groupId,
+			ContentResolver cr) {
+	    return cr.query(ContactsContract.Data.CONTENT_URI,
+	    		// null,
+	    	    new String[] {
+	    			ContactsContract.Contacts._ID, 
+	    			ContactsContract.Data.RAW_CONTACT_ID, 
+	    			ContactsContract.RawContacts._ID,
+	    			ContactsContract.Contacts.DISPLAY_NAME
+	    		},
+	    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+" = "+groupId,
+	    	    null, ContactsContract.Data.RAW_CONTACT_ID);
+	}
 	
 	public static String getAccountName(Context ctx, String accountType) {
         Account[] accounts = AccountManager.get(ctx).getAccounts();

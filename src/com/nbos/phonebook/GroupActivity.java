@@ -2,8 +2,6 @@ package com.nbos.phonebook;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -23,7 +21,7 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
-import com.nbos.phonebook.contentprovider.Provider;
+import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
 
 public class GroupActivity extends ListActivity {
@@ -44,8 +42,6 @@ public class GroupActivity extends ListActivity {
 	    	id = extras.getString("id");
 	    	name = extras.getString("name");
 	    }
-        setTitle("Group: "+name+" ("+numContacts()+" contacts sharing with)");
-		System.out.println("group id: "+id);
 		queryGroup();
 		registerForContextMenu(getListView());  
 	}
@@ -142,7 +138,7 @@ public class GroupActivity extends ListActivity {
         int numContacts = 0;
         Cursor dataCursor = Data.getBook(this, id);
         Log.i(tag, "There are "+dataCursor.getCount()+" contacts in the group");
-	    CursorJoiner joiner = new CursorJoiner(
+	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
 	    		dataCursor,	new String[] {BookTable.CONTACTID}
 	    );
@@ -175,75 +171,37 @@ public class GroupActivity extends ListActivity {
 	}
 
     private void queryGroup() {
-	    ContentResolver cr = getContentResolver();
-	    Cursor dataCursor = cr.query(ContactsContract.Data.CONTENT_URI,
-	    		// null,
-	    	    new String[] {
-	    			ContactsContract.Contacts._ID, 
-	    			ContactsContract.Data.RAW_CONTACT_ID, 
-	    			ContactsContract.RawContacts._ID,
-	    			ContactsContract.Contacts.DISPLAY_NAME
-	    		},
-	    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+"="+id,
-	    	    null, null);
+        setTitle("Group: "+name+" ("+numContacts()+" contacts sharing with)");
+	    Cursor dataCursor = Data.getContactsInGroup(id, getContentResolver());
 	    Log.i(tag, "There are "+dataCursor.getCount()+" contacts in data");
-        while(dataCursor.moveToNext())
-        {
-        	String name = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-	        String contactId =
-	        	dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts._ID));
-	        String cId =
-	        	dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID));
-
-	        String rawId =
-	        	dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.RawContacts._ID));
-
-	        Log.i(tag, "Contact name: "+name+", id: "+contactId+", cid: "+cId+", rawId: "+rawId);
-
-        }
+	    while(dataCursor.moveToNext())
+	    	Log.i(tag, "Contacts._ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts._ID))
+	    		+ ", ContactsContract.Data.RAW_CONTACT_ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID))
+	    		+ ", ContactsContract.RawContacts._ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.RawContacts._ID)));
+	    Cursor contactsCursor = Data.getContacts(this);
 	    
-	    Cursor contactsCursor = cr.query(ContactsContract.Contacts.CONTENT_URI,
-	    		// null,
-	    	    new String[] {
-	    			ContactsContract.Contacts._ID,
-	    			ContactsContract.Contacts.DISPLAY_NAME
-	    		},
-	    		null,
-	    	    // ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+"="+id,
-	    	    null, null);
-	    
-	    Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
-        while(contactsCursor.moveToNext())
-        {
-        	String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-	        String contactId =
-	        	contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
-
-	        Log.i(tag, "Contact name: "+name+", id: "+contactId);
-
-        }
-	    
-	    CursorJoiner joiner = new CursorJoiner(
-	    		contactsCursor,
-	    		new String[]
-	    		{ContactsContract.Contacts._ID},
-	    		dataCursor,
-	    		new String[] {ContactsContract.Data.RAW_CONTACT_ID}
+	    IntCursorJoiner joiner = new IntCursorJoiner(
+	    		contactsCursor, new String[] {ContactsContract.Contacts._ID} ,
+	    		dataCursor, new String[] {ContactsContract.Data.RAW_CONTACT_ID}
 	    );
         m_cursor = new MatrixCursor( 
-        	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME},10);
+        	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME}, 10);
         for (CursorJoiner.Result joinerResult : joiner) 
         {
+        	Log.i(tag, "contacts pos: "+contactsCursor.getPosition()+", data pos: "+dataCursor.getPosition()+", joiner result is: "+joinerResult);
         	switch (joinerResult) {
-        		case LEFT:
-        			// Log.i(tag, "LEFT");
-        		break;
-        		case RIGHT:
-        			// Log.i(tag, "RIGHT");
-        		break;
-        		case BOTH: // handle case where a row with the same key is in both cursors
-        			// Log.i(tag, "BOTH");
+        		case LEFT: // handle case where a row with the same key is in both cursors
         			String id = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
+        			Log.i(tag, "LEFT: "+id);
+        		break;
+        		case RIGHT: // handle case where a row with the same key is in both cursors
+        			id =  dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID));
+        			Log.i(tag, "Right: "+id);
+        		break;
+
+        		case BOTH: // handle case where a row with the same key is in both cursors
+        			id = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
+        			Log.i(tag, "BOTH: id: "+id);
         			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
         			m_cursor.addRow(new String[] {id, name});
         		break;
@@ -302,8 +260,7 @@ public class GroupActivity extends ListActivity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if(requestCode == ADD_CONTACTS)
-			queryGroup();
+		queryGroup();
 	}
 	
 	private void showDeleteGroupDialog() {

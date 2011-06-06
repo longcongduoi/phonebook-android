@@ -27,8 +27,6 @@ public class AddGroupActivity extends Activity {
 	}
 	
     public void addGroupButtonClicked(View v) {
-        System.out.println("add group clicked");
-        System.out.println("parent activity is: "+getParent());
         EditText groupNameEditText = (EditText) findViewById(R.id.groupNameEditText);
         String groupName = groupNameEditText.getEditableText().toString();
         // EditText password = (EditText) findViewById(R.id.password);

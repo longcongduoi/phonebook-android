@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.database.MatrixCursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
@@ -14,7 +13,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.SimpleCursorAdapter;
 
-import com.nbos.phonebook.contentprovider.Provider;
+import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
 
 public class SharingWithActivity extends ListActivity {
@@ -52,7 +51,7 @@ public class SharingWithActivity extends ListActivity {
         			+" serverId: "+dataCursor.getString(dataCursor.getColumnIndex(BookTable.SERVERID)));
         
         Log.i(tag, "Sharing with "+dataCursor.getCount()+" contacts");
-	    CursorJoiner joiner = new CursorJoiner(
+	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
 	    		dataCursor,	new String[] {BookTable.CONTACTID}
 	    );
