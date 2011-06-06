@@ -74,6 +74,7 @@ public class AddContactsActivity extends ListActivity {
         String[] fields = new String[] {
                 ContactsContract.Data.DISPLAY_NAME
         };
+        
         SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.contact_entry, m_cursor,
                 fields, new int[] {R.id.contact_name});
         getListView().setAdapter(adapter);
@@ -83,11 +84,13 @@ public class AddContactsActivity extends ListActivity {
 
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
+		int currentPosition = this.getListView().getFirstVisiblePosition();
 		m_cursor.moveToPosition(position);
 		String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID));
 		Log.i(tag, "Contact id is: "+contactId);//+", raw contact id: "+contactId+", lookup key: "+lookupKey);
 		Data.addToGroup(this.id, contactId, getContentResolver());
 		populateContacts();
+		this.setSelection(currentPosition);
 	}
 
 	@Override

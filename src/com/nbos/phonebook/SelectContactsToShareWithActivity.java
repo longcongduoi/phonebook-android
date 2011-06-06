@@ -87,6 +87,8 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 		String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID));
 		Log.i(tag, "Contact id is: "+contactId);//+", raw contact id: "+contactId+", lookup key: "+lookupKey);
 		shareGroupWithContact(contactId);
+		this.setSelection(position);
+		position--;
 	}
 
 	private void shareGroupWithContact(String contactId) {

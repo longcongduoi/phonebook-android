@@ -69,9 +69,10 @@ public class GroupActivity extends ListActivity {
 	    // a ListActivity; if you're not, you'll have to store the Adapter yourself
 	    // in some way that can be accessed here.)
 	    m_cursor.moveToPosition(info.position);
-	    String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID));
+	    String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID)),
+	    	name = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 
-	    Log.i(tag, "position is: "+info.position+", contactId: "+contactId);
+	    Log.i(tag, "position is: "+info.position+", contactId: "+contactId+", name: "+name);
 	    // Retrieve the item that was clicked on
 	    // Object o = adapter.getItem(info.position);
 		
@@ -98,7 +99,7 @@ public class GroupActivity extends ListActivity {
 
         Cursor phones = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
     		null, 		
-    		ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID +" = "+ contactId,
+    		ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = "+ contactId,
     		null, null);	
         
         Log.i(tag, "Calling phonenumber contactID is: "+contactId);
@@ -137,7 +138,7 @@ public class GroupActivity extends ListActivity {
         Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
         int numContacts = 0;
         Cursor dataCursor = Data.getBook(this, id);
-        Log.i(tag, "There are "+dataCursor.getCount()+" contacts in the group");
+        Log.i(tag, "There are "+dataCursor.getCount()+" contacts sharing this group");
 	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
 	    		dataCursor,	new String[] {BookTable.CONTACTID}

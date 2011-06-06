@@ -55,10 +55,10 @@ public class SharingWithActivity extends ListActivity {
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
 	    		dataCursor,	new String[] {BookTable.CONTACTID}
 	    );
-
+	    	
         m_cursor = new MatrixCursor( 
             	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME},10);
-
+        
         for (CursorJoiner.Result joinerResult : joiner) 
         {
         	String id;
