@@ -391,16 +391,31 @@ public class NetworkUtilities {
     }
 
 	public static void sendFriendUpdates(Account account, String authtoken,
-			Date lastUpdated, List<User> contacts, List<Group> groups, List<SharingBook> books, Context context) throws ClientProtocolException, IOException, JSONException {
+			Date lastUpdated, List<User> fewContacts, List<User> newContacts, List<Group> groups, List<SharingBook> books, Context context) throws ClientProtocolException, IOException, JSONException {
         final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair(PARAM_USERNAME, account.name));
         params.add(new BasicNameValuePair(PARAM_PASSWORD, authtoken));
-        params.add(new BasicNameValuePair("numContacts", new Integer(contacts.size()).toString()));
+
+        params.add(new BasicNameValuePair("numCheckContacts", new Integer(fewContacts.size()).toString()));
         
-        for(int i=0; i< contacts.size(); i++)
+        // These contacts are for checking the sync
+        for(int i=0; i< fewContacts.size(); i++)
         {
         	String index = new Integer(i).toString();
-        	User user =  contacts.get(i);
+        	User user =  fewContacts.get(i);
+        	params.add(new BasicNameValuePair("cName_"+index, user.getFirstName()));
+        	params.add(new BasicNameValuePair("cNumber_"+index, user.getCellPhone()));
+        	params.add(new BasicNameValuePair("cId_"+index, new Integer(user.getUserId()).toString()));
+        	params.add(new BasicNameValuePair("cContactId_"+index, new Integer(user.getContactId()).toString()));
+        }
+
+        
+        params.add(new BasicNameValuePair("numContacts", new Integer(newContacts.size()).toString()));
+        
+        for(int i=0; i< newContacts.size(); i++)
+        {
+        	String index = new Integer(i).toString();
+        	User user =  newContacts.get(i);
         	params.add(new BasicNameValuePair("name_"+index, user.getFirstName()));
         	params.add(new BasicNameValuePair("number_"+index, user.getCellPhone()));
         	params.add(new BasicNameValuePair("id_"+index, new Integer(user.getUserId()).toString()));

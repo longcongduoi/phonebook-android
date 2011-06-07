@@ -42,6 +42,7 @@ import android.provider.ContactsContract;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.Group;
@@ -51,7 +52,6 @@ import com.nbos.phonebook.sync.client.SharingBook;
 import com.nbos.phonebook.sync.client.User;
 import com.nbos.phonebook.sync.client.User.Status;
 import com.nbos.phonebook.sync.platform.ContactManager;
-import com.nbos.phonebook.database.tables.BookTable;
 
 /**
  * SyncAdapter implementation for syncing sample SyncAdapter contacts to the
@@ -93,7 +93,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
              users =  (List<User>) update[0];
              sharedBooks = (List<SharedBook>) update[1];
              NetworkUtilities.sendFriendUpdates(account, authtoken,
-                     mLastUpdated, getContacts(), getGroups(), getSharingBooks(), mContext);
+                     mLastUpdated, getFewContacts(5), getNewContacts(), getGroups(), getSharingBooks(), mContext);
             // update the last synced date.
             mLastUpdated = new Date();
             // update platform contacts.
@@ -127,7 +127,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     }
     
     
-    private Long getPhoneNumber() {
+	private Long getPhoneNumber() {
     	long phoneNumber = Long.parseLong(((TelephonyManager) 
     			mContext.getSystemService(Context.TELEPHONY_SERVICE))
     			.getLine1Number().replace("-", ""));	
@@ -232,7 +232,53 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 	    return groups;
 	}
 
-	private List<User> getContacts() {
+    private List<User> getFewContacts(int numContacts) {
+	    ContentResolver cr = mContext.getContentResolver();
+	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;
+	    Cursor cursor = cr.query(uri, 
+	    		null, null, // get all contacts
+	    	//	ContactsContract.RawContacts.DIRTY + " = 1",
+	        // "DISPLAY_NAME = '" + NAME + "'",
+	    	// null, 
+	    	null, null);
+	    Log.i(TAG, "There are "+cursor.getCount()+" contacts");
+	    List<User> users = new ArrayList<User>();
+	    int num = 0;
+	    while(cursor.moveToNext()) {
+	    	if(num > numContacts) break;
+	        String contactId =
+	            	cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts._ID));
+	        String sourceId = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.SOURCE_ID));
+	        String dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
+	        String version = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.VERSION));
+	        Cursor contact = cr.query(ContactsContract.Contacts.CONTENT_URI, null,
+	        		ContactsContract.Contacts._ID+" = '" + contactId + "' ",
+	    	null, null);
+	        if(contact.getCount()==0) continue;
+	        contact.moveToFirst();
+	        //Log.i(TAG, "There are "+contact.getCount()+" contacts for "+contactId);
+	        // contact.moveToFirst();
+	        String name = contact.getString(contact.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+	        
+	            //sourceId = 
+	            	//cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.SOURCE_ID));
+	        Cursor phones = mContext.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
+	    		null, 		
+	    		ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID +" = "+ contactId,
+	    		null, null);
+	        if(phones.getCount() == 0) continue;
+	        phones.moveToFirst();
+	        String phoneNumber = phones.getString(phones
+	                .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
+	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", sourceId: "+sourceId+", dirty: "+dirty+", version is: "+version);
+	        users.add(new User(name, phoneNumber, sourceId != null ? Integer.parseInt(sourceId) : 0, Integer.parseInt(contactId)));
+	        num++;
+	        phones.close();
+	    }
+	    return users;
+	}
+
+	private List<User> getNewContacts() {
 	    ContentResolver cr = mContext.getContentResolver();
 	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;
 	    Cursor cursor = cr.query(uri, 
