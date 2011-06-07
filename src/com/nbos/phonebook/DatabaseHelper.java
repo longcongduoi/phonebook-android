@@ -24,6 +24,13 @@ public class DatabaseHelper {
 				// ContactsContract.Contacts.DISPLAY_NAME);
 	}
 
+	public static Cursor getContacts(Activity activity, String searchString) {
+		return activity.managedQuery(ContactsContract.Contacts.CONTENT_URI, null, 
+				ContactsContract.Data.DISPLAY_NAME+" like '" + searchString + "%'", null,
+				ContactsContract.Contacts._ID);
+				// ContactsContract.Contacts.DISPLAY_NAME);
+	}
+
 	public static String getContactIdFromSourceId(ContentResolver cr, int id) {
 		Cursor cursor = cr.query(ContactsContract.RawContacts.CONTENT_URI, null, 
 				ContactsContract.RawContacts.SOURCE_ID + " = " + id, null,

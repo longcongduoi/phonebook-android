@@ -83,12 +83,13 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 	}
 
 	protected void onListItemClick(ListView l, View v, int position, long id) {
+		int currentPosition= this.getListView().getFirstVisiblePosition();
 		m_cursor.moveToPosition(position);
 		String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID));
 		Log.i(tag, "Contact id is: "+contactId);//+", raw contact id: "+contactId+", lookup key: "+lookupKey);
 		shareGroupWithContact(contactId);
-		this.setSelection(position);
-		position--;
+		this.setSelection(currentPosition);
+		
 	}
 
 	private void shareGroupWithContact(String contactId) {

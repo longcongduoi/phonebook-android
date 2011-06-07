@@ -71,11 +71,7 @@ public class WelcomeActivity extends ListActivity {
 	         startActivityForResult(i, ADD_GROUP);	
 	     }
 	     return true;
-	    /*case R.id.help:
-	        showHelp();
-	        return true;
-	    default:
-	        return super.onOptionsItemSelected(item);*/
+	  
 	    }
 		
 
@@ -114,21 +110,14 @@ public class WelcomeActivity extends ListActivity {
     private void populateGroups() {
 	    ContentResolver cr = getContentResolver();
 	    m_cursor = cr.query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
-	        // "DISPLAY_NAME = '" + NAME + "'",
 	    	ContactsContract.Groups.DELETED + "=0",	    		
 	    	null, null);
-	    Log.i(tag, "There are "+m_cursor.getCount()+" groups on the phone");
-/*        String[] fields = new String[] {
-                ContactsContract.Groups.TITLE,
-                ContactsContract.Groups.SUMMARY_COUNT
-        };*/
+	  
         String[] fields = new String[] {
                 ContactsContract.Groups.TITLE,
                 ContactsContract.Groups.SUMMARY_COUNT
         };
         
-        //SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.group_entry, m_cursor,
-          //      fields, new int[] {R.id.groupName, R.id.count});
         SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.group_entry, m_cursor,
                 fields, new int[] {android.R.id.text1, android.R.id.text2});
         
@@ -146,6 +135,8 @@ public class WelcomeActivity extends ListActivity {
             	    	ContactsContract.Groups.DELETED + "=0"
             	    	+ " and "+ContactsContract.Groups.TITLE+" like '%" + partialItemName+ "%'",	    		
             	    	null, null);
+                Log.i(tag, "partial name is" +partialItemName);
+                
                 return m_cursor;
             }
         });

@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
+import android.widget.FilterQueryProvider;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
@@ -21,7 +22,7 @@ import com.nbos.phonebook.value.ContactRow;
 
 public class AddContactsActivity extends ListActivity {
 
-	MatrixCursor m_cursor;
+	Cursor m_cursor;
 	String tag = "AddContactsActivity",
 		id, name;
 	
@@ -39,9 +40,40 @@ public class AddContactsActivity extends ListActivity {
 	    setTitle("Phonebook: Add contacts to "+name);
 	    Log.i(tag, "Intent is: "+getIntent().getClass().getName());
 	    populateContacts();
+	    getListView().setTextFilterEnabled(true);
 	}
 
 	private void populateContacts() {
+		getContactsCursor("");
+        
+        String[] fields = new String[] {
+                ContactsContract.Data.DISPLAY_NAME
+        };
+        
+        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.contact_entry, m_cursor,
+                fields, new int[] {R.id.contact_name});
+
+        //search  contacts code...
+        
+        adapter.setStringConversionColumn(
+                m_cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME));
+      
+        adapter.setFilterQueryProvider(new FilterQueryProvider() {
+
+            public Cursor runQuery(CharSequence constraint) {
+                String partialItemName = null;
+                if (constraint != null) {
+                    partialItemName = constraint.toString();
+                }
+                getContactsCursor(partialItemName);
+                return m_cursor;
+            }
+        });
+        
+        getListView().setAdapter(adapter);
+	}
+	
+	void getContactsCursor(String search) {
         Cursor contactsCursor = DatabaseHelper.getContacts(this);
         Cursor dataCursor = DatabaseHelper.getContactsInGroup(id, getContentResolver());
 	    IntCursorJoiner joiner = new IntCursorJoiner(
@@ -68,18 +100,11 @@ public class AddContactsActivity extends ListActivity {
         //Collections.sort(rows);
         Collections.sort(rows);
         for(ContactRow row : rows)
-        	m_cursor.addRow(new String[] {row.id, row.name});
-        
-        
-        String[] fields = new String[] {
-                ContactsContract.Data.DISPLAY_NAME
-        };
-        
-        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.contact_entry, m_cursor,
-                fields, new int[] {R.id.contact_name});
-        getListView().setAdapter(adapter);
+        	 ((MatrixCursor) m_cursor).addRow(new String[] {row.id, row.name});
+		
 	}
-
+	
+	ListView mGroupList;
 	boolean mShowInvisible = false;
 
 	@Override
