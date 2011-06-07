@@ -49,12 +49,8 @@ public class AddContactsActivity extends ListActivity {
         String[] fields = new String[] {
                 ContactsContract.Data.DISPLAY_NAME
         };
-        
         SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.contact_entry, m_cursor,
                 fields, new int[] {R.id.contact_name});
-
-        //search  contacts code...
-        
         adapter.setStringConversionColumn(
                 m_cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME));
       
@@ -75,6 +71,7 @@ public class AddContactsActivity extends ListActivity {
 	
 	void getContactsCursor(String search) {
         Cursor contactsCursor = DatabaseHelper.getContacts(this);
+        
         Cursor dataCursor = DatabaseHelper.getContactsInGroup(id, getContentResolver());
 	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},

@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
+import android.widget.FilterQueryProvider;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
@@ -41,15 +42,43 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 	    
 	    setTitle("Select contacts to share "+name+" with");
 	    populateContacts();
+	    getListView().setTextFilterEnabled(true);
 	}
 	
 	private void populateContacts() {
-        Cursor contactsCursor = DatabaseHelper.getContacts(this);
-        Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
+        getContactsCursor("");
+        
+        String[] fields = new String[] {
+                ContactsContract.Data.DISPLAY_NAME
+        };
+        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.contact_entry, m_cursor,
+                fields, new int[] {R.id.contact_name});
+        
+        adapter.setStringConversionColumn(
+                m_cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME));
+      
+        adapter.setFilterQueryProvider(new FilterQueryProvider() {
+
+            public Cursor runQuery(CharSequence constraint) {
+                String partialItemName = null;
+                if (constraint != null) {
+                    partialItemName = constraint.toString();
+                }
+                getContactsCursor(partialItemName);
+                return m_cursor;
+            }
+        });
+        
+        getListView().setAdapter(adapter);
+	}
+    
+	private void getContactsCursor(String search) {
+		Cursor contactsCursor = DatabaseHelper.getContacts(this, search);
+       
         
         Cursor dataCursor = DatabaseHelper.getBook(this, id); 
-        Log.i(tag, "Book with id "+id+" has "+dataCursor.getCount()+" contacts");
-	    IntCursorJoiner joiner = new IntCursorJoiner(
+       
+        IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
 	    		dataCursor,	new String[] {BookTable.CONTACTID}
 	    );
@@ -73,13 +102,7 @@ public class SelectContactsToShareWithActivity extends ListActivity {
         Collections.sort(rows);
         for(ContactRow row : rows)
         	m_cursor.addRow(new String[] {row.id, row.name});
-        
-        String[] fields = new String[] {
-                ContactsContract.Data.DISPLAY_NAME
-        };
-        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.contact_entry, m_cursor,
-                fields, new int[] {R.id.contact_name});
-        getListView().setAdapter(adapter);
+		
 	}
 
 	protected void onListItemClick(ListView l, View v, int position, long id) {
