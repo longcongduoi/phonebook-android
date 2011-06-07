@@ -44,10 +44,10 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 	}
 	
 	private void populateContacts() {
-        Cursor contactsCursor = Data.getContacts(this);
+        Cursor contactsCursor = DatabaseHelper.getContacts(this);
         Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
         
-        Cursor dataCursor = Data.getBook(this, id); 
+        Cursor dataCursor = DatabaseHelper.getBook(this, id); 
         Log.i(tag, "Book with id "+id+" has "+dataCursor.getCount()+" contacts");
 	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},

@@ -42,8 +42,8 @@ public class AddContactsActivity extends ListActivity {
 	}
 
 	private void populateContacts() {
-        Cursor contactsCursor = Data.getContacts(this);
-        Cursor dataCursor = Data.getContactsInGroup(id, getContentResolver());
+        Cursor contactsCursor = DatabaseHelper.getContacts(this);
+        Cursor dataCursor = DatabaseHelper.getContactsInGroup(id, getContentResolver());
 	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
 	    		dataCursor,	new String[] {ContactsContract.Data.RAW_CONTACT_ID}
@@ -88,7 +88,7 @@ public class AddContactsActivity extends ListActivity {
 		m_cursor.moveToPosition(position);
 		String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID));
 		Log.i(tag, "Contact id is: "+contactId);//+", raw contact id: "+contactId+", lookup key: "+lookupKey);
-		Data.addToGroup(this.id, contactId, getContentResolver());
+		DatabaseHelper.addToGroup(this.id, contactId, getContentResolver());
 		populateContacts();
 		this.setSelection(currentPosition);
 	}

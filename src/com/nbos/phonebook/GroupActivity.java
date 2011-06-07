@@ -127,17 +127,17 @@ public class GroupActivity extends ListActivity {
         		args);
         
         Toast.makeText(this, "Removed", Toast.LENGTH_SHORT).show();
-        Data.setGroupDirty(id, getContentResolver());
+        DatabaseHelper.setGroupDirty(id, getContentResolver());
         //notify registered observers that a row was updated
         getContentResolver().notifyChange(ContactsContract.Data.CONTENT_URI, null);
         queryGroup();
     }
 	
 	private int numContacts() {	
-        Cursor contactsCursor = Data.getContacts(this);//getContacts();
+        Cursor contactsCursor = DatabaseHelper.getContacts(this);//getContacts();
         Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
         int numContacts = 0;
-        Cursor dataCursor = Data.getBook(this, id);
+        Cursor dataCursor = DatabaseHelper.getBook(this, id);
         Log.i(tag, "There are "+dataCursor.getCount()+" contacts sharing this group");
 	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
@@ -147,14 +147,7 @@ public class GroupActivity extends ListActivity {
         for (CursorJoiner.Result joinerResult : joiner) 
         {
         	switch (joinerResult) {
-        		case LEFT:
-        			//Log.i(tag, "LEFT");
-        		break;
-        		case RIGHT:
-        			//Log.i(tag, "RIGHT");
-        		break;
         		case BOTH: // handle case where a row with the same key is in both cursors
-        			Log.i(tag, "BOTH");
         			numContacts++;        			
         		break;
         	}
@@ -173,13 +166,13 @@ public class GroupActivity extends ListActivity {
 
     private void queryGroup() {
         setTitle("Group: "+name+" ("+numContacts()+" contacts sharing with)");
-	    Cursor dataCursor = Data.getContactsInGroup(id, getContentResolver());
+	    Cursor dataCursor = DatabaseHelper.getContactsInGroup(id, getContentResolver());
 	    Log.i(tag, "There are "+dataCursor.getCount()+" contacts in data");
-	    while(dataCursor.moveToNext())
+	    /*while(dataCursor.moveToNext())
 	    	Log.i(tag, "Contacts._ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts._ID))
 	    		+ ", ContactsContract.Data.RAW_CONTACT_ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID))
-	    		+ ", ContactsContract.RawContacts._ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.RawContacts._ID)));
-	    Cursor contactsCursor = Data.getContacts(this);
+	    		+ ", ContactsContract.RawContacts._ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.RawContacts._ID)));*/
+	    Cursor contactsCursor = DatabaseHelper.getContacts(this);
 	    
 	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID} ,
@@ -189,20 +182,9 @@ public class GroupActivity extends ListActivity {
         	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME}, 10);
         for (CursorJoiner.Result joinerResult : joiner) 
         {
-        	Log.i(tag, "contacts pos: "+contactsCursor.getPosition()+", data pos: "+dataCursor.getPosition()+", joiner result is: "+joinerResult);
         	switch (joinerResult) {
-        		case LEFT: // handle case where a row with the same key is in both cursors
-        			String id = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
-        			Log.i(tag, "LEFT: "+id);
-        		break;
-        		case RIGHT: // handle case where a row with the same key is in both cursors
-        			id =  dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID));
-        			Log.i(tag, "Right: "+id);
-        		break;
-
         		case BOTH: // handle case where a row with the same key is in both cursors
         			id = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
-        			Log.i(tag, "BOTH: id: "+id);
         			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
         			m_cursor.addRow(new String[] {id, name});
         		break;
@@ -298,23 +280,6 @@ public class GroupActivity extends ListActivity {
 	        }
 	        setResult(RESULT_OK, null);
 	        finish();
-		/*ContentResolver cr = getContentResolver();
-	    Cursor cur = cr.query(ContactsContract.Groups.CONTENT_URI, null,
-		        "_ID = '" + id + "'",
-		    	null, null);
-	    while (cur.moveToNext()) {
-	        try{
-	            String lookupKey = cur.getString(cur.getColumnIndex(ContactsContract.Groups._ID));
-	            Uri uri = Uri.withAppendedPath(ContactsContract.Groups.CONTENT_SUMMARY_URI, lookupKey);
-	            System.out.println("The uri is " + uri.toString());
-	            cr.delete(uri, null, null);
-	        }
-	        catch(Exception e)
-	        {
-	            System.out.println(e.getStackTrace());
-	        }
-	    }*/
-		
 	}
     
 }

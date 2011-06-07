@@ -22,7 +22,6 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -39,13 +38,13 @@ import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.StatusUpdates;
 import android.util.Log;
 
-import com.nbos.phonebook.sync.Constants;
+import com.nbos.phonebook.DatabaseHelper;
 import com.nbos.phonebook.R;
+import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
-import com.nbos.phonebook.sync.client.DatabaseHelper;
 import com.nbos.phonebook.sync.client.SharedBook;
 import com.nbos.phonebook.sync.client.User;
-import com.nbos.phonebook.database.tables.BookTable;
 
 /**
  * Class for managing contacts sync related mOperations
@@ -68,6 +67,7 @@ public class ContactManager {
         String account, List<User> users) {
         long userId;
         long rawContactId = 0;
+        List<Long> rawContactIds = new ArrayList<Long>();
         final ContentResolver resolver = context.getContentResolver();
         final BatchOperation batchOperation =
             new BatchOperation(context, resolver);
@@ -102,26 +102,6 @@ public class ContactManager {
         }
         batchOperation.execute();
     }
-
-	private static void createAGroup(Context context, BatchOperation batchOperation) {
-		String mAccountName = "umesh",
-		mAccountType = "com.example.android.samplesync";
-	Uri mEntityUri = ContactsContract.Groups.CONTENT_URI.buildUpon()
-    .appendQueryParameter(ContactsContract.Groups.ACCOUNT_NAME, mAccountName)
-    .appendQueryParameter(ContactsContract.Groups.ACCOUNT_TYPE, mAccountType)
-    .appendQueryParameter(ContactsContract.CALLER_IS_SYNCADAPTER, "true")
-    .build();
-	
-	ContentProviderOperation.Builder builder = ContentProviderOperation.newInsert(mEntityUri);
-	Log.v("Group", "create accountgroup: "+mAccountType+", "+mAccountName);
-	builder.withValue(ContactsContract.Groups.ACCOUNT_TYPE, mAccountType);
-	builder.withValue(ContactsContract.Groups.ACCOUNT_NAME, mAccountName);
-	builder.withValue(ContactsContract.Groups.SYSTEM_ID, mAccountName);
-	builder.withValue(ContactsContract.Groups.TITLE, "My Group One");
-	builder.withValue(ContactsContract.Groups.GROUP_VISIBLE, 1);
-	batchOperation.add(builder.build());
-		
-	}
 
 	/**
      * Add a list of status messages to the contacts provider.
@@ -454,26 +434,37 @@ public class ContactManager {
 	}
 
 	private static void updateSharedBook(Context ctx, String name, SharedBook b) {
-	    Uri uri = Uri.parse(Constants.SHARE_BOOK_PROVIDER);
+	    // Uri uri = Uri.parse(Constants.SHARE_BOOK_PROVIDER);
 	    int id = b.getId();
 	    ContentResolver cr = ctx.getContentResolver();
 	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_URI, null,  
 	    		ContactsContract.Groups.SOURCE_ID + " = "+id, null, null);
 	    if(cursor.getCount() == 0)
 	    {
-	    	Log.i(TAG, "New share book");
+	    	Log.i(TAG, "New share book: "+name);
 	    	// create a group with the share book name
-	    	DatabaseHelper.createAGroup(ctx, b.getName(), name);
+	    	DatabaseHelper.createAGroup(ctx, b.getName(), name, id);
+	    	cursor.requery();
+	    	Log.i(TAG, "cursor has "+cursor.getCount()+" rows");
 	    }
-	    else
-	    {
-	    	Log.i(TAG, "Update share book");
-	    	List<User> users = new ArrayList<User>();
-	    	for(Contact c : b.getContacts())
-	    		users.add(new User(c.getName(), new Long(c.getNumber()).toString(), c.getId()));
-	    	syncContacts(ctx, name, users);
-	    	// add them to the group
-	    }
+	    cursor.moveToFirst();
+	    String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID));
 	    
+    	Log.i(TAG, "Update share book, id: "+groupId);
+    	List<User> users = new ArrayList<User>();
+    	for(Contact c : b.getContacts())
+    		users.add(new User(c.getName(), new Long(c.getNumber()).toString(), c.getId()));
+    	Log.i(TAG, "There are "+users.size()+" users");
+    	syncContacts(ctx, name, users);
+    	for(User u : users)
+    		updateSharedBookContact(u, groupId, ctx);
+	    
+	}
+
+	private static void updateSharedBookContact(User u, String groupId, Context ctx) {
+		String contactId = DatabaseHelper.getContactIdFromSourceId(ctx.getContentResolver(), u.getUserId());
+		DatabaseHelper.updateToGroup(groupId, contactId, ctx.getContentResolver());
+		
+		
 	}
 }

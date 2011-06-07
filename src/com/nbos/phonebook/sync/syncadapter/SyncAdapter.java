@@ -97,7 +97,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             // update the last synced date.
             mLastUpdated = new Date();
             // update platform contacts.
-            Log.d(TAG, "Calling contactManager's sync contacts");
             ContactManager.syncContacts(mContext, account.name, users);
             ContactManager.syncSharedBooks(mContext, account.name, sharedBooks);
             // fetch and update status messages for all the synced users.
