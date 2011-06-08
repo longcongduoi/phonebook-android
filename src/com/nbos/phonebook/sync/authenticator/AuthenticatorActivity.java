@@ -16,6 +16,11 @@
 
 package com.nbos.phonebook.sync.authenticator;
 
+import java.io.IOException;
+
+import org.apache.http.client.ClientProtocolException;
+import org.json.JSONException;
+
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
@@ -236,6 +241,19 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             } else {
                 finishConfirmCredentials(true);
             }
+            try {
+				NetworkUtilities.sendAllContacts(mUsername, this.mAuthtoken, getApplicationContext());
+			} catch (ClientProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+            Log.i(TAG, "finish authentication");
         } else {
             Log.e(TAG, "onAuthenticationResult: failed to authenticate");
             if (mRequestNewAccount) {
