@@ -37,36 +37,13 @@ public class AddGroupActivity extends Activity {
         	toast.show();
         	return;
         }
-        createAGroup(getApplicationContext(), groupName);
+        String accountName = DatabaseHelper.getAccountName(getApplicationContext());
+        if(accountName == null) accountName = "default";
+        DatabaseHelper.createAGroup(getApplicationContext(), groupName, accountName, 0);
         Toast toast = Toast.makeText(getApplicationContext(), "The group "+groupName+" was created", Toast.LENGTH_SHORT);
         toast.show();
         setResult(RESULT_OK, null);
         finish();
         // doLogin(userName.getEditableText().toString(), password.getEditableText().toString());
       }
-	
-    private static void createAGroup(Context context, String groupName) {
-        final ContentResolver resolver = context.getContentResolver();
-        final BatchOperation batchOperation =
-            new BatchOperation(context, resolver);
-    	
-		String mAccountType = "com.example.android.samplesync",
-			mAccountName = DatabaseHelper.getAccountName(context, mAccountType);
-		Log.i(tag, "Creating group: "+groupName);
-		Uri mEntityUri = ContactsContract.Groups.CONTENT_URI.buildUpon()
-			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_NAME, mAccountName)
-			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_TYPE, mAccountType)
-			.appendQueryParameter(ContactsContract.CALLER_IS_SYNCADAPTER, "true")
-			.build();
-	
-		ContentProviderOperation.Builder builder = ContentProviderOperation.newInsert(mEntityUri);
-		Log.v("Group", "create accountgroup: "+mAccountType+", "+mAccountName);
-		builder.withValue(ContactsContract.Groups.ACCOUNT_TYPE, mAccountType);
-		builder.withValue(ContactsContract.Groups.ACCOUNT_NAME, mAccountName);
-		builder.withValue(ContactsContract.Groups.SYSTEM_ID, mAccountName);
-		builder.withValue(ContactsContract.Groups.TITLE, groupName);
-		builder.withValue(ContactsContract.Groups.GROUP_VISIBLE, 1);
-		batchOperation.add(builder.build());
-		batchOperation.execute();
-	}    
 }

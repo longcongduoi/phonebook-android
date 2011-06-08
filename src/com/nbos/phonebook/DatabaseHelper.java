@@ -138,13 +138,14 @@ public class DatabaseHelper {
 	    return c.getCount() > 0;
 	}
 
-	public static String getAccountName(Context ctx, String accountType) {
+	public static final String ACCOUNT_TYPE = "com.nbos.phonebook"; 
+	public static String getAccountName(Context ctx) {
         Account[] accounts = AccountManager.get(ctx).getAccounts();
         Log.i(tag, "There are "+accounts.length+" accounts");
         for (Account account : accounts) 
         {
         	Log.i(tag, "account name: "+account.name+", type: "+account.type);
-        	if(account.type.equals(accountType))
+        	if(account.type.equals(ACCOUNT_TYPE))
         		return account.name;
         }
         return null;
@@ -155,20 +156,19 @@ public class DatabaseHelper {
         final BatchOperation batchOperation =
             new BatchOperation(context, resolver);
     	
-		String mAccountName = accountName,
-		mAccountType = "com.example.android.samplesync";
 		Log.i(tag, "Creating group: "+groupName);
 		Uri mEntityUri = ContactsContract.Groups.CONTENT_URI.buildUpon()
-			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_NAME, mAccountName)
-			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_TYPE, mAccountType)
+			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_NAME, accountName)
+			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_TYPE, ACCOUNT_TYPE)
 			.appendQueryParameter(ContactsContract.CALLER_IS_SYNCADAPTER, "true")
 			.build();
+		
 	
 		ContentProviderOperation.Builder builder = ContentProviderOperation.newInsert(mEntityUri);
-		Log.v("Group", "create accountgroup: "+mAccountType+", "+mAccountName);
-		builder.withValue(ContactsContract.Groups.ACCOUNT_TYPE, mAccountType);
-		builder.withValue(ContactsContract.Groups.ACCOUNT_NAME, mAccountName);
-		builder.withValue(ContactsContract.Groups.SYSTEM_ID, mAccountName);
+		Log.v("Group", "create accountgroup: "+ACCOUNT_TYPE+", "+accountName);
+		builder.withValue(ContactsContract.Groups.ACCOUNT_TYPE, ACCOUNT_TYPE);
+		builder.withValue(ContactsContract.Groups.ACCOUNT_NAME, accountName);
+		builder.withValue(ContactsContract.Groups.SYSTEM_ID, accountName);
 		builder.withValue(ContactsContract.Groups.TITLE, groupName);
 		builder.withValue(ContactsContract.Groups.SOURCE_ID, id);
 		builder.withValue(ContactsContract.Groups.GROUP_VISIBLE, 1);
