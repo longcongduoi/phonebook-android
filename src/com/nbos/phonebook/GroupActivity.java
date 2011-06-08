@@ -1,5 +1,9 @@
 package com.nbos.phonebook;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
@@ -18,11 +22,14 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.FilterQueryProvider;
+import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.value.ContactRow;
 
 public class GroupActivity extends ListActivity {
 
@@ -44,6 +51,7 @@ public class GroupActivity extends ListActivity {
 	    }
 		queryGroup();
 		registerForContextMenu(getListView());  
+		getListView().setTextFilterEnabled(true);
 	}
 
 	@Override
@@ -163,45 +171,74 @@ public class GroupActivity extends ListActivity {
 	    return true;
 		
 	}
-
+	Cursor dataCursor;
     private void queryGroup() {
-        setTitle("Group: "+name+" ("+numContacts()+" contacts sharing with)");
-	    Cursor dataCursor = DatabaseHelper.getContactsInGroup(id, getContentResolver());
-	    Log.i(tag, "There are "+dataCursor.getCount()+" contacts in data");
-	    /*while(dataCursor.moveToNext())
-	    	Log.i(tag, "Contacts._ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts._ID))
-	    		+ ", ContactsContract.Data.RAW_CONTACT_ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID))
-	    		+ ", ContactsContract.RawContacts._ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.RawContacts._ID)));*/
-	    Cursor contactsCursor = DatabaseHelper.getContacts(this);
-	    
-	    IntCursorJoiner joiner = new IntCursorJoiner(
-	    		contactsCursor, new String[] {ContactsContract.Contacts._ID} ,
-	    		dataCursor, new String[] {ContactsContract.Data.RAW_CONTACT_ID}
-	    );
-        m_cursor = new MatrixCursor( 
-        	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME}, 10);
-        for (CursorJoiner.Result joinerResult : joiner) 
-        {
-        	switch (joinerResult) {
-        		case BOTH: // handle case where a row with the same key is in both cursors
-        			id = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
-        			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-        			m_cursor.addRow(new String[] {id, name});
-        		break;
-        	}
-        }	    
-        
+    	setTitle("Group: "+name+" ("+numContacts()+" contacts sharing with)");
+    	dataCursor = DatabaseHelper.getContactsInGroup(id, this.getContentResolver());
+        getContactsFromGroupCursor("");
         String[] fields = new String[] {
                 ContactsContract.Contacts.DISPLAY_NAME
         };
         SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_1, m_cursor,
                 fields, new int[] {android.R.id.text1});
+        
+        adapter.setStringConversionColumn(
+                m_cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
+      
+        adapter.setFilterQueryProvider(new FilterQueryProvider() {
+
+            public Cursor runQuery(CharSequence constraint) {
+                String partialItemName = null;
+                if (constraint != null) {
+                    partialItemName = constraint.toString();
+                }
+                getContactsFromGroupCursor(partialItemName);
+                return m_cursor;
+            }
+        });
+        
         getListView().setAdapter(adapter);
 	    
 	    Log.i(tag, "There are "+m_cursor.getCount()+" contacts in this group");
 	    
 
 	}
+    private void getContactsFromGroupCursor(String search) {
+ 	    Log.i(tag, "There are "+dataCursor.getCount()+" contacts in data for groupId: "+id);
+ 	    /*while(dataCursor.moveToNext())
+ 	    	Log.i(tag, "Contacts._ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts._ID))
+ 	    		+ ", ContactsContract.Data.RAW_CONTACT_ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID))
+ 	    		+ ", ContactsContract.RawContacts._ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.RawContacts._ID)));*/
+ 	   Cursor contactsCursor = DatabaseHelper.getContacts(this, search);
+ 	   Log.i(tag, "There are "+contactsCursor.getCount()+" contacts matching "+search);
+ 	    
+ 	    IntCursorJoiner joiner = new IntCursorJoiner(
+ 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID} ,
+ 	    		dataCursor, new String[] {ContactsContract.Data.RAW_CONTACT_ID}
+ 	    );
+         m_cursor = new MatrixCursor( 
+         	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME}, 10);
+         
+         List<ContactRow> rows =new ArrayList<ContactRow>();
+         for (CursorJoiner.Result joinerResult : joiner) 
+         {
+         	switch (joinerResult) {
+         		case BOTH: // handle case where a row with the same key is in both cursors
+         			id = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
+         			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+         			if(name != null)
+         				rows.add(new ContactRow(id, name));
+         		break;
+         	}
+         }	    
+         Collections.sort(rows);
+         Log.i(tag, "There are "+rows.size()+" contacts matching "+search);
+         for(ContactRow row : rows)
+         	 ((MatrixCursor) m_cursor).addRow(new String[] {row.id, row.name});
+ 		
+	}
+	ListView mGroupList;
+	boolean mShowInvisible = false;
 	
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
