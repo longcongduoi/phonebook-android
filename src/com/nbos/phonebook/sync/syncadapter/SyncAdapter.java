@@ -42,6 +42,7 @@ import android.provider.ContactsContract;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import com.nbos.phonebook.DatabaseHelper;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
@@ -93,7 +94,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
              users =  (List<User>) update[0];
              sharedBooks = (List<SharedBook>) update[1];
              NetworkUtilities.sendFriendUpdates(account, authtoken,
-                     mLastUpdated, getFewContacts(5), getNewContacts(), getGroups(), getSharingBooks(), mContext);
+                     mLastUpdated, DatabaseHelper.getContacts(true, mContext),
+                     DatabaseHelper.getGroups(true, mContext),
+                     DatabaseHelper.getSharingBooks(true, mContext), mContext);
             // update the last synced date.
             mLastUpdated = new Date();
             // update platform contacts.
@@ -132,104 +135,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     			.getLine1Number().replace("-", ""));	
     	return phoneNumber;
     }
-
-	private List<SharingBook> getSharingBooks() {
-    	List<SharingBook> books = new ArrayList<SharingBook>();
-    	Cursor cursor = mContext.getContentResolver().query(
-    			Uri.parse(Constants.SHARE_BOOK_PROVIDER),
-    			null,
-    			BookTable.DIRTY + " is null",
-    			null, null);
-    	if(cursor != null)
-    		Log.i(TAG, "There are "+cursor.getCount()+" contacts sharing books");
-    	while(cursor.moveToNext())
-    		books.add(
-    			new SharingBook(
-    				cursor.getInt(cursor.getColumnIndex(BookTable.BOOKID)),
-    				cursor.getInt(cursor.getColumnIndex(BookTable.CONTACTID))));
-    	
-    	return books;
-    }
-    
-	private List<Group> getGroups() {
-		List<Group> groups = new ArrayList<Group>();
-	    ContentResolver cr = mContext.getContentResolver();
-	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
-	        // "DISPLAY_NAME = '" + NAME + "'",
-	    	ContactsContract.Groups.DELETED + " = 0 "
-	    	+ "and " + ContactsContract.Groups.DIRTY + " = 1 ",	    		
-	    	null, null);
-	    Log.i(TAG, "There are "+cursor.getCount()+" groups");
-	    
-	    
-	    Cursor contactsCursor = cr.query(ContactsContract.Contacts.CONTENT_URI,
-	    		// null,
-	    	    new String[] {
-	    			ContactsContract.Contacts._ID,
-	    			ContactsContract.Contacts.DISPLAY_NAME
-	    		},
-	    		null, null, null);
-	    Log.i(TAG, "There are "+contactsCursor.getCount()+" contacts");
-	    
-	    while(cursor.moveToNext())
-	    {
-	    	List<Contact> contacts = new ArrayList<Contact>();
-	    	String name = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.TITLE));
-	    	int groupId = cursor.getInt(cursor.getColumnIndex(ContactsContract.Groups._ID));
-	    	String dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DIRTY));
-		    Cursor dataCursor = cr.query(ContactsContract.Data.CONTENT_URI,
-		    		// null,
-		    	    new String[] {
-		    			ContactsContract.Contacts._ID, 
-		    			ContactsContract.Data.RAW_CONTACT_ID, 
-		    			ContactsContract.RawContacts._ID,
-		    			ContactsContract.Contacts.DISPLAY_NAME
-		    		},
-		    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID
-		    	    + " = " 
-		    	    + cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID)),
-		    	    null, null);
-		    Log.i(TAG, "There are "+dataCursor.getCount()+" contacts in data");
-	    	
-		    CursorJoiner joiner = new CursorJoiner(
-		    		contactsCursor,
-		    		new String[]
-		    		{ContactsContract.Contacts._ID},
-		    		dataCursor,
-		    		new String[] {ContactsContract.Data.RAW_CONTACT_ID}
-		    );
-	        for (CursorJoiner.Result joinerResult : joiner) 
-	        {
-	        	switch (joinerResult) {
-	        		case BOTH: // handle case where a row with the same key is in both cursors
-	        			int contactId = contactsCursor.getInt(contactsCursor.getColumnIndex(
-	        					ContactsContract.Contacts._ID));
-	        			String contactName = contactsCursor.getString(contactsCursor.getColumnIndex(
-	        					ContactsContract.Contacts.DISPLAY_NAME));
-	        	        Cursor phones = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
-	        	        		null, 		
-	        	        		ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID +" = "+ contactId,
-	        	        		null, null);
-	        	            
-	        	            // Log.i(TAG, "There are "+phones.getCount()+" phone numbers");
-	        	            if(phones.getCount() == 0) break;
-	        	            phones.moveToFirst();
-	        	            Long contactNumber = phones.getLong(phones
-	        	                    .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
-
-	        			contacts.add(new Contact(contactId, contactNumber, contactName));
-	        			Log.i(TAG, "added contact: "+contactId+", "+contactNumber+", "+contactName);
-	        		break;
-	        	}
-	        }	    
-	    	
-	        groups.add(new Group(groupId, name, contacts));
-	        Log.i(TAG, "dirty is "+dirty);
-	        Log.i(TAG, "Added book["+groupId+"] "+name+" with "+contacts.size()+" contacts");
-	    	// books
-	    }
-	    return groups;
-	}
 
     private List<User> getFewContacts(int numContacts) {
 	    ContentResolver cr = mContext.getContentResolver();

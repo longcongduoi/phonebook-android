@@ -49,6 +49,7 @@ import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
+import com.nbos.phonebook.DatabaseHelper;
 import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
 import com.nbos.phonebook.sync.platform.ContactManager;
 
@@ -391,12 +392,13 @@ public class NetworkUtilities {
     }
 
 	public static void sendFriendUpdates(Account account, String authtoken,
-			Date lastUpdated, List<User> fewContacts, List<User> newContacts, List<Group> groups, List<SharingBook> books, Context context) throws ClientProtocolException, IOException, JSONException {
+			Date lastUpdated, // List<User> fewContacts, 
+			List<User> newContacts, List<Group> groups, List<SharingBook> books, Context context) throws ClientProtocolException, IOException, JSONException {
         final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair(PARAM_USERNAME, account.name));
         params.add(new BasicNameValuePair(PARAM_PASSWORD, authtoken));
 
-        params.add(new BasicNameValuePair("numCheckContacts", new Integer(fewContacts.size()).toString()));
+        /*params.add(new BasicNameValuePair("numCheckContacts", new Integer(fewContacts.size()).toString()));
         
         // These contacts are for checking the sync
         for(int i=0; i< fewContacts.size(); i++)
@@ -407,7 +409,7 @@ public class NetworkUtilities {
         	params.add(new BasicNameValuePair("cNumber_"+index, user.getCellPhone()));
         	params.add(new BasicNameValuePair("cId_"+index, new Integer(user.getUserId()).toString()));
         	params.add(new BasicNameValuePair("cContactId_"+index, new Integer(user.getContactId()).toString()));
-        }
+        }*/
 
         
         params.add(new BasicNameValuePair("numContacts", new Integer(newContacts.size()).toString()));
@@ -477,5 +479,13 @@ public class NetworkUtilities {
         for (int i = 0; i < bookUpdates.length(); i++)
         	ContactManager.updateBook(bookUpdates.getJSONObject(i), context);
         
+	}
+
+	public static void sendAllContacts(String username, String authtoken, Context ctx) throws ClientProtocolException, IOException, JSONException {
+        sendFriendUpdates(DatabaseHelper.getAccount(ctx, username), authtoken,
+                null, DatabaseHelper.getContacts(false, ctx),
+                DatabaseHelper.getGroups(false, ctx),
+                DatabaseHelper.getSharingBooks(false, ctx), ctx);
+
 	}
 }
