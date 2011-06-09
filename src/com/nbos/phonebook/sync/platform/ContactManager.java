@@ -78,6 +78,7 @@ public class ContactManager {
             userId = user.getUserId();
             // Check to see if the contact needs to be inserted or updated
             rawContactId = lookupRawContact(resolver, userId);
+            Log.d(TAG, "Raw contact id is: "+rawContactId);
             if (rawContactId != 0) {
                 if (!user.isDeleted()) {
                     // update contact
@@ -89,7 +90,7 @@ public class ContactManager {
                 }
             } else {
                 // add new contact
-                Log.d(TAG, "In addContact");
+                Log.d(TAG, "In addContact, user: "+user.getFirstName());
                 if (!user.isDeleted()) {
                     addContact(context, account, user, batchOperation);
                 }
@@ -180,6 +181,7 @@ public class ContactManager {
     private static void updateContact(Context context,
         ContentResolver resolver, String accountName, User user,
         long rawContactId, BatchOperation batchOperation) {
+    	Log.i(TAG, "Update contact: "+user.getFirstName()+", rawContactId: "+rawContactId);
         Uri uri;
         String cellPhone = null;
         String otherPhone = null;
@@ -339,8 +341,8 @@ public class ContactManager {
         public final static int COLUMN_ID = 0;
 
         public static final String SELECTION =
-            RawContacts.ACCOUNT_TYPE + "='" + Constants.ACCOUNT_TYPE + "' AND "
-                + RawContacts.SOURCE_ID + "=?";
+            // RawContacts.ACCOUNT_TYPE + "='" + Constants.ACCOUNT_TYPE + "' AND " +
+                 RawContacts.SOURCE_ID + "=?";
     }
 
     /**

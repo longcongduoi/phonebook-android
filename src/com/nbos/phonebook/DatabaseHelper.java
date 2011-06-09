@@ -14,6 +14,7 @@ import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.net.Uri;
 import android.provider.ContactsContract;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.nbos.phonebook.contentprovider.Provider;
@@ -202,7 +203,7 @@ public class DatabaseHelper {
 	    String where = newOnly ? ContactsContract.RawContacts.DIRTY + " = 1" : null;
 	    Cursor cursor = cr.query(uri, 
 	    		null, where, null, null);
-	    Log.i(TAG, "There are "+cursor.getCount()+" contacts");
+	    Log.i(TAG, "There are "+cursor.getCount()+" contacts ");
 	    List<User> users = new ArrayList<User>();
 	    while(cursor.moveToNext()) {
 	        String contactId =
@@ -230,7 +231,11 @@ public class DatabaseHelper {
 	        String phoneNumber = phones.getString(phones
 	                .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
 	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", sourceId: "+sourceId+", dirty: "+dirty+", version is: "+version);
-	        users.add(new User(name, phoneNumber, sourceId != null ? Integer.parseInt(sourceId) : 0, Integer.parseInt(contactId)));
+	        int sId = 0;
+	        try {
+	        	sId = Integer.parseInt(sourceId);
+	        } catch(Exception e){}
+	        users.add(new User(name, phoneNumber, sId, Integer.parseInt(contactId)));
 	        phones.close();
 	    }
 	    return users;
@@ -270,7 +275,7 @@ public class DatabaseHelper {
 		    		},
 		    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID
 		    	    + " = " 
-		    	    + cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID)),
+		    	    + groupId,
 		    	    null, null);
 		    Log.i(TAG, "There are "+dataCursor.getCount()+" contacts in data");
 	    	
@@ -331,6 +336,11 @@ public class DatabaseHelper {
     	return books;
     }
 	
+	public static String getPhoneNumber(Context ctx) {
+		String ph = ((TelephonyManager) ctx.getSystemService(Context.TELEPHONY_SERVICE)).getLine1Number();
+		Log.i(TAG, "Phone number is: "+ph);
+		return ph;
+    }
     
 	
 }

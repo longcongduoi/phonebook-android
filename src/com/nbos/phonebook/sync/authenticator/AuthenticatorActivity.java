@@ -16,17 +16,13 @@
 
 package com.nbos.phonebook.sync.authenticator;
 
-import java.io.IOException;
-
-import org.apache.http.client.ClientProtocolException;
-import org.json.JSONException;
-
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -38,9 +34,11 @@ import android.view.View;
 import android.view.Window;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.TextView.BufferType;
 
-import com.nbos.phonebook.sync.Constants;
+import com.nbos.phonebook.DatabaseHelper;
 import com.nbos.phonebook.R;
+import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.NetworkUtilities;
 
 /**
@@ -68,8 +66,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
     /** for posting authentication attempts back to UI thread */
     private final Handler mHandler = new Handler();
     private TextView mMessage;
-    private String mPassword;
-    private EditText mPasswordEdit;
+    private String mPassword, mPhone;
+    private EditText mPasswordEdit, mPhoneEdit;
 
     /** Was the original caller asking for an entirely new account? */
     protected boolean mRequestNewAccount = false;
@@ -102,12 +100,20 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         mMessage = (TextView) findViewById(R.id.message);
         mUsernameEdit = (EditText) findViewById(R.id.username_edit);
         mPasswordEdit = (EditText) findViewById(R.id.password_edit);
-
+        mPhoneEdit = (EditText) findViewById(R.id.phone_edit);
+        getPhoneNumber(getApplicationContext());
         mUsernameEdit.setText(mUsername);
         mMessage.setText(getMessage());
     }
 
-    /*
+    private void getPhoneNumber(Context context) {
+    	String ph = DatabaseHelper.getPhoneNumber(context);
+    	if(ph == null) return;
+    	mPhoneEdit.setText(ph);
+    	mPhoneEdit.setFocusable(false);
+	}
+
+	/*
      * {@inheritDoc}
      */
     @Override
@@ -139,13 +145,14 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             mUsername = mUsernameEdit.getText().toString();
         }
         mPassword = mPasswordEdit.getText().toString();
-        if (TextUtils.isEmpty(mUsername) || TextUtils.isEmpty(mPassword)) {
+        mPhone = mPhoneEdit.getText().toString();
+        if (TextUtils.isEmpty(mUsername) || TextUtils.isEmpty(mPassword) || TextUtils.isEmpty(mPhone)) {
             mMessage.setText(getMessage());
         } else {
             showProgress();
             // Start authenticating...
             mAuthThread =
-                NetworkUtilities.attemptAuth(mUsername, mPassword, mHandler,
+                NetworkUtilities.attemptAuth(mUsername, mPassword, mPhone, mHandler,
                     AuthenticatorActivity.this);
         }
     }
@@ -156,13 +163,17 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             mUsername = mUsernameEdit.getText().toString();
         }
         mPassword = mPasswordEdit.getText().toString();
-        if (TextUtils.isEmpty(mUsername) || TextUtils.isEmpty(mPassword)) {
+        mPhone = mPhoneEdit.getText().toString();
+        Log.i(TAG, "usename: "+mUsername+", password: "+mPassword+", mPhone: "+mPhone);
+        if (TextUtils.isEmpty(mUsername) || TextUtils.isEmpty(mPassword) || TextUtils.isEmpty(mPhone)) {
+        	Log.i(TAG, "Empty field");
             mMessage.setText(getMessage());
         } else {
             showProgress();
             // Start authenticating...
+            Log.i(TAG, "attempting register");
             mAuthThread =
-                NetworkUtilities.attemptRegister(mUsername, mPassword, mHandler,
+                NetworkUtilities.attemptRegister(mUsername, mPassword, mPhone, mHandler,
                     AuthenticatorActivity.this);
         }
     }
@@ -242,17 +253,11 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
                 finishConfirmCredentials(true);
             }
             try {
+            	Log.i(TAG, "Sending all contacts");
 				NetworkUtilities.sendAllContacts(mUsername, this.mAuthtoken, getApplicationContext());
-			} catch (ClientProtocolException e) {
-				// TODO Auto-generated catch block
+			} catch (Exception e) {
 				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			} 
             Log.i(TAG, "finish authentication");
         } else {
             Log.e(TAG, "onAuthenticationResult: failed to authenticate");
@@ -286,6 +291,11 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             // We have an account but no password
             return getText(R.string.login_activity_loginfail_text_pwmissing);
         }
+        if (TextUtils.isEmpty(mPhone)) {
+            // We have an account but no password
+            return getText(R.string.login_activity_loginfail_text_phmissing);
+        }
+
         return null;
     }
 

@@ -90,7 +90,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
              // fetch updates from the sample service over the cloud
              
              Object[] update =   NetworkUtilities.fetchFriendUpdates(account, authtoken,
-                    mLastUpdated, getPhoneNumber());
+                    mLastUpdated);
              users =  (List<User>) update[0];
              sharedBooks = (List<SharedBook>) update[1];
              NetworkUtilities.sendFriendUpdates(account, authtoken,
@@ -129,13 +129,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     }
     
     
-	private Long getPhoneNumber() {
-    	long phoneNumber = Long.parseLong(((TelephonyManager) 
-    			mContext.getSystemService(Context.TELEPHONY_SERVICE))
-    			.getLine1Number().replace("-", ""));	
-    	return phoneNumber;
-    }
-
     private List<User> getFewContacts(int numContacts) {
 	    ContentResolver cr = mContext.getContentResolver();
 	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;

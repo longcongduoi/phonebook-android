@@ -21,13 +21,13 @@ public class Constants {
     /**
      * Account type string.
      */
-    public static final String ACCOUNT_TYPE = "com.example.android.samplesync";
+    public static final String ACCOUNT_TYPE = "com.nbos.phonebook";
 
     /**
      * Authtoken type string.
      */
-    public static final String AUTHTOKEN_TYPE =
-        "com.example.android.samplesync";
+    public static final String AUTHTOKEN_TYPE = ACCOUNT_TYPE;
+        // "com.example.android.samplesync";
 
 	public static final String SHARE_BOOK_PROVIDER = "content://com.nbos.phonebook.provider.defaultname/book";
     

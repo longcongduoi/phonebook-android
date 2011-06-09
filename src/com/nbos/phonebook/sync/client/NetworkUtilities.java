@@ -120,7 +120,7 @@ public class NetworkUtilities {
      * @return boolean The boolean result indicating whether the user was
      *         successfully authenticated.
      */
-    public static boolean authenticate(String username, String password,
+    public static boolean authenticate(String username, String password, String ph,
         Handler handler, final Context context) {
     	Log.i(TAG, "Authenticate");
         final HttpResponse resp;
@@ -128,6 +128,7 @@ public class NetworkUtilities {
         final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair(PARAM_USERNAME, username));
         params.add(new BasicNameValuePair(PARAM_PASSWORD, password));
+        params.add(new BasicNameValuePair(PARAM_PHONE_NUMBER, ph));
         HttpEntity entity = null;
         try {
             entity = new UrlEncodedFormEntity(params);
@@ -171,7 +172,7 @@ public class NetworkUtilities {
         }
     }
 
-    public static boolean register(String username, String password,
+    public static boolean register(String username, String password, String ph,
             Handler handler, final Context context) {
         	Log.i(TAG, "Register");
             final HttpResponse resp;
@@ -179,6 +180,7 @@ public class NetworkUtilities {
             final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
             params.add(new BasicNameValuePair(PARAM_USERNAME, username));
             params.add(new BasicNameValuePair(PARAM_PASSWORD, password));
+            params.add(new BasicNameValuePair(PARAM_PHONE_NUMBER, ph));
             HttpEntity entity = null;
             try {
                 entity = new UrlEncodedFormEntity(params);
@@ -253,10 +255,10 @@ public class NetworkUtilities {
      * @return Thread The thread on which the network mOperations are executed.
      */
     public static Thread attemptAuth(final String username,
-        final String password, final Handler handler, final Context context) {
+        final String password, final String ph, final Handler handler, final Context context) {
         final Runnable runnable = new Runnable() {
             public void run() {
-                authenticate(username, password, handler, context);
+                authenticate(username, password, ph, handler, context);
             }
         };
         // run on background thread.
@@ -264,10 +266,10 @@ public class NetworkUtilities {
     }
 
     public static Thread attemptRegister(final String username,
-            final String password, final Handler handler, final Context context) {
+            final String password, final String ph, final Handler handler, final Context context) {
             final Runnable runnable = new Runnable() {
                 public void run() {
-                    register(username, password, handler, context);
+                    register(username, password, ph, handler, context);
                 }
             };
             // run on background thread.
@@ -283,14 +285,14 @@ public class NetworkUtilities {
      * @return list The list of updates received from the server.
      */
     public static Object[] fetchFriendUpdates(Account account,
-        String authtoken, Date lastUpdated, Long phoneNumber) throws JSONException,
+        String authtoken, Date lastUpdated) throws JSONException,
         ParseException, IOException, AuthenticationException {
         final ArrayList<User> friendList = new ArrayList<User>();
         final ArrayList<SharedBook> books = new ArrayList<SharedBook>();
         final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair(PARAM_USERNAME, account.name));
         params.add(new BasicNameValuePair(PARAM_PASSWORD, authtoken));
-        params.add(new BasicNameValuePair(PARAM_PHONE_NUMBER, phoneNumber.toString()));
+        // params.add(new BasicNameValuePair(PARAM_PHONE_NUMBER, phoneNumber.toString()));
         if (lastUpdated != null) {
             final SimpleDateFormat formatter =
                 new SimpleDateFormat("yyyy/MM/dd HH:mm");

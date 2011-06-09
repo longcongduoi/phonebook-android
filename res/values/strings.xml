@@ -70,6 +70,9 @@
     <!-- Message shown in dialog to prompt the user for their password -->
     <string
         name="login_activity_loginfail_text_pwmissing">Type the password for this account.</string>
+    <string
+        name="login_activity_loginfail_text_phmissing">Please enter your phone number</string>
+        
     <!--
         Message shown if the provided account doesn't support the current
         activity.
@@ -109,5 +112,6 @@
     <string name="not_sharing">You are not sharing this group with anybody</string>
     <string name="add_contact_to_share_with">Select contacts to share with</string>
     <string name="no_contacts_to_share_with">There are no contacts to share this group with</string>
+    <string name="tel_number">Phone number</string>
     
 </resources>
