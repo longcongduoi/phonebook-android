@@ -67,17 +67,21 @@ public class ContactManager {
         String account, List<User> users) {
         long userId;
         long rawContactId = 0;
-        List<Long> rawContactIds = new ArrayList<Long>();
         final ContentResolver resolver = context.getContentResolver();
         final BatchOperation batchOperation =
             new BatchOperation(context, resolver);
         
+        final Cursor rawContactsCursor =
+            resolver.query(RawContacts.CONTENT_URI, UserIdQuery.PROJECTION,
+                null, null, null);
+        Log.i(TAG, "There are "+rawContactsCursor.getCount()+" raw contacts");
+
         // syncSharedBooks(context);
         Log.d(TAG, "In SyncContacts");
         for (final User user : users) {
             userId = user.getUserId();
             // Check to see if the contact needs to be inserted or updated
-            rawContactId = lookupRawContact(resolver, userId);
+            rawContactId = lookupRawContact(resolver, userId, rawContactsCursor);
             Log.d(TAG, "Raw contact id is: "+rawContactId);
             if (rawContactId != 0) {
                 if (!user.isDeleted()) {
@@ -103,6 +107,21 @@ public class ContactManager {
         }
         batchOperation.execute();
     }
+
+	private static long lookupRawContact(ContentResolver resolver, long userId, Cursor rawContactsCursor) {
+		rawContactsCursor.moveToFirst();
+		do
+		{
+			String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.SOURCE_ID));
+			try {
+				if(Long.parseLong(sourceId) == userId)
+					return rawContactsCursor.getLong(0);
+			}
+			catch(Exception e){}
+			
+		} while(rawContactsCursor.moveToNext());
+		return 0;
+	}
 
 	/**
      * Add a list of status messages to the contacts provider.
@@ -336,7 +355,7 @@ public class ContactManager {
      */
     private interface UserIdQuery {
         public final static String[] PROJECTION =
-            new String[] {RawContacts._ID};
+            new String[] {RawContacts._ID, RawContacts.SOURCE_ID};
 
         public final static int COLUMN_ID = 0;
 
