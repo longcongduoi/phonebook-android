@@ -224,7 +224,7 @@ public class DatabaseHelper {
 	            	//cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.SOURCE_ID));
 	        Cursor phones = ctx.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
 	    		null, 		
-	    		ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID +" = "+ contactId,
+	    		ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = "+ contactId,
 	    		null, null);
 	        if(phones.getCount() == 0) continue;
 	        phones.moveToFirst();
