@@ -18,6 +18,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.nbos.phonebook.contentprovider.Provider;
+import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
@@ -265,21 +266,10 @@ public class DatabaseHelper {
 	    	String name = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.TITLE));
 	    	int groupId = cursor.getInt(cursor.getColumnIndex(ContactsContract.Groups._ID));
 	    	String dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DIRTY));
-		    Cursor dataCursor = cr.query(ContactsContract.Data.CONTENT_URI,
-		    		// null,
-		    	    new String[] {
-		    			ContactsContract.Contacts._ID, 
-		    			ContactsContract.Data.RAW_CONTACT_ID, 
-		    			ContactsContract.RawContacts._ID,
-		    			ContactsContract.Contacts.DISPLAY_NAME
-		    		},
-		    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID
-		    	    + " = " 
-		    	    + groupId,
-		    	    null, null);
-		    Log.i(TAG, "There are "+dataCursor.getCount()+" contacts in data");
+		    Cursor dataCursor = getContactsInGroup(new Integer(groupId).toString(), ctx.getContentResolver());
+		    Log.i(TAG, "There are "+dataCursor.getCount()+" contacts in group: "+groupId);
 	    	
-		    CursorJoiner joiner = new CursorJoiner(
+		    IntCursorJoiner joiner = new IntCursorJoiner(
 		    		contactsCursor,
 		    		new String[]
 		    		{ContactsContract.Contacts._ID},
@@ -313,7 +303,7 @@ public class DatabaseHelper {
 	    	
 	        groups.add(new Group(groupId, name, contacts));
 	        Log.i(TAG, "dirty is "+dirty);
-	        Log.i(TAG, "Added book["+groupId+"] "+name+" with "+contacts.size()+" contacts");
+	        Log.i(TAG, "Added group["+groupId+"] "+name+" with "+contacts.size()+" contacts");
 	    	// books
 	    }
 	    return groups;

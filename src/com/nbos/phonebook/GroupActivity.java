@@ -204,13 +204,9 @@ public class GroupActivity extends ListActivity {
 
 	}
     private void getContactsFromGroupCursor(String search) {
- 	    Log.i(tag, "There are "+dataCursor.getCount()+" contacts in data for groupId: "+id);
- 	    /*while(dataCursor.moveToNext())
- 	    	Log.i(tag, "Contacts._ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts._ID))
- 	    		+ ", ContactsContract.Data.RAW_CONTACT_ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID))
- 	    		+ ", ContactsContract.RawContacts._ID = "+dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.RawContacts._ID)));*/
- 	   Cursor contactsCursor = DatabaseHelper.getContacts(this, search);
- 	   Log.i(tag, "There are "+contactsCursor.getCount()+" contacts matching "+search);
+    	Log.i(tag, "There are "+dataCursor.getCount()+" contacts in data for groupId: "+id);
+ 	   	Cursor contactsCursor = DatabaseHelper.getContacts(this, search);
+ 	   	Log.i(tag, "There are "+contactsCursor.getCount()+" contacts matching "+search);
  	    
  	    IntCursorJoiner joiner = new IntCursorJoiner(
  	    		contactsCursor, new String[] {ContactsContract.Contacts._ID} ,
