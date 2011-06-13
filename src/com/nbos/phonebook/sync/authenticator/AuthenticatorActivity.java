@@ -110,7 +110,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
     	String ph = DatabaseHelper.getPhoneNumber(context);
     	if(ph == null) return;
     	mPhoneEdit.setText(ph);
-    	mPhoneEdit.setFocusable(false);
+    	// mPhoneEdit.setFocusable(false);
 	}
 
 	/*
