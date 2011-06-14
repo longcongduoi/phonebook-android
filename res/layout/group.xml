@@ -4,8 +4,11 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:id="@+id/linearLayout1">
-    <ListView android:id="@android:id/list" android:layout_height="wrap_content" android:layout_width="fill_parent"></ListView>
+    
+    <ListView android:id="@android:id/list" android:layout_height="wrap_content" android:layout_width="wrap_content" android:layout_gravity="top"></ListView>
+    
     <TextView android:id="@android:id/empty" android:layout_height="wrap_content"
      android:layout_width="wrap_content" android:text="@string/no_contacts"
      android:textAppearance="?android:attr/textAppearanceLarge"></TextView>
+
 </LinearLayout>

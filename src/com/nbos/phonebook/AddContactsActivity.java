@@ -70,7 +70,7 @@ public class AddContactsActivity extends ListActivity {
 	}
 	
 	void getContactsCursor(String search) {
-        Cursor contactsCursor = DatabaseHelper.getContacts(this);
+        Cursor contactsCursor = DatabaseHelper.getContacts(this,search);
         
         Cursor dataCursor = DatabaseHelper.getContactsInGroup(id, getContentResolver());
 	    IntCursorJoiner joiner = new IntCursorJoiner(
@@ -89,7 +89,7 @@ public class AddContactsActivity extends ListActivity {
         			String id = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
         			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
         			if(name != null)
-        				rows.add(new ContactRow(id, name));	        			
+        				rows.add(new ContactRow(id, name, null));	        			
         		break;
         		
         	}

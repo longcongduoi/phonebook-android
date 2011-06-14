@@ -94,7 +94,7 @@ public class SelectContactsToShareWithActivity extends ListActivity {
         			String id = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
         			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
         			if(name != null)
-        				rows.add(new ContactRow(id, name));
+        				rows.add(new ContactRow(id, name, null));
         		break;
         	}
         }	    

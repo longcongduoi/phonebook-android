@@ -6,25 +6,34 @@ import java.util.List;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.ContentUris;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.database.MatrixCursor;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.Contacts;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.FilterQueryProvider;
+import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
@@ -36,6 +45,7 @@ public class GroupActivity extends ListActivity {
 	String id, name;
 	static String tag = "GroupActivity";
 	MatrixCursor m_cursor;
+    List<byte[]> photos;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -73,9 +83,6 @@ public class GroupActivity extends ListActivity {
 	    // Get the info on which item was selected
 	    AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
 
-	    // Get the Adapter behind your ListView (this assumes you're using
-	    // a ListActivity; if you're not, you'll have to store the Adapter yourself
-	    // in some way that can be accessed here.)
 	    m_cursor.moveToPosition(info.position);
 	    String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID)),
 	    	name = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
@@ -90,9 +97,8 @@ public class GroupActivity extends ListActivity {
 		} else if (item.getTitle() == "Call") {
 			//call the guy
 			callFromGroup(contactId);
-			
-			
-		} else {
+		} 
+		else {
 			return false;
 		}
 		return true;
@@ -179,8 +185,8 @@ public class GroupActivity extends ListActivity {
         String[] fields = new String[] {
                 ContactsContract.Contacts.DISPLAY_NAME
         };
-        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_1, m_cursor,
-                fields, new int[] {android.R.id.text1});
+        ImageCursorAdapter adapter = new ImageCursorAdapter(this, R.layout.contact_entry, m_cursor, photos,
+                fields, new int[] {R.id.contact_name});
         
         adapter.setStringConversionColumn(
                 m_cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
@@ -203,7 +209,9 @@ public class GroupActivity extends ListActivity {
 	    
 
 	}
+    
     private void getContactsFromGroupCursor(String search) {
+    	photos = new ArrayList<byte[]>();
     	Log.i(tag, "There are "+dataCursor.getCount()+" contacts in data for groupId: "+id);
  	   	Cursor contactsCursor = DatabaseHelper.getContacts(this, search);
  	   	Log.i(tag, "There are "+contactsCursor.getCount()+" contacts matching "+search);
@@ -222,15 +230,35 @@ public class GroupActivity extends ListActivity {
          		case BOTH: // handle case where a row with the same key is in both cursors
          			String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
          			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+         			
+         			
+         			byte [] photo = null;
+         			
+         		     Uri contactUri = ContentUris.withAppendedId(Contacts.CONTENT_URI, Long.parseLong(contactId));
+         		     Uri photoUri = Uri.withAppendedPath(contactUri, Contacts.Photo.CONTENT_DIRECTORY);
+         		     Cursor cursor = getContentResolver().query(photoUri,
+         		          new String[] {ContactsContract.CommonDataKinds.Photo.PHOTO}, null, null, null);
+         		     try {
+         		         if (cursor.moveToFirst()) {
+         		             photo = cursor.getBlob(0);
+         		             if (photo != null) 
+         		            	Log.i(tag, "name is: "+name+", photo data is "+photo.length + " bytes");
+         		         }
+         		     } finally {
+         		         cursor.close();
+         		     }
          			if(name != null)
-         				rows.add(new ContactRow(contactId, name));
+         				rows.add(new ContactRow(contactId, name, photo));
          		break;
          	}
          }	    
          Collections.sort(rows);
          Log.i(tag, "There are "+rows.size()+" contacts matching "+search);
          for(ContactRow row : rows)
-         	 ((MatrixCursor) m_cursor).addRow(new String[] {row.id, row.name});
+         {
+         	 ((MatrixCursor) m_cursor).addRow(new Object[] {row.id, row.name});
+         	 photos.add(row.image);
+         }
  		
 	}
 	ListView mGroupList;
@@ -314,5 +342,45 @@ public class GroupActivity extends ListActivity {
 	        setResult(RESULT_OK, null);
 	        finish();
 	}
-    
 }
+
+class ImageCursorAdapter extends SimpleCursorAdapter {
+
+	private Cursor c;
+	private Context context;
+	List<byte[]> images;
+	
+	public ImageCursorAdapter(Context context, int layout, Cursor c, List<byte[]> images,
+			String[] from, int[] to) {
+		super(context, layout, c, from, to);
+		this.c = c;
+		this.context = context;
+		this.images = images;
+	}
+
+	@Override
+	public View getView(int pos, View inView, ViewGroup parent) {
+		String tag = "GroupActivity: ImageCursorAdapter";
+		Log.v(tag, "position of image" +pos);
+		View v = inView;
+		if (v == null) {
+			LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		    v = inflater.inflate(R.layout.contact_entry, null);
+		}
+		this.c.moveToPosition(pos);	
+		
+		String contactName = this.c.getString(this.c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+		byte[] pic = images.get(pos);
+		Log.v(tag, "image #" +pos+", "+pic+", num images: "+images.size());
+		if (pic != null) {
+			ImageView iv = (ImageView) v.findViewById(R.id.contact_pic);
+			iv.setImageBitmap(BitmapFactory.decodeByteArray(pic, 0, pic.length));
+			iv.setScaleType(ScaleType.FIT_XY);
+		}
+		TextView cName = (TextView) v.findViewById(R.id.contact_name);
+		cName.setText(contactName);
+		return v;
+	}
+
+}
+
