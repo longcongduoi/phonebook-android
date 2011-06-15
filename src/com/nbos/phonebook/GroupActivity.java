@@ -177,15 +177,28 @@ public class GroupActivity extends ListActivity {
 	    return true;
 		
 	}
+	
+	
+	
+	@Override
+	protected void onListItemClick(ListView l, View v, int position, long id) {
+		Log.i(tag, "Clicked ..");
+	}
+
+
+
+	
 	Cursor dataCursor;
+	ImageCursorAdapter adapter;
+	
     private void queryGroup() {
     	setTitle("Group: "+name+" ("+numContacts()+" contacts sharing with)");
     	dataCursor = DatabaseHelper.getContactsInGroup(id, this.getContentResolver());
-        getContactsFromGroupCursor("");
+  	   	getContactsFromGroupCursor("");
         String[] fields = new String[] {
                 ContactsContract.Contacts.DISPLAY_NAME
         };
-        ImageCursorAdapter adapter = new ImageCursorAdapter(this, R.layout.contact_entry, m_cursor, photos,
+        adapter = new ImageCursorAdapter(this, R.layout.contact_entry, m_cursor, photos,
                 fields, new int[] {R.id.contact_name});
         
         adapter.setStringConversionColumn(
@@ -199,6 +212,8 @@ public class GroupActivity extends ListActivity {
                     partialItemName = constraint.toString();
                 }
                 getContactsFromGroupCursor(partialItemName);
+                adapter.setCursor(m_cursor);
+                adapter.setImages(photos);
                 return m_cursor;
             }
         });
@@ -214,7 +229,7 @@ public class GroupActivity extends ListActivity {
     	photos = new ArrayList<byte[]>();
     	Log.i(tag, "There are "+dataCursor.getCount()+" contacts in data for groupId: "+id);
  	   	Cursor contactsCursor = DatabaseHelper.getContacts(this, search);
- 	   	Log.i(tag, "There are "+contactsCursor.getCount()+" contacts matching "+search);
+ 	    Log.i(tag, "There are "+contactsCursor.getCount()+" contacts matching "+search);
  	    
  	    IntCursorJoiner joiner = new IntCursorJoiner(
  	    		contactsCursor, new String[] {ContactsContract.Contacts._ID} ,
@@ -230,7 +245,7 @@ public class GroupActivity extends ListActivity {
          		case BOTH: // handle case where a row with the same key is in both cursors
          			String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
          			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-         			
+         			Log.i(tag, "Contact id: "+contactId+", name: "+name);
          			
          			byte [] photo = null;
          			
@@ -256,7 +271,8 @@ public class GroupActivity extends ListActivity {
          Log.i(tag, "There are "+rows.size()+" contacts matching "+search);
          for(ContactRow row : rows)
          {
-         	 ((MatrixCursor) m_cursor).addRow(new Object[] {row.id, row.name});
+         	 m_cursor.addRow(new String[] {row.id, row.name});
+         	 Log.i(tag, "Adding row["+row.id+"] = "+row.name);
          	 photos.add(row.image);
          }
  		
@@ -358,10 +374,12 @@ class ImageCursorAdapter extends SimpleCursorAdapter {
 		this.images = images;
 	}
 
+	public void setCursor(Cursor c) { this.c = c; }
+	public void setImages(List<byte[]> images) { this.images = images; }
 	@Override
 	public View getView(int pos, View inView, ViewGroup parent) {
-		String tag = "GroupActivity: ImageCursorAdapter";
-		Log.v(tag, "position of image" +pos);
+		String tag = "GroupActivity";
+		Log.v(tag, "position of image " +pos);
 		View v = inView;
 		if (v == null) {
 			LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -369,8 +387,9 @@ class ImageCursorAdapter extends SimpleCursorAdapter {
 		}
 		this.c.moveToPosition(pos);	
 		
+		// ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME, ContactsContract.CommonDataKinds.Photo.PHOTO}, 10);
 		String contactName = this.c.getString(this.c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-		byte[] pic = images.get(pos);
+		byte[] pic = images.get(pos);//this.c.getBlob(this.c.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
 		Log.v(tag, "image #" +pos+", "+pic+", num images: "+images.size());
 		if (pic != null) {
 			ImageView iv = (ImageView) v.findViewById(R.id.contact_pic);
