@@ -287,9 +287,10 @@ public class NetworkUtilities {
     public static Object[] fetchFriendUpdates(Account account,
         String authtoken, Date lastUpdated) throws JSONException,
         ParseException, IOException, AuthenticationException {
-        final ArrayList<User> friendList = new ArrayList<User>();
-        final ArrayList<SharedBook> books = new ArrayList<SharedBook>();
-        final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+        final List<User> friendList = new ArrayList<User>();
+        final List<Group> groupsList = new ArrayList<Group>();
+        final List<SharedBook> books = new ArrayList<SharedBook>();
+        final List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair(PARAM_USERNAME, account.name));
         params.add(new BasicNameValuePair(PARAM_PASSWORD, authtoken));
         // params.add(new BasicNameValuePair(PARAM_PHONE_NUMBER, phoneNumber.toString()));
@@ -319,11 +320,17 @@ public class NetworkUtilities {
             // Extract friends data in json format.
             final JSONArray update = new JSONArray(response),
             	friends = update.getJSONArray(0),
-            	sharedBooks = update.getJSONArray(1);
+            	groups = update.getJSONArray(1),
+            	sharedBooks = update.getJSONArray(2);
             Log.d(TAG, response);
             for (int i = 0; i < friends.length(); i++) {
                 friendList.add(User.valueOf(friends.getJSONObject(i)));
             }
+
+            for (int i = 0; i < groups.length(); i++) {
+                groupsList.add(Group.valueOf(groups.getJSONObject(i)));
+            }
+            
             Log.i(TAG, "There are "+sharedBooks.length()+" shared books");
             for (int i = 0; i < sharedBooks.length(); i++) { // server is giving wrong json
                 books.add(SharedBook.valueOf(sharedBooks.getJSONArray(i).getJSONObject(0)));
@@ -341,7 +348,7 @@ public class NetworkUtilities {
                 throw new IOException();
             }
         }
-        Object [] update = {friendList, books}; 
+        Object [] update = {friendList, groupsList, books}; 
         return update;
     }
 
@@ -395,7 +402,7 @@ public class NetworkUtilities {
 
 	public static void sendFriendUpdates(Account account, String authtoken,
 			Date lastUpdated, // List<User> fewContacts, 
-			List<User> newContacts, List<Group> groups, List<SharingBook> books, Context context) throws ClientProtocolException, IOException, JSONException {
+			List<User> contacts, List<Group> groups, List<SharingBook> books, Context context) throws ClientProtocolException, IOException, JSONException {
         final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair(PARAM_USERNAME, account.name));
         params.add(new BasicNameValuePair(PARAM_PASSWORD, authtoken));
@@ -414,12 +421,12 @@ public class NetworkUtilities {
         }*/
 
         
-        params.add(new BasicNameValuePair("numContacts", new Integer(newContacts.size()).toString()));
+        params.add(new BasicNameValuePair("numContacts", new Integer(contacts.size()).toString()));
         
-        for(int i=0; i< newContacts.size(); i++)
+        for(int i=0; i< contacts.size(); i++)
         {
         	String index = new Integer(i).toString();
-        	User user =  newContacts.get(i);
+        	User user =  contacts.get(i);
         	params.add(new BasicNameValuePair("name_"+index, user.getFirstName()));
         	params.add(new BasicNameValuePair("number_"+index, user.getCellPhone()));
         	params.add(new BasicNameValuePair("id_"+index, new Integer(user.getUserId()).toString()));
@@ -474,10 +481,13 @@ public class NetworkUtilities {
         Log.i(TAG, "Response is: "+response);
         final JSONArray updates = new JSONArray(response),
         	contactUpdates = updates.getJSONArray(0),
-        	bookUpdates = updates.getJSONArray(1);
+        	groupUpdates = updates.getJSONArray(1),
+        	bookUpdates = updates.getJSONArray(2);
         	
         for (int i = 0; i < contactUpdates.length(); i++)
         	ContactManager.updateContact(contactUpdates.getJSONObject(i), context);
+        for (int i = 0; i < groupUpdates.length(); i++)
+        	ContactManager.updateGroup(groupUpdates.getJSONObject(i), context);
         for (int i = 0; i < bookUpdates.length(); i++)
         	ContactManager.updateBook(bookUpdates.getJSONObject(i), context);
         

@@ -42,8 +42,8 @@ public class SharedBook {
 		{
 			JSONObject c = contactsArray.getJSONObject(i);
 			int cid = c.getInt("id");
-			String cName = c.getString("name");
-			long number = c.getLong("number");
+			String cName = c.getString("name"),
+				number = c.getString("number");
 			contacts.add(new Contact(cid, number, cName));
 		}
 		Log.i(tag, "There are "+contacts.size()+" contacts");

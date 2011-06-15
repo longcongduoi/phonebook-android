@@ -293,7 +293,7 @@ public class DatabaseHelper {
 	        	            // Log.i(TAG, "There are "+phones.getCount()+" phone numbers");
 	        	            if(phones.getCount() == 0) break;
 	        	            phones.moveToFirst();
-	        	            Long contactNumber = phones.getLong(phones
+	        	            String contactNumber = phones.getString(phones
 	        	                    .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
 
 	        			contacts.add(new Contact(contactId, contactNumber, contactName));

@@ -47,6 +47,7 @@ import com.nbos.phonebook.sync.client.SharedBook;
 import com.nbos.phonebook.sync.client.User;
 import com.nbos.phonebook.sync.client.User.Status;
 import com.nbos.phonebook.sync.platform.ContactManager;
+import com.nbos.phonebook.sync.client.Group;
 
 /**
  * SyncAdapter implementation for syncing sample SyncAdapter contacts to the
@@ -70,6 +71,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     public void onPerformSync(Account account, Bundle extras, String authority,
         ContentProviderClient provider, SyncResult syncResult) {
         List<User> users;
+        List<Group> groups;
         List<SharedBook> sharedBooks;
         List<Status> statuses;
         String authtoken = null;
@@ -83,10 +85,11 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
              // fetch updates from the sample service over the cloud
              
-             Object[] update =   NetworkUtilities.fetchFriendUpdates(account, authtoken,
+             Object[] update = NetworkUtilities.fetchFriendUpdates(account, authtoken,
                     mLastUpdated);
              users =  (List<User>) update[0];
-             sharedBooks = (List<SharedBook>) update[1];
+             groups = (List<Group>) update[1];
+             sharedBooks = (List<SharedBook>) update[2];
              NetworkUtilities.sendFriendUpdates(account, authtoken,
                      mLastUpdated, DatabaseHelper.getContacts(true, mContext),
                      DatabaseHelper.getGroups(true, mContext),
@@ -95,6 +98,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             mLastUpdated = new Date();
             // update platform contacts.
             ContactManager.syncContacts(mContext, account.name, users);
+            ContactManager.syncGroups(mContext, account.name, groups);
             ContactManager.syncSharedBooks(mContext, account.name, sharedBooks);
             // fetch and update status messages for all the synced users.
             // statuses = NetworkUtilities.fetchFriendStatuses(account, authtoken);

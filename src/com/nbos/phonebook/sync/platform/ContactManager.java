@@ -45,6 +45,7 @@ import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.SharedBook;
 import com.nbos.phonebook.sync.client.User;
+import com.nbos.phonebook.sync.client.Group;
 
 /**
  * Class for managing contacts sync related mOperations
@@ -485,7 +486,55 @@ public class ContactManager {
 	private static void updateSharedBookContact(User u, String groupId, Context ctx) {
 		String contactId = DatabaseHelper.getContactIdFromSourceId(ctx.getContentResolver(), u.getUserId());
 		DatabaseHelper.updateToGroup(groupId, contactId, ctx.getContentResolver());
-		
-		
+	}
+
+	public static void updateGroup(JSONObject group, Context context) throws JSONException {
+        int sourceId = group.getInt("sourceId"),
+			groupId = group.getInt("groupId");
+        Log.i(TAG, "updateGroup, sourceId: "+sourceId+", groupId: "+groupId);
+	    /*ContentResolver cr = context.getContentResolver();
+	    Uri uri = ContactsContract.Groups.CONTENT_URI;
+	    ContentValues values = new ContentValues();
+	    values.put(ContactsContract.Groups.SOURCE_ID, sourceId);
+	    int rows = cr.update(uri, values, ContactsContract.Groups._ID + " = " + groupId, null);
+	    Log.i(TAG, rows + " rows updated");*/
+	}
+
+	public static void syncGroups(Context mContext, String name,
+			List<Group> groups) {
+		for(Group g : groups)
+			ContactManager.updateGroup(mContext, name, g);
+	}
+
+	private static void updateGroup(Context ctx, String name, Group g) {
+	    int id = g.getGroupId();
+	    ContentResolver cr = ctx.getContentResolver();
+	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_URI, null,  
+	    		ContactsContract.Groups.SOURCE_ID + " = "+id, null, null);
+	    if(cursor.getCount() == 0)
+	    {
+	    	Log.i(TAG, "New group: "+name);
+	    	// create a group with the share book name
+	    	DatabaseHelper.createAGroup(ctx, g.getName(), name, id);
+	    	cursor.requery();
+	    	Log.i(TAG, "cursor has "+cursor.getCount()+" rows");
+	    }
+	    cursor.moveToFirst();
+	    String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID));
+	    
+    	Log.i(TAG, "Update group, id: "+groupId);
+    	List<User> users = new ArrayList<User>();
+    	for(Contact c : g.getContacts())
+    		users.add(new User(c.getName(), c.getNumber(), c.getId()));
+    	Log.i(TAG, "There are "+users.size()+" users in group "+g.getName());
+    	syncContacts(ctx, name, users);
+    	for(User u : users)
+    		updateGroupContact(u, groupId, ctx);
+	    
+	}
+
+	private static void updateGroupContact(User u, String groupId, Context ctx) {
+		String contactId = DatabaseHelper.getContactIdFromSourceId(ctx.getContentResolver(), u.getUserId());
+		DatabaseHelper.updateToGroup(groupId, contactId, ctx.getContentResolver());
 	}
 }
