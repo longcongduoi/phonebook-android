@@ -70,7 +70,9 @@ public class NetworkUtilities {
     	REG_URL = BASE_URL + "/mobile/register";
     public static final String 
     	FETCH_FRIEND_UPDATES_URI = BASE_URL + "/mobile/contacts",
-        SEND_FRIEND_UPDATES_URI = BASE_URL + "/mobile/updateContacts"; 
+        SEND_CONTACT_UPDATES_URI = BASE_URL + "/mobile/updateContacts",
+        SEND_GROUP_UPDATES_URI = BASE_URL + "/mobile/updateGroups",
+    	SEND_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/updateSharedBooks";
     public static final String FETCH_STATUS_URI = BASE_URL + "/fetch_status";
     private static HttpClient mHttpClient;
 
@@ -289,7 +291,7 @@ public class NetworkUtilities {
         ParseException, IOException, AuthenticationException {
         final List<User> friendList = new ArrayList<User>();
         final List<Group> groupsList = new ArrayList<Group>();
-        final List<SharedBook> books = new ArrayList<SharedBook>();
+        final List<Group> books = new ArrayList<Group>();
         final List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair(PARAM_USERNAME, account.name));
         params.add(new BasicNameValuePair(PARAM_PASSWORD, authtoken));
@@ -333,7 +335,7 @@ public class NetworkUtilities {
             
             Log.i(TAG, "There are "+sharedBooks.length()+" shared books");
             for (int i = 0; i < sharedBooks.length(); i++) { // server is giving wrong json
-                books.add(SharedBook.valueOf(sharedBooks.getJSONArray(i).getJSONObject(0)));
+                books.add(Group.valueOf(sharedBooks.getJSONArray(i).getJSONObject(0)));
             }
 
         } else {
@@ -400,58 +402,21 @@ public class NetworkUtilities {
         return statusList;
     }
 
+    static Context mContext;
+    static String accountName, authToken;
 	public static void sendFriendUpdates(Account account, String authtoken,
-			Date lastUpdated, // List<User> fewContacts, 
-			List<User> contacts, List<Group> groups, List<SharingBook> books, Context context) throws ClientProtocolException, IOException, JSONException {
-        final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
-        params.add(new BasicNameValuePair(PARAM_USERNAME, account.name));
-        params.add(new BasicNameValuePair(PARAM_PASSWORD, authtoken));
+			Date lastUpdated, boolean newOnly, Context context) throws ClientProtocolException, IOException, JSONException {
+		mContext = context;
+		accountName = account.name;
+		authToken = authtoken;
+		sendContactUpdates(DatabaseHelper.getContacts(newOnly, mContext));
+        sendGroupUpdates(DatabaseHelper.getGroups(newOnly, mContext));
+        sendSharedBookUpdates(DatabaseHelper.getSharingBooks(true, mContext));
+	}
 
-        /*params.add(new BasicNameValuePair("numCheckContacts", new Integer(fewContacts.size()).toString()));
-        
-        // These contacts are for checking the sync
-        for(int i=0; i< fewContacts.size(); i++)
-        {
-        	String index = new Integer(i).toString();
-        	User user =  fewContacts.get(i);
-        	params.add(new BasicNameValuePair("cName_"+index, user.getFirstName()));
-        	params.add(new BasicNameValuePair("cNumber_"+index, user.getCellPhone()));
-        	params.add(new BasicNameValuePair("cId_"+index, new Integer(user.getUserId()).toString()));
-        	params.add(new BasicNameValuePair("cContactId_"+index, new Integer(user.getContactId()).toString()));
-        }*/
-
-        
-        params.add(new BasicNameValuePair("numContacts", new Integer(contacts.size()).toString()));
-        
-        for(int i=0; i< contacts.size(); i++)
-        {
-        	String index = new Integer(i).toString();
-        	User user =  contacts.get(i);
-        	params.add(new BasicNameValuePair("name_"+index, user.getFirstName()));
-        	params.add(new BasicNameValuePair("number_"+index, user.getCellPhone()));
-        	params.add(new BasicNameValuePair("id_"+index, new Integer(user.getUserId()).toString()));
-        	params.add(new BasicNameValuePair("contactId_"+index, new Integer(user.getContactId()).toString()));
-        }
-        
-        params.add(new BasicNameValuePair("numBooks", new Integer(groups.size()).toString()));
-        for(int i=0; i< groups.size(); i++)
-        {
-        	String index = new Integer(i).toString();
-        	Group group =  groups.get(i);
-        	params.add(new BasicNameValuePair("groupId_"+index, new Integer(group.getGroupId()).toString()));
-        	params.add(new BasicNameValuePair("bookName_"+index, group.getName()));
-        	List<Contact> bookContacts = group.getContacts();
-        	params.add(new BasicNameValuePair("numContacts_"+index, new Integer(bookContacts.size()).toString()));
-        	for(int j=0; j< bookContacts.size(); j++)
-        	{
-        		Contact bContact = bookContacts.get(j);
-        		String cIndex = new Integer(j).toString();
-        		params.add(new BasicNameValuePair("contactId_"+index+"_"+cIndex, new Integer(bContact.getId()).toString()));
-        	}
-        	
-        }
-        
-
+	
+	private static void sendSharedBookUpdates(List<SharingBook> books) throws ClientProtocolException, IOException, JSONException {
+        List<NameValuePair> params = getAuthParams();
         params.add(new BasicNameValuePair("numShareBooks", new Integer(books.size()).toString()));
         for(int i=0; i< books.size(); i++)
         {
@@ -460,44 +425,90 @@ public class NetworkUtilities {
         	params.add(new BasicNameValuePair("shareBookId_"+index, new Integer(book.getGroupId()).toString()));
         	params.add(new BasicNameValuePair("shareContactId_"+index, new Integer(book.getContactId()).toString()));
         }
-        
-        if (lastUpdated != null) {
-            final SimpleDateFormat formatter =
-                new SimpleDateFormat("yyyy/MM/dd HH:mm");
-            formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-            params.add(new BasicNameValuePair(PARAM_UPDATED, formatter
-                .format(lastUpdated)));
-        }
-        Log.i(TAG, params.toString());
+        JSONArray  bookUpdates = post(SEND_SHARED_BOOK_UPDATES_URI, params);
+        for (int i = 0; i < bookUpdates.length(); i++)
+        	ContactManager.updateBook(bookUpdates.getJSONObject(i), mContext);
 
+	}
+
+	private static void sendGroupUpdates(List<Group> groups) throws ClientProtocolException, IOException, JSONException {
+        List<NameValuePair> params = getAuthParams();
+        params.add(new BasicNameValuePair("numBooks", new Integer(groups.size()).toString()));
+        for(int i=0; i< groups.size(); i++)
+        {
+        	String index = new Integer(i).toString();
+        	Group group =  groups.get(i);
+        	params.add(new BasicNameValuePair("groupId_"+index, group.groupId));
+        	params.add(new BasicNameValuePair("serverId_"+index, group.serverId));
+        	params.add(new BasicNameValuePair("bookName_"+index, group.name));
+        	List<Contact> bookContacts = group.contacts;
+        	params.add(new BasicNameValuePair("numContacts_"+index, new Integer(bookContacts.size()).toString()));
+        	for(int j=0; j< bookContacts.size(); j++)
+        	{
+        		Contact bContact = bookContacts.get(j);
+        		String cIndex = new Integer(j).toString();
+        		params.add(new BasicNameValuePair("contactId_"+index+"_"+cIndex, new Integer(bContact.getId()).toString()));
+        		params.add(new BasicNameValuePair("serverId_"+index+"_"+cIndex, new Integer(bContact.getServerId()).toString()));
+        	}
+        }
+        JSONArray groupUpdates = post(SEND_GROUP_UPDATES_URI, params);
+        for (int i = 0; i < groupUpdates.length(); i++)
+        	ContactManager.updateGroup(groupUpdates.getJSONObject(i), mContext);
+
+	}
+
+
+	private static void sendContactUpdates(List<User> contacts) throws ClientProtocolException, IOException, JSONException {
+        List<NameValuePair> params = getAuthParams();
+		
+        params.add(new BasicNameValuePair("numContacts", new Integer(contacts.size()).toString()));
+        for(int i=0; i< contacts.size(); i++)
+        {
+        	String index = new Integer(i).toString();
+        	User user =  contacts.get(i);
+        	params.add(new BasicNameValuePair("name_"+index, user.getFirstName()));
+        	params.add(new BasicNameValuePair("number_"+index, user.getCellPhone()));
+        	params.add(new BasicNameValuePair("id_"+index, user.getUserId()));
+        	params.add(new BasicNameValuePair("contactId_"+index, user.getContactId()));
+        }
+		
+        JSONArray  contactUpdates = post(SEND_CONTACT_UPDATES_URI, params);
+        for (int i = 0; i < contactUpdates.length(); i++)
+        	ContactManager.updateContact(contactUpdates.getJSONObject(i), mContext);
+	}
+
+	private static List<NameValuePair> getAuthParams() {
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair(PARAM_USERNAME, accountName));
+        params.add(new BasicNameValuePair(PARAM_PASSWORD, authToken));
+        /*if (lastUpdated != null) {
+        final SimpleDateFormat formatter =
+            new SimpleDateFormat("yyyy/MM/dd HH:mm");
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+        params.add(new BasicNameValuePair(PARAM_UPDATED, formatter
+            .format(lastUpdated)));
+    }
+    Log.i(TAG, params.toString());*/
+        
+        return params;
+	}
+
+	public static void sendAllContacts(String username, String authtoken, Context ctx) throws ClientProtocolException, IOException, JSONException {
+        sendFriendUpdates(DatabaseHelper.getAccount(ctx, username), authtoken,
+                null, false, ctx);
+
+	}
+	
+	public static JSONArray post(String url, List<NameValuePair> params) throws ClientProtocolException, IOException, JSONException {
         HttpEntity entity = new UrlEncodedFormEntity(params);
-        final HttpPost post = new HttpPost(SEND_FRIEND_UPDATES_URI);
-        Log.i(TAG, "Sending friends to: "+SEND_FRIEND_UPDATES_URI);
+        final HttpPost post = new HttpPost(url);
+        Log.i(TAG, "Sending to: "+url);
         post.addHeader(entity.getContentType());
         post.setEntity(entity);
         maybeCreateHttpClient();
         final HttpResponse resp = mHttpClient.execute(post);
         final String response = EntityUtils.toString(resp.getEntity());
         Log.i(TAG, "Response is: "+response);
-        final JSONArray updates = new JSONArray(response),
-        	contactUpdates = updates.getJSONArray(0),
-        	groupUpdates = updates.getJSONArray(1),
-        	bookUpdates = updates.getJSONArray(2);
-        	
-        for (int i = 0; i < contactUpdates.length(); i++)
-        	ContactManager.updateContact(contactUpdates.getJSONObject(i), context);
-        for (int i = 0; i < groupUpdates.length(); i++)
-        	ContactManager.updateGroup(groupUpdates.getJSONObject(i), context);
-        for (int i = 0; i < bookUpdates.length(); i++)
-        	ContactManager.updateBook(bookUpdates.getJSONObject(i), context);
-        
-	}
-
-	public static void sendAllContacts(String username, String authtoken, Context ctx) throws ClientProtocolException, IOException, JSONException {
-        sendFriendUpdates(DatabaseHelper.getAccount(ctx, username), authtoken,
-                null, DatabaseHelper.getContacts(false, ctx),
-                DatabaseHelper.getGroups(false, ctx),
-                DatabaseHelper.getSharingBooks(false, ctx), ctx);
-
+        return new JSONArray(response);
 	}
 }

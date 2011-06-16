@@ -42,7 +42,7 @@ public class DatabaseHelper {
 				// ContactsContract.Contacts.DISPLAY_NAME);
 	}
 
-	public static String getContactIdFromSourceId(ContentResolver cr, int id) {
+	public static String getContactIdFromSourceId(ContentResolver cr, String id) {
 		Cursor cursor = cr.query(ContactsContract.RawContacts.CONTENT_URI, null, 
 				ContactsContract.RawContacts.SOURCE_ID + " = " + id, null,
 				null);
@@ -125,6 +125,7 @@ public class DatabaseHelper {
 	    			ContactsContract.Contacts._ID, 
 	    			ContactsContract.Data.RAW_CONTACT_ID, 
 	    			ContactsContract.RawContacts._ID,
+	    			ContactsContract.RawContacts.SOURCE_ID,
 	    			ContactsContract.Contacts.DISPLAY_NAME,
 	    			ContactsContract.CommonDataKinds.Photo.PHOTO
 	    		},
@@ -233,11 +234,11 @@ public class DatabaseHelper {
 	        String phoneNumber = phones.getString(phones
 	                .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
 	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", sourceId: "+sourceId+", dirty: "+dirty+", version is: "+version);
-	        int sId = 0;
+	        /*int sId = 0;
 	        try {
 	        	sId = Integer.parseInt(sourceId);
-	        } catch(Exception e){}
-	        users.add(new User(name, phoneNumber, sId, Integer.parseInt(contactId)));
+	        } catch(Exception e){}*/
+	        users.add(new User(name, phoneNumber, sourceId, contactId));
 	        phones.close();
 	    }
 	    return users;
@@ -265,7 +266,8 @@ public class DatabaseHelper {
 	    {
 	    	List<Contact> contacts = new ArrayList<Contact>();
 	    	String name = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.TITLE));
-	    	int groupId = cursor.getInt(cursor.getColumnIndex(ContactsContract.Groups._ID));
+	    	String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID));
+	    	String groupSourceId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.SOURCE_ID));
 	    	String dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DIRTY));
 		    Cursor dataCursor = getContactsInGroup(new Integer(groupId).toString(), ctx.getContentResolver());
 		    Log.i(TAG, "There are "+dataCursor.getCount()+" contacts in group: "+groupId);
@@ -281,8 +283,11 @@ public class DatabaseHelper {
 	        {
 	        	switch (joinerResult) {
 	        		case BOTH: // handle case where a row with the same key is in both cursors
-	        			int contactId = contactsCursor.getInt(contactsCursor.getColumnIndex(
+	        			String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(
 	        					ContactsContract.Contacts._ID));
+	        			String sourceId = dataCursor.getString(dataCursor.getColumnIndex(
+	        					ContactsContract.RawContacts.SOURCE_ID));
+	        			
 	        			String contactName = contactsCursor.getString(contactsCursor.getColumnIndex(
 	        					ContactsContract.Contacts.DISPLAY_NAME));
 	        	        Cursor phones = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
@@ -296,13 +301,13 @@ public class DatabaseHelper {
 	        	            String contactNumber = phones.getString(phones
 	        	                    .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
 
-	        			contacts.add(new Contact(contactId, contactNumber, contactName));
-	        			Log.i(TAG, "added contact: "+contactId+", "+contactNumber+", "+contactName);
+	        			contacts.add(new Contact(contactId, sourceId, contactNumber, contactName));
+	        			Log.i(TAG, "added contact: "+contactId+", sourceId: "+sourceId+", "+contactNumber+", "+contactName);
 	        		break;
 	        	}
 	        }	    
 	    	
-	        groups.add(new Group(groupId, name, contacts));
+	        groups.add(new Group(groupId, groupSourceId, name, contacts));
 	        Log.i(TAG, "dirty is "+dirty);
 	        Log.i(TAG, "Added group["+groupId+"] "+name+" with "+contacts.size()+" contacts");
 	    	// books

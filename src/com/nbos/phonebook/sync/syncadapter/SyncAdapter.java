@@ -43,7 +43,6 @@ import android.util.Log;
 import com.nbos.phonebook.DatabaseHelper;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.NetworkUtilities;
-import com.nbos.phonebook.sync.client.SharedBook;
 import com.nbos.phonebook.sync.client.User;
 import com.nbos.phonebook.sync.client.User.Status;
 import com.nbos.phonebook.sync.platform.ContactManager;
@@ -72,7 +71,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         ContentProviderClient provider, SyncResult syncResult) {
         List<User> users;
         List<Group> groups;
-        List<SharedBook> sharedBooks;
+        List<Group> sharedBooks;
         List<Status> statuses;
         String authtoken = null;
         
@@ -89,21 +88,22 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     mLastUpdated);
              users =  (List<User>) update[0];
              groups = (List<Group>) update[1];
-             sharedBooks = (List<SharedBook>) update[2];
+             sharedBooks = (List<Group>) update[2];
+             ContactManager.syncContacts(mContext, account.name, users);
+             ContactManager.syncGroups(mContext, account.name, groups);
+             ContactManager.syncSharedBooks(mContext, account.name, sharedBooks);
+             
              NetworkUtilities.sendFriendUpdates(account, authtoken,
-                     mLastUpdated, DatabaseHelper.getContacts(true, mContext),
-                     DatabaseHelper.getGroups(true, mContext),
-                     DatabaseHelper.getSharingBooks(true, mContext), mContext);
+                     mLastUpdated, true, mContext);
             // update the last synced date.
             mLastUpdated = new Date();
+            // ContactManager.resetDirtyContacts(mContext);
+            
             // update platform contacts.
-            ContactManager.syncContacts(mContext, account.name, users);
-            ContactManager.syncGroups(mContext, account.name, groups);
-            ContactManager.syncSharedBooks(mContext, account.name, sharedBooks);
             // fetch and update status messages for all the synced users.
             // statuses = NetworkUtilities.fetchFriendStatuses(account, authtoken);
             // ContactManager.insertStatuses(mContext, account.name, statuses);
-            ContactManager.resetDirtyContacts(mContext);
+
         } catch (final AuthenticatorException e) {
             syncResult.stats.numParseExceptions++;
             Log.e(TAG, "AuthenticatorException", e);
@@ -166,7 +166,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 	        String phoneNumber = phones.getString(phones
 	                .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
 	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", sourceId: "+sourceId+", dirty: "+dirty+", version is: "+version);
-	        users.add(new User(name, phoneNumber, sourceId != null ? Integer.parseInt(sourceId) : 0, Integer.parseInt(contactId)));
+	        users.add(new User(name, phoneNumber, sourceId != null ? sourceId : "0", contactId));
 	        num++;
 	        phones.close();
 	    }
@@ -210,7 +210,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 	        String phoneNumber = phones.getString(phones
 	                .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
 	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", sourceId: "+sourceId+", dirty: "+dirty+", version is: "+version);
-	        users.add(new User(name, phoneNumber, sourceId != null ? Integer.parseInt(sourceId) : 0, Integer.parseInt(contactId)));
+	        users.add(new User(name, phoneNumber, sourceId != null ? sourceId : "0", contactId));
 	        phones.close();
 	    }
 	    return users;

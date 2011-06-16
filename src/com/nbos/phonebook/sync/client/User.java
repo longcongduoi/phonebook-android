@@ -33,10 +33,10 @@ public class User {
     private String mHomePhone = null;
     private String mEmail = null;
     private boolean mDeleted;
-    private int mUserId, mContactId;
+    private String mUserId, mContactId;
     
 
-    public int getUserId() {
+    public String getUserId() {
         return mUserId;
     }
 
@@ -72,7 +72,7 @@ public class User {
         return mDeleted;
     }
     
-    public int getContactId() {
+    public String getContactId() {
     	return mContactId;
     }
 
@@ -91,17 +91,17 @@ public class User {
         mUserId = userId;
     }*/
 
-    public User(String name, String number, Integer userId) {
+    public User(String name, String number, String userId) {
             mUserName = name;
             mFirstName = name;
             mCellPhone = number;
-            mContactId = 0;
+            mContactId = "0";
             mDeleted = false;
             mUserId = userId;
 
     }
 
-    public User(String name, String number, Integer userId, Integer contactId) {
+    public User(String name, String number, String userId, String contactId) {
         mUserName = name;
         mFirstName = name;
         mCellPhone = number;
@@ -135,7 +135,7 @@ public class User {
             //final boolean deleted =
                 // user.has("d") ? user.getBoolean("d") : false;
             final int userId = user.getInt("id");
-            return new User(firstName, cellPhone, userId);
+            return new User(firstName, cellPhone, new Integer(userId).toString());
         } catch (final Exception ex) {
             Log.i("User", "Error parsing JSON user object" + ex.toString());
 

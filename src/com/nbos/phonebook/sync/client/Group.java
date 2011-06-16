@@ -10,31 +10,13 @@ import org.json.JSONObject;
 import android.util.Log;
 
 public class Group {
-	String name;
-	int groupId;
-	List<Contact> contacts;
-	public Group(int groupId, String name, List<Contact> contacts) {
+	public String groupId, serverId, name;
+	public List<Contact> contacts;
+	public Group(String groupId, String serverId, String name, List<Contact> contacts) {
 		super();
 		this.groupId = groupId;
+		this.serverId = serverId;
 		this.name = name;
-		this.contacts = contacts;
-	}
-	public int getGroupId() {
-		return groupId;
-	}
-	public void setGroupId(int groupId) {
-		this.groupId = groupId;
-	}
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
-	public List<Contact> getContacts() {
-		return contacts;
-	}
-	public void setContacts(List<Contact> contacts) {
 		this.contacts = contacts;
 	}
 	
@@ -51,10 +33,10 @@ public class Group {
 			int cid = c.getInt("id");
 			String cName = c.getString("name"),
 				number = c.getString("number");
-			contacts.add(new Contact(cid, number, cName));
+			contacts.add(new Contact(new Integer(cid).toString(), "0", number, cName));
 		}
 		Log.i(tag, "There are "+contacts.size()+" contacts in group "+name);
-		return new Group(id, name, contacts);
+		return new Group(new Integer(id).toString(), null, name, contacts);
 	}
 	
 }

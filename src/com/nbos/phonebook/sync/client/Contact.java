@@ -1,19 +1,23 @@
 package com.nbos.phonebook.sync.client;
 
 public class Contact {
-	int id;
+	String id, serverId;
 	String name, number;
-	public Contact(int id, String number, String name) {
+	public Contact(String id, String serverId, String number, String name) {
 		super();
 		this.id = id;
+		this.serverId = serverId;
 		this.number = number;
 		this.name = name;
 	}
-	public int getId() {
+	public String getId() {
 		return id;
 	}
-	public void setId(int id) {
+	public void setId(String id) {
 		this.id = id;
+	}
+	public String getServerId() {
+		return serverId;
 	}
 	public String getNumber() {
 		return number;
@@ -27,5 +31,4 @@ public class Contact {
 	public void setName(String name) {
 		this.name = name;
 	}
-	
 }

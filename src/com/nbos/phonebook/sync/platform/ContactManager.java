@@ -43,7 +43,6 @@ import com.nbos.phonebook.R;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
-import com.nbos.phonebook.sync.client.SharedBook;
 import com.nbos.phonebook.sync.client.User;
 import com.nbos.phonebook.sync.client.Group;
 
@@ -80,7 +79,7 @@ public class ContactManager {
         // syncSharedBooks(context);
         Log.d(TAG, "In SyncContacts");
         for (final User user : users) {
-            userId = user.getUserId();
+            userId = Integer.parseInt(user.getUserId());
             // Check to see if the contact needs to be inserted or updated
             rawContactId = lookupRawContact(resolver, userId, rawContactsCursor);
             Log.d(TAG, "Raw contact id is: "+rawContactId);
@@ -180,12 +179,12 @@ public class ContactManager {
         User user, BatchOperation batchOperation) {
         // Put the data in the contacts provider
         final ContactOperations contactOp =
-            ContactOperations.createNewContact(context, user.getUserId(),
+            ContactOperations.createNewContact(context, Integer.parseInt(user.getUserId()),
                 accountName, batchOperation);
         contactOp.addName(user.getFirstName(), user.getLastName()).addEmail(
             user.getEmail()).addPhone(user.getCellPhone(), Phone.TYPE_MOBILE)
             .addPhone(user.getHomePhone(), Phone.TYPE_OTHER).addProfileAction(
-                user.getUserId());
+                Integer.parseInt(user.getUserId()));
     }
 
     /**
@@ -450,14 +449,14 @@ public class ContactManager {
 	}
 
 	public static void syncSharedBooks(Context mContext, String name,
-			List<SharedBook> sharedBooks) {
-		for(SharedBook b : sharedBooks)
+			List<Group> sharedBooks) {
+		for(Group b : sharedBooks)
 			ContactManager.updateSharedBook(mContext, name, b);
 	}
 
-	private static void updateSharedBook(Context ctx, String name, SharedBook b) {
+	private static void updateSharedBook(Context ctx, String name, Group b) {
 	    // Uri uri = Uri.parse(Constants.SHARE_BOOK_PROVIDER);
-	    int id = b.getId();
+	    int id = Integer.parseInt(b.groupId);
 	    ContentResolver cr = ctx.getContentResolver();
 	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_URI, null,  
 	    		ContactsContract.Groups.SOURCE_ID + " = "+id, null, null);
@@ -465,7 +464,7 @@ public class ContactManager {
 	    {
 	    	Log.i(TAG, "New share book: "+name);
 	    	// create a group with the share book name
-	    	DatabaseHelper.createAGroup(ctx, b.getName(), name, id);
+	    	DatabaseHelper.createAGroup(ctx, b.name, name, id);
 	    	cursor.requery();
 	    	Log.i(TAG, "cursor has "+cursor.getCount()+" rows");
 	    }
@@ -474,8 +473,8 @@ public class ContactManager {
 	    
     	Log.i(TAG, "Update share book, id: "+groupId);
     	List<User> users = new ArrayList<User>();
-    	for(Contact c : b.getContacts())
-    		users.add(new User(c.getName(), new Long(c.getNumber()).toString(), c.getId()));
+    	for(Contact c : b.contacts)
+    		users.add(new User(c.getName(), c.getNumber(), c.getId()));
     	Log.i(TAG, "There are "+users.size()+" users");
     	syncContacts(ctx, name, users);
     	for(User u : users)
@@ -492,12 +491,12 @@ public class ContactManager {
         int sourceId = group.getInt("sourceId"),
 			groupId = group.getInt("groupId");
         Log.i(TAG, "updateGroup, sourceId: "+sourceId+", groupId: "+groupId);
-	    /*ContentResolver cr = context.getContentResolver();
+	    ContentResolver cr = context.getContentResolver();
 	    Uri uri = ContactsContract.Groups.CONTENT_URI;
 	    ContentValues values = new ContentValues();
 	    values.put(ContactsContract.Groups.SOURCE_ID, sourceId);
 	    int rows = cr.update(uri, values, ContactsContract.Groups._ID + " = " + groupId, null);
-	    Log.i(TAG, rows + " rows updated");*/
+	    Log.i(TAG, "updated "+ rows + " rows to sourceId: "+sourceId);
 	}
 
 	public static void syncGroups(Context mContext, String name,
@@ -507,7 +506,7 @@ public class ContactManager {
 	}
 
 	private static void updateGroup(Context ctx, String name, Group g) {
-	    int id = g.getGroupId();
+	    String id = g.groupId;
 	    ContentResolver cr = ctx.getContentResolver();
 	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_URI, null,  
 	    		ContactsContract.Groups.SOURCE_ID + " = "+id, null, null);
@@ -515,7 +514,7 @@ public class ContactManager {
 	    {
 	    	Log.i(TAG, "New group: "+name);
 	    	// create a group with the share book name
-	    	DatabaseHelper.createAGroup(ctx, g.getName(), name, id);
+	    	DatabaseHelper.createAGroup(ctx, g.name, name, Integer.parseInt(id));
 	    	cursor.requery();
 	    	Log.i(TAG, "cursor has "+cursor.getCount()+" rows");
 	    }
@@ -524,9 +523,9 @@ public class ContactManager {
 	    
     	Log.i(TAG, "Update group, id: "+groupId);
     	List<User> users = new ArrayList<User>();
-    	for(Contact c : g.getContacts())
+    	for(Contact c : g.contacts)
     		users.add(new User(c.getName(), c.getNumber(), c.getId()));
-    	Log.i(TAG, "There are "+users.size()+" users in group "+g.getName());
+    	Log.i(TAG, "There are "+users.size()+" users in group "+g.name);
     	syncContacts(ctx, name, users);
     	for(User u : users)
     		updateGroupContact(u, groupId, ctx);
