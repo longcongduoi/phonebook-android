@@ -97,7 +97,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                      mLastUpdated, true, mContext);
             // update the last synced date.
             mLastUpdated = new Date();
-            // ContactManager.resetDirtyContacts(mContext);
+            ContactManager.resetDirtyContacts(mContext);
             
             // update platform contacts.
             // fetch and update status messages for all the synced users.
