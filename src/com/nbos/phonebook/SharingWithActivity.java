@@ -1,5 +1,9 @@
 package com.nbos.phonebook;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import android.app.ListActivity;
 import android.content.Intent;
 import android.database.Cursor;
@@ -15,6 +19,7 @@ import android.widget.SimpleCursorAdapter;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.value.ContactRow;
 
 public class SharingWithActivity extends ListActivity {
 
@@ -44,6 +49,7 @@ public class SharingWithActivity extends ListActivity {
         Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
 		
         Cursor dataCursor = DatabaseHelper.getBook(this, id);
+        
         Log.i(tag, "all columns: "+BookTable.ALL_COLUMNS.length+", data columns: "+dataCursor.getColumnCount());
         while(dataCursor.moveToNext())
         	Log.i(tag, "contactid: "+dataCursor.getString(dataCursor.getColumnIndex(BookTable.CONTACTID))
@@ -59,6 +65,7 @@ public class SharingWithActivity extends ListActivity {
         m_cursor = new MatrixCursor( 
             	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME},10);
         
+        List<ContactRow> rows= new ArrayList<ContactRow>();
         for (CursorJoiner.Result joinerResult : joiner) 
         {
         	String id;
@@ -66,11 +73,19 @@ public class SharingWithActivity extends ListActivity {
         		case BOTH: // handle case where a row with the same key is in both cursors
         			id = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
         			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-        			m_cursor.addRow(new String[] {id, name});        			
+        			Log.i(tag, " name: "+name);
+        			//m_cursor.addRow(new String[] {id, name}); 
+        			if(name != null)
+         				rows.add(new ContactRow(id, name, null));
         		break;
         	}
         }	    
-        Log.i(tag, "Sharing with "+m_cursor.getCount()+" contacts");
+        	Collections.sort(rows);
+        	for(ContactRow row : rows)
+        	{
+        		m_cursor.addRow(new String[] {row.id, row.name});
+        	}
+        
         String[] fields = new String[] {
                 ContactsContract.Data.DISPLAY_NAME
         };
@@ -109,7 +124,7 @@ public class SharingWithActivity extends ListActivity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if(requestCode == SHARE_WITH)
+		//if(requestCode == SHARE_WITH)
 			populateContacts();
 	}
 
