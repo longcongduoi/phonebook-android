@@ -422,8 +422,8 @@ public class NetworkUtilities {
         {
         	String index = new Integer(i).toString();
         	SharingBook book =  books.get(i);
-        	params.add(new BasicNameValuePair("shareBookId_"+index, new Integer(book.getGroupId()).toString()));
-        	params.add(new BasicNameValuePair("shareContactId_"+index, new Integer(book.getContactId()).toString()));
+        	params.add(new BasicNameValuePair("shareBookId_"+index, book.groupId));
+        	params.add(new BasicNameValuePair("shareContactId_"+index, book.contactId));
         }
         JSONArray  bookUpdates = post(SEND_SHARED_BOOK_UPDATES_URI, params);
         for (int i = 0; i < bookUpdates.length(); i++)

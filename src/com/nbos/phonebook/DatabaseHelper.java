@@ -35,6 +35,15 @@ public class DatabaseHelper {
 				// ContactsContract.Contacts.DISPLAY_NAME);
 	}
 
+	public static Cursor getContacts(ContentResolver cr) {
+		return cr.query(ContactsContract.RawContacts.CONTENT_URI, null, null, null, null);
+	}
+
+	public static Cursor getGroups(ContentResolver cr) {
+	    return cr.query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
+	    		ContactsContract.Groups.DELETED + " = 0 ", null, null);
+	}
+
 	public static Cursor getContacts(Activity activity, String searchString) {
 		return activity.managedQuery(ContactsContract.Contacts.CONTENT_URI, null, 
 				ContactsContract.Data.DISPLAY_NAME+" like '" + searchString + "%'", null,
@@ -295,11 +304,11 @@ public class DatabaseHelper {
 	        	        		ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID +" = "+ contactId,
 	        	        		null, null);
 	        	            
-	        	            // Log.i(TAG, "There are "+phones.getCount()+" phone numbers");
-	        	            if(phones.getCount() == 0) break;
-	        	            phones.moveToFirst();
-	        	            String contactNumber = phones.getString(phones
-	        	                    .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
+	        	        // Log.i(TAG, "There are "+phones.getCount()+" phone numbers");
+	        	        if(phones.getCount() == 0) break;
+        	            phones.moveToFirst();
+        	            String contactNumber = phones.getString(phones
+        	                    .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
 
 	        			contacts.add(new Contact(contactId, sourceId, contactNumber, contactName));
 	        			Log.i(TAG, "added contact: "+contactId+", sourceId: "+sourceId+", "+contactNumber+", "+contactName);
@@ -318,20 +327,52 @@ public class DatabaseHelper {
 	public static List<SharingBook> getSharingBooks(boolean newOnly, Context ctx) {
     	List<SharingBook> books = new ArrayList<SharingBook>();
     	String where = newOnly ? BookTable.DIRTY + " is null" : null;
-    	Cursor cursor = ctx.getContentResolver().query(
+    	ContentResolver cr = ctx.getContentResolver();
+    	Cursor cursor = cr.query(
     			Uri.parse(Constants.SHARE_BOOK_PROVIDER),
     			null, where, null, null);
+    	Cursor contactsCursor = getContacts(cr);
+    	Cursor groupsCursor = getGroups(cr);
     	if(cursor != null)
     		Log.i(TAG, "There are "+cursor.getCount()+" contacts sharing books");
     	while(cursor.moveToNext())
-    		books.add(
-    			new SharingBook(
-    				cursor.getInt(cursor.getColumnIndex(BookTable.BOOKID)),
-    				cursor.getInt(cursor.getColumnIndex(BookTable.CONTACTID))));
+    	{
+    		String groupSourceId = getSourceIdFromGroupId(groupsCursor, 
+    				cursor.getString(cursor.getColumnIndex(BookTable.BOOKID))),
+    			contactSourceId = getSourceIdFromContactId(contactsCursor, 
+    				cursor.getString(cursor.getColumnIndex(BookTable.CONTACTID)));
+    		Log.i(TAG, "groupSourceId: "+groupSourceId+", contactSourceId: "+contactSourceId);
+    		if(groupSourceId != null && contactSourceId != null)
+    			books.add(new SharingBook(groupSourceId, contactSourceId));
+    	}
     	
     	return books;
     }
 	
+	private static String getSourceIdFromGroupId(Cursor groupsCursor, String groupId) {
+		groupsCursor.moveToFirst();
+		do {
+			String gId = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups._ID)),
+				sourceId = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.SOURCE_ID));
+			if(gId.equals(groupId))
+				return sourceId;
+		}
+		while(groupsCursor.moveToNext());
+		return null;
+	}
+
+	private static String getSourceIdFromContactId(Cursor contactsCursor, String contactId) {
+		contactsCursor.moveToFirst();
+		do {
+			String cId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID)),
+				sourceId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.RawContacts.SOURCE_ID));
+			if(cId.equals(contactId))
+				return sourceId;
+		}
+		while(contactsCursor.moveToNext());
+		return null;
+	}
+
 	public static String getPhoneNumber(Context ctx) {
 		String ph = ((TelephonyManager) ctx.getSystemService(Context.TELEPHONY_SERVICE)).getLine1Number();
 		Log.i(TAG, "Phone number is: "+ph);
