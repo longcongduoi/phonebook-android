@@ -12,10 +12,14 @@ import android.database.MatrixCursor;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.SimpleCursorAdapter;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
@@ -29,8 +33,10 @@ public class SharingWithActivity extends ListActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
-	    setContentView(R.layout.sharing_with);
 	    
+	    setContentView(R.layout.sharing_with);
+	    registerForContextMenu(getListView());  
+		
 	    Bundle extras = getIntent().getExtras();
 	    if(extras !=null)
 	    {
@@ -40,6 +46,46 @@ public class SharingWithActivity extends ListActivity {
 	    
 	    setTitle("Sharing "+name+" with");
 	    populateContacts();
+	}
+
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+		super.onCreateContextMenu(menu, v, menuInfo);
+	    // Get the info on which item was selected
+	    AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
+	    m_cursor.moveToPosition(info.position);
+	   
+	    String contactName = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+		
+	    menu.setHeaderTitle("Menu: "+contactName);
+		menu.add(0, v.getId(), 0, "Remove share");
+		}
+	
+	
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+	    // Get the info on which item was selected
+	    AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+
+	    m_cursor.moveToPosition(info.position);
+	    String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID)),
+	    	name = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+
+	    Log.i(tag, "position is: "+info.position+", contactId: "+contactId+", name: "+name);
+	    
+		if (item.getTitle() == "Remove from sharing") {
+			Log.i(tag, "Remove: " + item.getItemId());
+			removeSharing(contactId);
+		} 
+		else {
+			return false;
+		}
+		return true;
+	}   	
+
+	private void removeSharing(String contactId) {
+		
+		
 	}
 
 	MatrixCursor m_cursor;

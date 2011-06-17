@@ -112,7 +112,8 @@ public class ContactManager {
 		rawContactsCursor.moveToFirst();
 		do
 		{
-			String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.SOURCE_ID));
+			String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
+			// String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.SOURCE_ID));
 			try {
 				if(Long.parseLong(sourceId) == userId)
 					return rawContactsCursor.getLong(0);
@@ -355,13 +356,14 @@ public class ContactManager {
      */
     private interface UserIdQuery {
         public final static String[] PROJECTION =
-            new String[] {RawContacts._ID, RawContacts.SOURCE_ID};
-
+            // new String[] {RawContacts._ID, RawContacts.SOURCE_ID};
+        	new String[] {RawContacts._ID, Constants.CONTACT_SERVER_ID};
         public final static int COLUMN_ID = 0;
 
         public static final String SELECTION =
             // RawContacts.ACCOUNT_TYPE + "='" + Constants.ACCOUNT_TYPE + "' AND " +
-                 RawContacts.SOURCE_ID + "=?";
+            //      RawContacts.SOURCE_ID + "=?";
+        	Constants.CONTACT_SERVER_ID + "=?";
     }
 
     /**
@@ -387,19 +389,12 @@ public class ContactManager {
         public static final String SELECTION = Data.RAW_CONTACT_ID + "=?";
     }
 
-	public static void resetDirtyContacts(Context mContext) {
-		// TODO: reset individual contact and group from update contact or group
-	    ContentResolver cr = mContext.getContentResolver();
-	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;
+	public static void resetDirtyGroups(Context ctx) {
+		ContentResolver cr = ctx.getContentResolver();
 	    ContentValues values = new ContentValues();
-	    values.put(ContactsContract.RawContacts.DIRTY, 0);
-	    int num = cr.update(uri, values, null, null);
-	    Log.i("ContactManager", "Resetting "+num+" dirty on contacts");
-	    
-	    values = new ContentValues();
 	    values.put(ContactsContract.Groups.DIRTY, "0");
 	    
-	    num = cr.update(
+	    int num = cr.update(
 	    		ContactsContract.Groups.CONTENT_URI, values,
 	    		null, null);
 	    Log.i(TAG, "Updated "+num+" groups to dirty = 0");
@@ -413,6 +408,16 @@ public class ContactManager {
 	    Log.i(TAG, "Updated "+num+" sharebooks to dirty = 0");
 
 	    
+	}
+
+	public static void resetDirtyContacts(Context mContext) {
+		// TODO: reset individual contact and group from update contact or group
+	    ContentResolver cr = mContext.getContentResolver();
+	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;
+	    ContentValues values = new ContentValues();
+	    values.put(ContactsContract.RawContacts.DIRTY, 0);
+	    int num = cr.update(uri, values, null, null);
+	    Log.i("ContactManager", "Resetting "+num+" dirty on contacts");
 	}
 
 	public static void setDirtyContacts(Context mContext) { // for testing
@@ -431,7 +436,7 @@ public class ContactManager {
 	    ContentResolver cr = context.getContentResolver();
 	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;
 	    ContentValues values = new ContentValues();
-	    values.put(ContactsContract.RawContacts.SOURCE_ID, sourceId);
+	    values.put(Constants.CONTACT_SERVER_ID, sourceId);
 	    int rows = cr.update(uri, values, ContactsContract.RawContacts._ID + " = " + contactId, null);
 	    Log.i(TAG, rows + " rows updated");
 	}

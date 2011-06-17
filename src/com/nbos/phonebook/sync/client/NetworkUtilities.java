@@ -454,6 +454,7 @@ public class NetworkUtilities {
         JSONArray groupUpdates = post(SEND_GROUP_UPDATES_URI, params);
         for (int i = 0; i < groupUpdates.length(); i++)
         	ContactManager.updateGroup(groupUpdates.getJSONObject(i), mContext);
+        ContactManager.resetDirtyGroups(mContext);
 
 	}
 
@@ -472,9 +473,10 @@ public class NetworkUtilities {
         	params.add(new BasicNameValuePair("contactId_"+index, user.getContactId()));
         }
 		
-        JSONArray  contactUpdates = post(SEND_CONTACT_UPDATES_URI, params);
+        JSONArray contactUpdates = post(SEND_CONTACT_UPDATES_URI, params);
         for (int i = 0; i < contactUpdates.length(); i++)
         	ContactManager.updateContact(contactUpdates.getJSONObject(i), mContext);
+        ContactManager.resetDirtyContacts(mContext);
 	}
 
 	private static List<NameValuePair> getAuthParams() {

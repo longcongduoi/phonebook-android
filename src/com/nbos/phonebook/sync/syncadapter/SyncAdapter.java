@@ -97,8 +97,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                      mLastUpdated, true, mContext);
             // update the last synced date.
             mLastUpdated = new Date();
-            ContactManager.resetDirtyContacts(mContext);
-            
             // update platform contacts.
             // fetch and update status messages for all the synced users.
             // statuses = NetworkUtilities.fetchFriendStatuses(account, authtoken);
@@ -125,94 +123,4 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             Log.e(TAG, "JSONException", e);
         }
     }
-    
-    
-    private List<User> getFewContacts(int numContacts) {
-	    ContentResolver cr = mContext.getContentResolver();
-	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;
-	    Cursor cursor = cr.query(uri, 
-	    		null, null, // get all contacts
-	    	//	ContactsContract.RawContacts.DIRTY + " = 1",
-	        // "DISPLAY_NAME = '" + NAME + "'",
-	    	// null, 
-	    	null, null);
-	    Log.i(TAG, "There are "+cursor.getCount()+" contacts");
-	    List<User> users = new ArrayList<User>();
-	    int num = 0;
-	    while(cursor.moveToNext()) {
-	    	if(num > numContacts) break;
-	        String contactId =
-	            	cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts._ID));
-	        String sourceId = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.SOURCE_ID));
-	        String dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
-	        String version = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.VERSION));
-	        Cursor contact = cr.query(ContactsContract.Contacts.CONTENT_URI, null,
-	        		ContactsContract.Contacts._ID+" = '" + contactId + "' ",
-	    	null, null);
-	        if(contact.getCount()==0) continue;
-	        contact.moveToFirst();
-	        //Log.i(TAG, "There are "+contact.getCount()+" contacts for "+contactId);
-	        // contact.moveToFirst();
-	        String name = contact.getString(contact.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-	        
-	            //sourceId = 
-	            	//cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.SOURCE_ID));
-	        Cursor phones = mContext.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
-	    		null, 		
-	    		ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID +" = "+ contactId,
-	    		null, null);
-	        if(phones.getCount() == 0) continue;
-	        phones.moveToFirst();
-	        String phoneNumber = phones.getString(phones
-	                .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
-	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", sourceId: "+sourceId+", dirty: "+dirty+", version is: "+version);
-	        users.add(new User(name, phoneNumber, sourceId != null ? sourceId : "0", contactId));
-	        num++;
-	        phones.close();
-	    }
-	    return users;
-	}
-
-	private List<User> getNewContacts() {
-	    ContentResolver cr = mContext.getContentResolver();
-	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;
-	    Cursor cursor = cr.query(uri, 
-	    		null,
-	    		ContactsContract.RawContacts.DIRTY + " = 1",
-	        // "DISPLAY_NAME = '" + NAME + "'",
-	    	// null, 
-	    	null, null);
-	    Log.i(TAG, "There are "+cursor.getCount()+" contacts");
-	    List<User> users = new ArrayList<User>();
-	    while(cursor.moveToNext()) {
-	        String contactId =
-	            	cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts._ID));
-	        String sourceId = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.SOURCE_ID));
-	        String dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
-	        String version = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.VERSION));
-	        Cursor contact = cr.query(ContactsContract.Contacts.CONTENT_URI, null,
-	        		ContactsContract.Contacts._ID+" = '" + contactId + "' ",
-	    	null, null);
-	        if(contact.getCount()==0) continue;
-	        contact.moveToFirst();
-	        //Log.i(TAG, "There are "+contact.getCount()+" contacts for "+contactId);
-	        // contact.moveToFirst();
-	        String name = contact.getString(contact.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-	        
-	            //sourceId = 
-	            	//cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.SOURCE_ID));
-	        Cursor phones = mContext.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
-	    		null, 		
-	    		ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID +" = "+ contactId,
-	    		null, null);
-	        if(phones.getCount() == 0) continue;
-	        phones.moveToFirst();
-	        String phoneNumber = phones.getString(phones
-	                .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
-	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", sourceId: "+sourceId+", dirty: "+dirty+", version is: "+version);
-	        users.add(new User(name, phoneNumber, sourceId != null ? sourceId : "0", contactId));
-	        phones.close();
-	    }
-	    return users;
-	}
 }

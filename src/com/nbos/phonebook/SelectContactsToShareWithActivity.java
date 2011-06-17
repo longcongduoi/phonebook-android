@@ -68,7 +68,7 @@ public class SelectContactsToShareWithActivity extends ListActivity {
                 return m_cursor;
             }
         });
-        
+        Log.i(tag, "There are "+m_cursor.getCount()+" contacts sharing");
         getListView().setAdapter(adapter);
 	}
     

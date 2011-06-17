@@ -98,6 +98,7 @@ public class WelcomeActivity extends ListActivity {
         getListView().setTextFilterEnabled(true);
     	String phoneNumber = getPhoneNumber();
     	Log.i(tag, "phone number: "+phoneNumber);
+    	// DatabaseHelper.getContacts(false, this.getApplicationContext());
         // runOnUiThread(mainUiThread);
     }
     private void testContentProvider() {

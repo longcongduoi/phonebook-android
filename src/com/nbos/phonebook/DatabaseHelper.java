@@ -211,48 +211,83 @@ public class DatabaseHelper {
     
 	public static List<User> getContacts(boolean newOnly, Context ctx) {
 	    ContentResolver cr = ctx.getContentResolver();
-	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;
-	    String where = newOnly ? ContactsContract.RawContacts.DIRTY + " = 1" : null;
-	    Cursor cursor = cr.query(uri, 
-	    		null, where, null, null);
-	    Log.i(TAG, "There are "+cursor.getCount()+" contacts ");
+	    Cursor rawContactsCursor = getRawContactsCursor(cr, newOnly),
+	    	contactsCursor = cr.query(ContactsContract.Contacts.CONTENT_URI, null,
+	    			null,
+	        		// ContactsContract.Contacts._ID+" = '" + contactId + "' ",
+	    	    	null, null),
+	    	phonesCursor = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
+		    		null, null, 		
+		    		// ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = "+ contactId,
+		    		null, null);
+	    
+	    Log.i(TAG, "There are "+rawContactsCursor.getCount()+" contacts ");
 	    List<User> users = new ArrayList<User>();
-	    while(cursor.moveToNext()) {
+	    while(rawContactsCursor.moveToNext()) {
 	        String contactId =
-	            	cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts._ID));
-	        String sourceId = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.SOURCE_ID));
-	        String dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
-	        String version = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.VERSION));
-	        Cursor contact = cr.query(ContactsContract.Contacts.CONTENT_URI, null,
+	            	rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts._ID));
+	        String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
+	        String sync1 = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.SYNC1));
+	        String dirty = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
+	        String version = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.VERSION));
+	        /*Cursor contact = cr.query(ContactsContract.Contacts.CONTENT_URI, null,
 	        		ContactsContract.Contacts._ID+" = '" + contactId + "' ",
 	    	null, null);
 	        if(contact.getCount()==0) continue;
-	        contact.moveToFirst();
+	        contact.moveToFirst();*/
 	        //Log.i(TAG, "There are "+contact.getCount()+" contacts for "+contactId);
 	        // contact.moveToFirst();
-	        String name = contact.getString(contact.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+	        String name = getContactName(contactsCursor, contactId); 
+	        	// contact.getString(contact.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 	        
 	            //sourceId = 
 	            	//cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.SOURCE_ID));
-	        Cursor phones = ctx.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
+	        /*Cursor phones = ctx.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
 	    		null, 		
 	    		ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = "+ contactId,
 	    		null, null);
 	        if(phones.getCount() == 0) continue;
-	        phones.moveToFirst();
-	        String phoneNumber = phones.getString(phones
-	                .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
-	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", sourceId: "+sourceId+", dirty: "+dirty+", version is: "+version);
+	        phones.moveToFirst();*/
+	        String phoneNumber = getContactNumber(phonesCursor, contactId); 
+	        	// phones.getString(phones
+	               // .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
+	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", sourceId: "+sourceId+", dirty: "+dirty+", version is: "+version+", sync1: "+sync1);
 	        /*int sId = 0;
 	        try {
 	        	sId = Integer.parseInt(sourceId);
 	        } catch(Exception e){}*/
+	        if(name == null || phoneNumber == null) continue;
 	        users.add(new User(name, phoneNumber, sourceId, contactId));
-	        phones.close();
+	        // phones.close();
 	    }
 	    return users;
 	}
 	
+	private static Cursor getRawContactsCursor(ContentResolver cr, boolean newOnly) {
+	    String where = newOnly ? ContactsContract.RawContacts.DIRTY + " = 1" : null;
+		return cr.query(ContactsContract.RawContacts.CONTENT_URI, null, where, null, null);	
+	}
+
+	private static String getContactNumber(Cursor phonesCursor, String contactId) {
+		phonesCursor.moveToFirst();
+		do {
+			String cId = phonesCursor.getString(phonesCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
+			if(cId.equals(contactId))
+				return phonesCursor.getString(phonesCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+		} while(phonesCursor.moveToNext());
+		return null;
+	}
+
+	private static String getContactName(Cursor contactsCursor, String contactId) {
+		contactsCursor.moveToFirst();
+		do {
+			String cId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
+			if(cId.equals(contactId))
+				return contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+		} while(contactsCursor.moveToNext());
+		return null;
+	}
+
 	public static List<Group> getGroups(boolean newOnly, Context ctx) {
 		List<Group> groups = new ArrayList<Group>();
 	    ContentResolver cr = ctx.getContentResolver();
@@ -268,7 +303,9 @@ public class DatabaseHelper {
 	    			ContactsContract.Contacts._ID,
 	    			ContactsContract.Contacts.DISPLAY_NAME
 	    		},
-	    		null, null, null);
+	    		null, null, ContactsContract.Contacts._ID),
+	    	rawContactsCursor = getRawContactsCursor(cr, false);
+	    
 	    Log.i(TAG, "There are "+contactsCursor.getCount()+" contacts");
 	    
 	    while(cursor.moveToNext())
@@ -278,7 +315,7 @@ public class DatabaseHelper {
 	    	String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID));
 	    	String groupSourceId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.SOURCE_ID));
 	    	String dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DIRTY));
-		    Cursor dataCursor = getContactsInGroup(new Integer(groupId).toString(), ctx.getContentResolver());
+		    Cursor dataCursor = getContactsInGroup(new Integer(groupId).toString(), cr);
 		    Log.i(TAG, "There are "+dataCursor.getCount()+" contacts in group: "+groupId);
 	    	
 		    IntCursorJoiner joiner = new IntCursorJoiner(
@@ -294,8 +331,9 @@ public class DatabaseHelper {
 	        		case BOTH: // handle case where a row with the same key is in both cursors
 	        			String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(
 	        					ContactsContract.Contacts._ID));
-	        			String sourceId = dataCursor.getString(dataCursor.getColumnIndex(
-	        					ContactsContract.RawContacts.SOURCE_ID));
+	        			String sourceId = getContactServerId(contactId, rawContactsCursor); 
+	        				// dataCursor.getString(dataCursor.getColumnIndex(
+	        					// ContactsContract.RawContacts.SOURCE_ID));
 	        			
 	        			String contactName = contactsCursor.getString(contactsCursor.getColumnIndex(
 	        					ContactsContract.Contacts.DISPLAY_NAME));
@@ -324,6 +362,17 @@ public class DatabaseHelper {
 	    return groups;
 	}
 	
+	private static String getContactServerId(String contactId, Cursor rawContactsCursor) {
+		rawContactsCursor.moveToFirst();
+		do {
+			String cId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
+			if(cId.equals(contactId))
+				return rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
+			
+		} while(rawContactsCursor.moveToNext());
+		return null;
+	}
+
 	public static List<SharingBook> getSharingBooks(boolean newOnly, Context ctx) {
     	List<SharingBook> books = new ArrayList<SharingBook>();
     	String where = newOnly ? BookTable.DIRTY + " is null" : null;

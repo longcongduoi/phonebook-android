@@ -16,6 +16,8 @@
 
 package com.nbos.phonebook.sync;
 
+import android.provider.ContactsContract;
+
 public class Constants {
 
     /**
@@ -29,7 +31,8 @@ public class Constants {
     public static final String AUTHTOKEN_TYPE = ACCOUNT_TYPE;
         // "com.example.android.samplesync";
 
-	public static final String SHARE_BOOK_PROVIDER = "content://com.nbos.phonebook.provider.defaultname/book";
+	public static final String SHARE_BOOK_PROVIDER = "content://com.nbos.phonebook.provider.defaultname/book",
+		CONTACT_SERVER_ID = ContactsContract.RawContacts.SYNC1;
     
 
 }
