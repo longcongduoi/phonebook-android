@@ -130,7 +130,6 @@ public class DatabaseHelper {
 	    			ContactsContract.Contacts._ID, 
 	    			ContactsContract.Data.RAW_CONTACT_ID, 
 	    			ContactsContract.RawContacts._ID,
-	    			ContactsContract.RawContacts.SOURCE_ID,
 	    			ContactsContract.Contacts.DISPLAY_NAME,
 	    			ContactsContract.CommonDataKinds.Photo.PHOTO
 	    		},

@@ -245,8 +245,7 @@ public class GroupActivity extends ListActivity {
          		case BOTH: // handle case where a row with the same key is in both cursors
          			String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
          			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-         			String serverId = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.RawContacts.SOURCE_ID));
-         			Log.i(tag, "Contact id: "+contactId+", name: "+name+", serverId: "+serverId);
+         			Log.i(tag, "Contact id: "+contactId+", name: "+name);
          			
          			byte [] photo = null;
          			
