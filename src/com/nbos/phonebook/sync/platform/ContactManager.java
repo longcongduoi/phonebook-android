@@ -389,26 +389,27 @@ public class ContactManager {
         public static final String SELECTION = Data.RAW_CONTACT_ID + "=?";
     }
 
-	public static void resetDirtyGroups(Context ctx) {
+	public static void resetDirtySharedBooks(Context ctx) {
 		ContentResolver cr = ctx.getContentResolver();
 	    ContentValues values = new ContentValues();
-	    values.put(ContactsContract.Groups.DIRTY, "0");
-	    
-	    int num = cr.update(
-	    		ContactsContract.Groups.CONTENT_URI, values,
-	    		null, null);
-	    Log.i(TAG, "Updated "+num+" groups to dirty = 0");
-
 	    values = new ContentValues();
 	    values.put(BookTable.DIRTY, "0");
-
-	    num = cr.update(
+	    int num = cr.update(
 	    		Uri.parse(Constants.SHARE_BOOK_PROVIDER), values,
 	    		null, null);
 	    Log.i(TAG, "Updated "+num+" sharebooks to dirty = 0");
 
 	    
 	}
+
+	public static void resetDirtyGroups(Context ctx) {
+		ContentResolver cr = ctx.getContentResolver();
+	    ContentValues values = new ContentValues();
+	    values.put(ContactsContract.Groups.DIRTY, "0");
+	    int num = cr.update(ContactsContract.Groups.CONTENT_URI, values, null, null);
+	    Log.i(TAG, "Updated "+num+" groups to dirty = 0");
+	}
+	
 
 	public static void resetDirtyContacts(Context mContext) {
 		// TODO: reset individual contact and group from update contact or group

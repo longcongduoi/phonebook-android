@@ -25,6 +25,7 @@ import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -46,6 +47,8 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
 import com.nbos.phonebook.contentprovider.Provider;
+import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.value.Contact;
 import com.nbos.phonebook.value.Group;
 
@@ -98,10 +101,27 @@ public class WelcomeActivity extends ListActivity {
         getListView().setTextFilterEnabled(true);
     	String phoneNumber = getPhoneNumber();
     	Log.i(tag, "phone number: "+phoneNumber);
+    	
+    	// test();
+    }
+
+    private void test() {
+		ContentResolver cr = getApplicationContext().getContentResolver();
+	    ContentValues values = new ContentValues();
+	    values = new ContentValues();
+	    values.put(BookTable.DIRTY, (Integer) null);
+	    int num = cr.update(
+	    		Uri.parse(Constants.SHARE_BOOK_PROVIDER), values,
+	    		null, null);
+	    Log.i(tag, "Updated "+num+" sharebooks to dirty = 0");
+
     	// DatabaseHelper.getContacts(false, this.getApplicationContext());
         // runOnUiThread(mainUiThread);
-    }
-    private void testContentProvider() {
+		
+	}
+
+
+	private void testContentProvider() {
         Uri URI = Uri.parse("content://"+Provider.AUTHORITY+"/"+Provider.BookContent.CONTENT_PATH);
         Cursor c = getContentResolver().query(URI, null, null, null, null);
         Log.i(tag, "There are "+c.getCount()+" books");

@@ -428,7 +428,7 @@ public class NetworkUtilities {
         JSONArray  bookUpdates = post(SEND_SHARED_BOOK_UPDATES_URI, params);
         for (int i = 0; i < bookUpdates.length(); i++)
         	ContactManager.updateBook(bookUpdates.getJSONObject(i), mContext);
-
+        ContactManager.resetDirtySharedBooks(mContext);
 	}
 
 	private static void sendGroupUpdates(List<Group> groups) throws ClientProtocolException, IOException, JSONException {

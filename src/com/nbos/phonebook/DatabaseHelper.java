@@ -35,10 +35,6 @@ public class DatabaseHelper {
 				// ContactsContract.Contacts.DISPLAY_NAME);
 	}
 
-	public static Cursor getContacts(ContentResolver cr) {
-		return cr.query(ContactsContract.RawContacts.CONTENT_URI, null, null, null, null);
-	}
-
 	public static Cursor getGroups(ContentResolver cr) {
 	    return cr.query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
 	    		ContactsContract.Groups.DELETED + " = 0 ", null, null);
@@ -380,7 +376,7 @@ public class DatabaseHelper {
     	Cursor cursor = cr.query(
     			Uri.parse(Constants.SHARE_BOOK_PROVIDER),
     			null, where, null, null);
-    	Cursor contactsCursor = getContacts(cr);
+    	Cursor contactsCursor = getRawContactsCursor(cr, false);
     	Cursor groupsCursor = getGroups(cr);
     	if(cursor != null)
     		Log.i(TAG, "There are "+cursor.getCount()+" contacts sharing books");
@@ -414,7 +410,7 @@ public class DatabaseHelper {
 		contactsCursor.moveToFirst();
 		do {
 			String cId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID)),
-				sourceId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.RawContacts.SOURCE_ID));
+				sourceId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.RawContacts.SYNC1));
 			if(cId.equals(contactId))
 				return sourceId;
 		}
