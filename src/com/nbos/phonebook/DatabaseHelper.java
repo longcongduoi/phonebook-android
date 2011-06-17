@@ -49,8 +49,8 @@ public class DatabaseHelper {
 
 	public static String getContactIdFromSourceId(ContentResolver cr, String id) {
 		Cursor cursor = cr.query(ContactsContract.RawContacts.CONTENT_URI, null, 
-				ContactsContract.RawContacts.SOURCE_ID + " = " + id, null,
-				null);
+				Constants.CONTACT_SERVER_ID + " = " + id, 
+				null, null);
 		String rawContactId = "0";
 		Log.i(TAG, "getContact: "+cursor.getCount()+" contacts for sourceId: "+id);
 		while(cursor.moveToNext())
