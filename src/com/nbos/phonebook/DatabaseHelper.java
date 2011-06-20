@@ -218,6 +218,7 @@ public class DatabaseHelper {
 	    
 	    Log.i(TAG, "There are "+rawContactsCursor.getCount()+" contacts ");
 	    List<User> users = new ArrayList<User>();
+	    if(rawContactsCursor.getCount() == 0) return users;
 	    rawContactsCursor.moveToFirst();
 	    do {
 	        String contactId =

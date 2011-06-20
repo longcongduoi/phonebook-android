@@ -109,6 +109,7 @@ public class ContactManager {
     }
 
 	private static long lookupRawContact(ContentResolver resolver, long userId, Cursor rawContactsCursor) {
+		if(rawContactsCursor.getCount() == 0) return 0;
 		rawContactsCursor.moveToFirst();
 		do
 		{
