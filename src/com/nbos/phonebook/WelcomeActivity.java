@@ -102,23 +102,9 @@ public class WelcomeActivity extends ListActivity {
     	String phoneNumber = getPhoneNumber();
     	Log.i(tag, "phone number: "+phoneNumber);
     	
-    	// test();
+    	// Test.getContacts(getApplicationContext());
+    	// Test.getRawContacts(getApplicationContext());
     }
-
-    private void test() {
-		ContentResolver cr = getApplicationContext().getContentResolver();
-	    ContentValues values = new ContentValues();
-	    values = new ContentValues();
-	    values.put(BookTable.DIRTY, (Integer) null);
-	    int num = cr.update(
-	    		Uri.parse(Constants.SHARE_BOOK_PROVIDER), values,
-	    		null, null);
-	    Log.i(tag, "Updated "+num+" sharebooks to dirty = 0");
-
-    	// DatabaseHelper.getContacts(false, this.getApplicationContext());
-        // runOnUiThread(mainUiThread);
-		
-	}
 
 
 	private void testContentProvider() {

@@ -447,8 +447,8 @@ public class NetworkUtilities {
         	{
         		Contact bContact = bookContacts.get(j);
         		String cIndex = new Integer(j).toString();
-        		params.add(new BasicNameValuePair("contactId_"+index+"_"+cIndex, new Integer(bContact.getId()).toString()));
-        		params.add(new BasicNameValuePair("serverId_"+index+"_"+cIndex, new Integer(bContact.getServerId()).toString()));
+        		params.add(new BasicNameValuePair("contactId_"+index+"_"+cIndex, bContact.getId()));
+        		params.add(new BasicNameValuePair("serverId_"+index+"_"+cIndex, bContact.getServerId()));
         	}
         }
         JSONArray groupUpdates = post(SEND_GROUP_UPDATES_URI, params);
