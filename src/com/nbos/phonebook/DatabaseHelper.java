@@ -239,7 +239,7 @@ public class DatabaseHelper {
 	
 	public static Cursor getRawContactsCursor(ContentResolver cr, boolean newOnly) {
 	    String where = newOnly ? ContactsContract.RawContacts.DIRTY + " = 1" : null;
-		return cr.query(ContactsContract.RawContacts.CONTENT_URI, null, where, null, null);	
+		return cr.query(ContactsContract.RawContacts.CONTENT_URI, null, where, null, ContactsContract.RawContacts._ID);	
 	}
 
 	private static String getContactNumber(Cursor phonesCursor, String contactId) {
@@ -389,7 +389,6 @@ public class DatabaseHelper {
 		do {
 			String cId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID)),
 				sourceId = contactsCursor.getString(contactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
-			Log.i(TAG, "cId: "+cId+", serverId: "+sourceId);
 			if(cId.equals(contactId))
 				return sourceId;
 		}

@@ -40,4 +40,8 @@ public class Test {
     	DatabaseHelper.getSourceIdFromContactId(c, "793");
 	}
 
+    
+    public static void getGroups(Context ctx) {
+    	DatabaseHelper.getGroups(false, ctx);
+    }
 }

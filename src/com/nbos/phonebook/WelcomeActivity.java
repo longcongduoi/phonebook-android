@@ -104,6 +104,7 @@ public class WelcomeActivity extends ListActivity {
     	
     	// Test.getContacts(getApplicationContext());
     	// Test.getRawContacts(getApplicationContext());
+    	// Test.getGroups(getApplicationContext());
     }
 
 
