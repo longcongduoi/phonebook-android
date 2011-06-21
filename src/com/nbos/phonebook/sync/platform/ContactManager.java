@@ -62,9 +62,10 @@ public class ContactManager {
      * @param context The context of Authenticator Activity
      * @param account The username for the account
      * @param users The list of users
+     * @param contacts 
      */
     public static synchronized void syncContacts(Context context,
-        String account, List<User> users) {
+        String account, List<User> users, List<User> contacts) {
         long userId;
         long rawContactId = 0;
         final ContentResolver resolver = context.getContentResolver();
@@ -74,7 +75,6 @@ public class ContactManager {
         final Cursor rawContactsCursor =
             resolver.query(RawContacts.CONTENT_URI, UserIdQuery.PROJECTION,
                 null, null, null);
-        List<User> contacts = DatabaseHelper.getContacts(false, context);
         Log.i(TAG, "There are "+rawContactsCursor.getCount()+" raw contacts");
         Log.i(TAG, "There are "+contacts.size()+" contacts");
         // syncSharedBooks(context);
@@ -470,12 +470,12 @@ public class ContactManager {
 	}
 
 	public static void syncSharedBooks(Context mContext, String accountName,
-			List<Group> sharedBooks) {
+			List<Group> sharedBooks, List<User> contacts) {
 		for(Group b : sharedBooks)
-			ContactManager.updateSharedBook(mContext, accountName, b);
+			ContactManager.updateSharedBook(mContext, accountName, b, contacts);
 	}
 
-	private static void updateSharedBook(Context ctx, String accountName, Group sharedBook) {
+	private static void updateSharedBook(Context ctx, String accountName, Group sharedBook, List<User> contacts) {
 	    // Uri uri = Uri.parse(Constants.SHARE_BOOK_PROVIDER);
 	    int id = Integer.parseInt(sharedBook.groupId);
 	    ContentResolver cr = ctx.getContentResolver();
@@ -497,7 +497,7 @@ public class ContactManager {
     	for(Contact c : sharedBook.contacts)
     		users.add(new User(c.getName(), c.getNumber(), c.getId()));
     	Log.i(TAG, "There are "+users.size()+" users");
-    	syncContacts(ctx, accountName, users);
+    	syncContacts(ctx, accountName, users, contacts);
     	for(User u : users)
     		updateSharedBookContact(u, groupId, ctx);
 	    
@@ -521,12 +521,12 @@ public class ContactManager {
 	}
 
 	public static void syncGroups(Context mContext, String name,
-			List<Group> groups) {
+			List<Group> groups, List<User> contacts) {
 		for(Group g : groups)
-			ContactManager.updateGroup(mContext, name, g);
+			ContactManager.updateGroup(mContext, name, g, contacts);
 	}
 
-	private static void updateGroup(Context ctx, String name, Group g) {
+	private static void updateGroup(Context ctx, String name, Group g, List<User> contacts) {
 	    String id = g.groupId;
 	    ContentResolver cr = ctx.getContentResolver();
 	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_URI, null,  
@@ -547,7 +547,7 @@ public class ContactManager {
     	for(Contact c : g.contacts)
     		users.add(new User(c.getName(), c.getNumber(), c.getId()));
     	Log.i(TAG, "There are "+users.size()+" users in group "+g.name);
-    	syncContacts(ctx, name, users);
+    	syncContacts(ctx, name, users, contacts);
     	for(User u : users)
     		updateGroupContact(u, groupId, ctx);
 	    

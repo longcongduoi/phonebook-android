@@ -83,15 +83,16 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 mAccountManager.blockingGetAuthToken(account,
                     Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
              // fetch updates from the sample service over the cloud
-             
+             List<User> contacts = DatabaseHelper.getContacts(false, mContext);
              Object[] update = NetworkUtilities.fetchFriendUpdates(account, authtoken,
                     mLastUpdated);
              users =  (List<User>) update[0];
              groups = (List<Group>) update[1];
              sharedBooks = (List<Group>) update[2];
-             ContactManager.syncContacts(mContext, account.name, users);
-             ContactManager.syncGroups(mContext, account.name, groups);
-             ContactManager.syncSharedBooks(mContext, account.name, sharedBooks);
+             ContactManager.syncContacts(mContext, account.name, users, contacts);
+             contacts = DatabaseHelper.getContacts(false, mContext);
+             ContactManager.syncGroups(mContext, account.name, groups, contacts);
+             ContactManager.syncSharedBooks(mContext, account.name, sharedBooks, contacts);
              
              NetworkUtilities.sendFriendUpdates(account, authtoken,
                      mLastUpdated, true, mContext);
