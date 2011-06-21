@@ -469,23 +469,23 @@ public class ContactManager {
         Log.i(TAG, rows + " rows updated");
 	}
 
-	public static void syncSharedBooks(Context mContext, String name,
+	public static void syncSharedBooks(Context mContext, String accountName,
 			List<Group> sharedBooks) {
 		for(Group b : sharedBooks)
-			ContactManager.updateSharedBook(mContext, name, b);
+			ContactManager.updateSharedBook(mContext, accountName, b);
 	}
 
-	private static void updateSharedBook(Context ctx, String name, Group b) {
+	private static void updateSharedBook(Context ctx, String accountName, Group sharedBook) {
 	    // Uri uri = Uri.parse(Constants.SHARE_BOOK_PROVIDER);
-	    int id = Integer.parseInt(b.groupId);
+	    int id = Integer.parseInt(sharedBook.groupId);
 	    ContentResolver cr = ctx.getContentResolver();
 	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_URI, null,  
 	    		ContactsContract.Groups.SOURCE_ID + " = "+id, null, null);
 	    if(cursor.getCount() == 0)
 	    {
-	    	Log.i(TAG, "New share book: "+name);
+	    	Log.i(TAG, "New share book: "+accountName);
 	    	// create a group with the share book name
-	    	DatabaseHelper.createAGroup(ctx, b.name, name, id);
+	    	DatabaseHelper.createAGroup(ctx, sharedBook.name, sharedBook.owner, accountName, id);
 	    	cursor.requery();
 	    	Log.i(TAG, "cursor has "+cursor.getCount()+" rows");
 	    }
@@ -494,10 +494,10 @@ public class ContactManager {
 	    
     	Log.i(TAG, "Update share book, id: "+groupId);
     	List<User> users = new ArrayList<User>();
-    	for(Contact c : b.contacts)
+    	for(Contact c : sharedBook.contacts)
     		users.add(new User(c.getName(), c.getNumber(), c.getId()));
     	Log.i(TAG, "There are "+users.size()+" users");
-    	syncContacts(ctx, name, users);
+    	syncContacts(ctx, accountName, users);
     	for(User u : users)
     		updateSharedBookContact(u, groupId, ctx);
 	    
@@ -535,7 +535,7 @@ public class ContactManager {
 	    {
 	    	Log.i(TAG, "New group: "+name);
 	    	// create a group with the share book name
-	    	DatabaseHelper.createAGroup(ctx, g.name, name, Integer.parseInt(id));
+	    	DatabaseHelper.createAGroup(ctx, g.name, null, name, Integer.parseInt(id));
 	    	cursor.requery();
 	    	Log.i(TAG, "cursor has "+cursor.getCount()+" rows");
 	    }

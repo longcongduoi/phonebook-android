@@ -10,21 +10,23 @@ import org.json.JSONObject;
 import android.util.Log;
 
 public class Group {
-	public String groupId, serverId, name;
+	public String groupId, serverId, name, owner;
 	public List<Contact> contacts;
-	public Group(String groupId, String serverId, String name, List<Contact> contacts) {
+	public Group(String groupId, String serverId, String name, String owner, List<Contact> contacts) {
 		super();
 		this.groupId = groupId;
 		this.serverId = serverId;
 		this.name = name;
+		this.owner = owner;
 		this.contacts = contacts;
 	}
 	
 	static String tag = "Group";
 	public static Group valueOf(JSONObject group) throws JSONException {
 		int id = group.getInt("id");
-		String name = group.getString("name");
-		Log.i(tag, "Id: "+id+", name: "+name);
+		String name = group.getString("name"),
+			owner = group.getString("owner");;
+		Log.i(tag, "Id: "+id+", name: "+name+", owner: "+owner);
 		List<Contact> contacts = new ArrayList<Contact>();
 		JSONArray contactsArray = group.getJSONArray("contacts");
 		for(int i=0; i< contactsArray.length(); i++)
@@ -36,7 +38,7 @@ public class Group {
 			contacts.add(new Contact(new Integer(cid).toString(), "0", number, cName));
 		}
 		Log.i(tag, "There are "+contacts.size()+" contacts in group "+name);
-		return new Group(new Integer(id).toString(), null, name, contacts);
+		return new Group(new Integer(id).toString(), null, name, owner, contacts);
 	}
 	
 }

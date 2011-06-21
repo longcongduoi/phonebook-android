@@ -39,7 +39,7 @@ public class AddGroupActivity extends Activity {
         }
         String accountName = DatabaseHelper.getAccountName(getApplicationContext());
         if(accountName == null) accountName = "default";
-        DatabaseHelper.createAGroup(getApplicationContext(), groupName, accountName, 0);
+        DatabaseHelper.createAGroup(getApplicationContext(), groupName, null, accountName, 0);
         Toast toast = Toast.makeText(getApplicationContext(), "The group "+groupName+" was created", Toast.LENGTH_SHORT);
         toast.show();
         setResult(RESULT_OK, null);

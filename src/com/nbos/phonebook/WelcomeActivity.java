@@ -101,10 +101,6 @@ public class WelcomeActivity extends ListActivity {
         getListView().setTextFilterEnabled(true);
     	String phoneNumber = getPhoneNumber();
     	Log.i(tag, "phone number: "+phoneNumber);
-    	// Test.setContactsServerIdToNull(getApplicationContext());
-    	// Test.getContacts(getApplicationContext());
-    	// Test.getRawContacts(getApplicationContext());
-    	// Test.getGroups(getApplicationContext());
     }
 
 
@@ -123,11 +119,12 @@ public class WelcomeActivity extends ListActivity {
 	  
         String[] fields = new String[] {
                 ContactsContract.Groups.TITLE,
-                ContactsContract.Groups.SUMMARY_COUNT
+                ContactsContract.Groups.SUMMARY_COUNT,
+                ContactsContract.Groups.SYNC1
         };
         
         SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.group_entry, m_cursor,
-                fields, new int[] {android.R.id.text1, android.R.id.text2});
+                fields, new int[] {R.id.groupName, R.id.groupCount, R.id.groupOwner});
         
         adapter.setStringConversionColumn(
                 m_cursor.getColumnIndexOrThrow(ContactsContract.Groups.TITLE));

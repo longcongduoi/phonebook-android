@@ -179,7 +179,8 @@ public class DatabaseHelper {
         return null;
 	}
 
-    public static void createAGroup(Context context, String groupName, String accountName, int id) {
+    public static void createAGroup(Context context, String groupName, String owner, String accountName, int id) {
+    	// if(owner == null) owner = accountName;
         final ContentResolver resolver = context.getContentResolver();
         final BatchOperation batchOperation =
             new BatchOperation(context, resolver);
@@ -199,6 +200,7 @@ public class DatabaseHelper {
 		builder.withValue(ContactsContract.Groups.SYSTEM_ID, accountName);
 		builder.withValue(ContactsContract.Groups.TITLE, groupName);
 		builder.withValue(ContactsContract.Groups.SOURCE_ID, id);
+		builder.withValue(ContactsContract.Groups.SYNC1, owner); // using sync1 for the owner of the shared book
 		builder.withValue(ContactsContract.Groups.GROUP_VISIBLE, 1);
 		batchOperation.add(builder.build());
 		batchOperation.execute();
@@ -329,7 +331,7 @@ public class DatabaseHelper {
 	        	}
 	        }	    
 	    	
-	        groups.add(new Group(groupId, groupSourceId, name, contacts));
+	        groups.add(new Group(groupId, groupSourceId, name, null, contacts));
 	        Log.i(TAG, "dirty is "+dirty);
 	        Log.i(TAG, "Added group["+groupId+"] "+name+" with "+contacts.size()+" contacts");
 	    	// books
