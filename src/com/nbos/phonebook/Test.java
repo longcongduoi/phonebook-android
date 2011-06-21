@@ -44,4 +44,15 @@ public class Test {
     public static void getGroups(Context ctx) {
     	DatabaseHelper.getGroups(false, ctx);
     }
+    
+    public static void setContactsServerIdToNull(Context ctx) {
+	    ContentValues values = new ContentValues();
+	    values.put(Constants.CONTACT_SERVER_ID, (String) null);
+	    ContentResolver cr = ctx.getContentResolver();
+	    int num = cr.update(
+	    		ContactsContract.RawContacts.CONTENT_URI, values,
+	    		null, null);
+	    Log.i(tag, "Updated "+num+" contacts serverId to null");
+
+    }    
 }

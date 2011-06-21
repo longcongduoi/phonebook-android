@@ -211,8 +211,8 @@ public class ContactOperations {
      */
     public ContactOperations updateName(Uri uri, String existingFirstName,
         String existingLastName, String firstName, String lastName) {
-        Log.i("ContactOperations", "ef=" + existingFirstName + "el="
-            + existingLastName + "f=" + firstName + "l=" + lastName);
+        Log.i("ContactOperations", " ef=" + existingFirstName + ", el="
+            + existingLastName + ", f=" + firstName + ", l=" + lastName);
         mValues.clear();
         if (!TextUtils.equals(existingFirstName, firstName)) {
             mValues.put(StructuredName.GIVEN_NAME, firstName);

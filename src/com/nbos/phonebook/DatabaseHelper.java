@@ -402,6 +402,16 @@ public class DatabaseHelper {
 		Log.i(TAG, "Phone number is: "+ph);
 		return ph;
     }
+
+	public static void updateContactServerId(String contactId, String serverId, ContentResolver cr) {
+	    ContentValues values = new ContentValues();
+	    values.put(Constants.CONTACT_SERVER_ID, serverId);
+
+	    int num = cr.update(
+	    		ContactsContract.RawContacts.CONTENT_URI, values,
+	    		ContactsContract.RawContacts.CONTACT_ID + " = " + contactId, null);
+	    Log.i(TAG, "Updated "+num+" contacts to serverId: "+serverId);
+	}
     
 	
 }

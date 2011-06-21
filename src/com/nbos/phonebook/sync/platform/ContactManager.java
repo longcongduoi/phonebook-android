@@ -74,14 +74,15 @@ public class ContactManager {
         final Cursor rawContactsCursor =
             resolver.query(RawContacts.CONTENT_URI, UserIdQuery.PROJECTION,
                 null, null, null);
+        List<User> contacts = DatabaseHelper.getContacts(false, context);
         Log.i(TAG, "There are "+rawContactsCursor.getCount()+" raw contacts");
-
+        Log.i(TAG, "There are "+contacts.size()+" contacts");
         // syncSharedBooks(context);
         Log.d(TAG, "In SyncContacts");
         for (final User user : users) {
-            userId = Integer.parseInt(user.getUserId());
+            // userId = Integer.parseInt(user.getUserId());
             // Check to see if the contact needs to be inserted or updated
-            rawContactId = lookupRawContact(resolver, userId, rawContactsCursor);
+            rawContactId = lookupRawContact(resolver, user, rawContactsCursor, contacts);
             Log.d(TAG, "Raw contact id is: "+rawContactId);
             if (rawContactId != 0) {
                 if (!user.isDeleted()) {
@@ -108,7 +109,7 @@ public class ContactManager {
         batchOperation.execute();
     }
 
-	private static long lookupRawContact(ContentResolver resolver, long userId, Cursor rawContactsCursor) {
+	private static long lookupRawContact(ContentResolver resolver, User user, Cursor rawContactsCursor, List<User> contacts) {
 		if(rawContactsCursor.getCount() == 0) return 0;
 		rawContactsCursor.moveToFirst();
 		do
@@ -116,12 +117,25 @@ public class ContactManager {
 			String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
 			// String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.SOURCE_ID));
 			try {
-				if(Long.parseLong(sourceId) == userId)
+				if(sourceId.equals(user.getUserId()))
 					return rawContactsCursor.getLong(0);
 			}
 			catch(Exception e){}
 			
 		} while(rawContactsCursor.moveToNext());
+		// could not find the contact, do a phone number search
+		for(User u : contacts) {
+			if(u.getCellPhone().equals(user.getCellPhone())) {// maybe a contact
+				// check if the rest of the information is the same
+				if(u.getFirstName().equals(user.getFirstName()))
+				{
+					Log.i(TAG, "Existing contact; ph: "+u.getCellPhone()+", name: "+u.getFirstName()+", serverId: "+user.getUserId()+", contactId: "+u.getContactId());
+					// update the serverId of the contact
+					DatabaseHelper.updateContactServerId(u.getContactId(), user.getUserId(), resolver);
+					return Long.parseLong(u.getContactId());
+				}
+			}
+		}
 		return 0;
 	}
 
