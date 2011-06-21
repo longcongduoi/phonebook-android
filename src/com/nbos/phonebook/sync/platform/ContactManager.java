@@ -63,10 +63,10 @@ public class ContactManager {
      * @param account The username for the account
      * @param users The list of users
      * @param contacts 
+     * @param dataCursor 
      */
     public static synchronized void syncContacts(Context context,
-        String account, List<User> users, List<User> contacts) {
-        long userId;
+        String account, List<User> users, List<User> contacts, Cursor dataCursor) {
         long rawContactId = 0;
         final ContentResolver resolver = context.getContentResolver();
         final BatchOperation batchOperation =
@@ -88,7 +88,7 @@ public class ContactManager {
                 if (!user.isDeleted()) {
                     // update contact
                     updateContact(context, resolver, account, user,
-                        rawContactId, batchOperation);
+                        rawContactId, batchOperation, dataCursor);
                 } else {
                     // delete contact
                     deleteContact(context, rawContactId, batchOperation);
@@ -212,61 +212,64 @@ public class ContactManager {
      * @param user the sample SyncAdapter contact object.
      * @param rawContactId the unique Id for this rawContact in contacts
      *        provider
+     * @param dataCursor 
      */
     private static void updateContact(Context context,
         ContentResolver resolver, String accountName, User user,
-        long rawContactId, BatchOperation batchOperation) {
+        long rawContactId, BatchOperation batchOperation, Cursor dataCursor) {
     	Log.i(TAG, "Update contact: "+user.getFirstName()+", rawContactId: "+rawContactId);
         Uri uri;
         String cellPhone = null;
         String otherPhone = null;
         String email = null;
 
-        final Cursor c =
+        /*final Cursor dataCursor =
             resolver.query(Data.CONTENT_URI, DataQuery.PROJECTION,
                 DataQuery.SELECTION,
-                new String[] {String.valueOf(rawContactId)}, null);
+                new String[] {String.valueOf(rawContactId)}, null);*/
         final ContactOperations contactOp =
             ContactOperations.updateExistingContact(context, rawContactId,
                 batchOperation);
-
+        dataCursor.moveToFirst();
         try {
-            while (c.moveToNext()) {
-                final long id = c.getLong(DataQuery.COLUMN_ID);
-                final String mimeType = c.getString(DataQuery.COLUMN_MIMETYPE);
+            do {
+            	long rawContactIdee = dataCursor.getLong(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+            	if(rawContactIdee != rawContactId) continue;
+                final long id = dataCursor.getLong(DataQuery.COLUMN_ID);
+                final String mimeType = dataCursor.getString(DataQuery.COLUMN_MIMETYPE);
                 uri = ContentUris.withAppendedId(Data.CONTENT_URI, id);
 
                 if (mimeType.equals(StructuredName.CONTENT_ITEM_TYPE)) {
                     final String lastName =
-                        c.getString(DataQuery.COLUMN_FAMILY_NAME);
+                        dataCursor.getString(DataQuery.COLUMN_FAMILY_NAME);
                     final String firstName =
-                        c.getString(DataQuery.COLUMN_GIVEN_NAME);
+                        dataCursor.getString(DataQuery.COLUMN_GIVEN_NAME);
                     contactOp.updateName(uri, firstName, lastName, user
                         .getFirstName(), user.getLastName());
                 }
 
                 else if (mimeType.equals(Phone.CONTENT_ITEM_TYPE)) {
-                    final int type = c.getInt(DataQuery.COLUMN_PHONE_TYPE);
+                    final int type = dataCursor.getInt(DataQuery.COLUMN_PHONE_TYPE);
 
                     if (type == Phone.TYPE_MOBILE) {
-                        cellPhone = c.getString(DataQuery.COLUMN_PHONE_NUMBER);
+                        cellPhone = dataCursor.getString(DataQuery.COLUMN_PHONE_NUMBER);
                         contactOp.updatePhone(cellPhone, user.getCellPhone(),
                             uri);
                     } else if (type == Phone.TYPE_OTHER) {
-                        otherPhone = c.getString(DataQuery.COLUMN_PHONE_NUMBER);
+                        otherPhone = dataCursor.getString(DataQuery.COLUMN_PHONE_NUMBER);
                         contactOp.updatePhone(otherPhone, user.getHomePhone(),
                             uri);
                     }
                 }
 
                 else if (Data.MIMETYPE.equals(Email.CONTENT_ITEM_TYPE)) {
-                    email = c.getString(DataQuery.COLUMN_EMAIL_ADDRESS);
+                    email = dataCursor.getString(DataQuery.COLUMN_EMAIL_ADDRESS);
                     contactOp.updateEmail(user.getEmail(), email, uri);
 
                 }
-            } // while
+            } while (dataCursor.moveToNext());// while
         } finally {
-            c.close();
+            // c.close();
         }
 
         // Add the cell phone, if present and not updated above
@@ -470,12 +473,12 @@ public class ContactManager {
 	}
 
 	public static void syncSharedBooks(Context mContext, String accountName,
-			List<Group> sharedBooks, List<User> contacts) {
+			List<Group> sharedBooks, List<User> contacts, Cursor dataCursor) {
 		for(Group b : sharedBooks)
-			ContactManager.updateSharedBook(mContext, accountName, b, contacts);
+			ContactManager.updateSharedBook(mContext, accountName, b, contacts, dataCursor);
 	}
 
-	private static void updateSharedBook(Context ctx, String accountName, Group sharedBook, List<User> contacts) {
+	private static void updateSharedBook(Context ctx, String accountName, Group sharedBook, List<User> contacts, Cursor dataCursor) {
 	    // Uri uri = Uri.parse(Constants.SHARE_BOOK_PROVIDER);
 	    int id = Integer.parseInt(sharedBook.groupId);
 	    ContentResolver cr = ctx.getContentResolver();
@@ -497,7 +500,7 @@ public class ContactManager {
     	for(Contact c : sharedBook.contacts)
     		users.add(new User(c.getName(), c.getNumber(), c.getId()));
     	Log.i(TAG, "There are "+users.size()+" users");
-    	syncContacts(ctx, accountName, users, contacts);
+    	syncContacts(ctx, accountName, users, contacts, dataCursor);
     	for(User u : users)
     		updateSharedBookContact(u, groupId, ctx);
 	    
@@ -521,12 +524,12 @@ public class ContactManager {
 	}
 
 	public static void syncGroups(Context mContext, String name,
-			List<Group> groups, List<User> contacts) {
+			List<Group> groups, List<User> contacts, Cursor dataCursor) {
 		for(Group g : groups)
-			ContactManager.updateGroup(mContext, name, g, contacts);
+			ContactManager.updateGroup(mContext, name, g, contacts, dataCursor);
 	}
 
-	private static void updateGroup(Context ctx, String name, Group g, List<User> contacts) {
+	private static void updateGroup(Context ctx, String name, Group g, List<User> contacts, Cursor dataCursor) {
 	    String id = g.groupId;
 	    ContentResolver cr = ctx.getContentResolver();
 	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_URI, null,  
@@ -547,7 +550,7 @@ public class ContactManager {
     	for(Contact c : g.contacts)
     		users.add(new User(c.getName(), c.getNumber(), c.getId()));
     	Log.i(TAG, "There are "+users.size()+" users in group "+g.name);
-    	syncContacts(ctx, name, users, contacts);
+    	syncContacts(ctx, name, users, contacts, dataCursor);
     	for(User u : users)
     		updateGroupContact(u, groupId, ctx);
 	    

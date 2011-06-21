@@ -6,6 +6,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.Data;
 import android.util.Log;
 
 import com.nbos.phonebook.database.tables.BookTable;
@@ -54,5 +55,12 @@ public class Test {
 	    		null, null);
 	    Log.i(tag, "Updated "+num+" contacts serverId to null");
 
-    }    
+    }
+    
+    public static void getData(Context ctx) {
+    	final Cursor c =
+    		ctx.getContentResolver().query(Data.CONTENT_URI, null, null, null, null);
+    	Log.i(tag, "There are "+c.getCount()+" data items");
+    
+    }
 }

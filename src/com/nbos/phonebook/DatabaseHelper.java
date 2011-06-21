@@ -14,6 +14,7 @@ import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.net.Uri;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.Data;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
@@ -414,6 +415,10 @@ public class DatabaseHelper {
 	    		ContactsContract.RawContacts.CONTACT_ID + " = " + contactId, null);
 	    Log.i(TAG, "Updated "+num+" contacts to serverId: "+serverId);
 	}
-    
+
+    public static Cursor getData(Context ctx) {
+    	return ctx.getContentResolver().query(Data.CONTENT_URI, null, null, null, null);
+    }
+
 	
 }

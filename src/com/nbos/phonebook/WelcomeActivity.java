@@ -23,9 +23,7 @@ import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
-import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -47,8 +45,6 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
 import com.nbos.phonebook.contentprovider.Provider;
-import com.nbos.phonebook.database.tables.BookTable;
-import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.value.Contact;
 import com.nbos.phonebook.value.Group;
 
@@ -101,6 +97,7 @@ public class WelcomeActivity extends ListActivity {
         getListView().setTextFilterEnabled(true);
     	String phoneNumber = getPhoneNumber();
     	Log.i(tag, "phone number: "+phoneNumber);
+    	// Test.getData(this.getApplicationContext());
     }
 
 
