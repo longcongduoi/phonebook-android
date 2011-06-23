@@ -496,8 +496,7 @@ public class NetworkUtilities {
 	}
 
 	public static void sendAllContacts(String username, String authtoken, Context ctx) throws ClientProtocolException, IOException, JSONException {
-        sendFriendUpdates(DatabaseHelper.getAccount(ctx, username), authtoken,
-                null, false, ctx);
+        sendFriendUpdates(DatabaseHelper.getAccount(ctx, username), authtoken, null, false, ctx);
 
 	}
 	

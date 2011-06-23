@@ -46,6 +46,19 @@ public class Test {
     	DatabaseHelper.getGroups(false, ctx);
     }
     
+    public static void getGroupList(Context ctx) {
+    	Cursor c = ctx.getContentResolver().query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
+    	    	ContactsContract.Groups.DELETED + "=0",	    		
+    	    	null, null);
+    	c.moveToFirst();
+    	do {
+    		String name = c.getString(c.getColumnIndex(ContactsContract.Groups.TITLE)),
+    			id = c.getString(c.getColumnIndex(ContactsContract.Groups._ID)),
+    			serverId = c.getString(c.getColumnIndex(ContactsContract.Groups.SOURCE_ID));
+    		Log.i(tag, "Group; name: "+name+", id: "+id+", serverId: "+serverId);
+    	} while(c.moveToNext());
+    }
+    
     public static void setContactsServerIdToNull(Context ctx) {
 	    ContentValues values = new ContentValues();
 	    values.put(Constants.CONTACT_SERVER_ID, (String) null);

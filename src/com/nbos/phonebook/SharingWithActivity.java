@@ -126,11 +126,9 @@ public class SharingWithActivity extends ListActivity {
         		break;
         	}
         }	    
-        	Collections.sort(rows);
-        	for(ContactRow row : rows)
-        	{
-        		m_cursor.addRow(new String[] {row.id, row.name});
-        	}
+    	Collections.sort(rows);
+    	for(ContactRow row : rows)
+    		m_cursor.addRow(new String[] {row.id, row.name});
         
         String[] fields = new String[] {
                 ContactsContract.Data.DISPLAY_NAME

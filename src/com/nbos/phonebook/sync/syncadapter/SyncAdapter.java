@@ -76,7 +76,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         String authtoken = null;
         
         // ContactManager.setDirtyContacts(mContext); // for testing
-        
+        Cursor dataCursor = null;
         try {
              // use the account manager to request the credentials
              authtoken =
@@ -84,7 +84,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                     Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
              // fetch updates from the sample service over the cloud
              List<User> contacts = DatabaseHelper.getContacts(false, mContext);
-             Cursor dataCursor = DatabaseHelper.getData(mContext);
+             dataCursor = DatabaseHelper.getData(mContext);
              Object[] update = NetworkUtilities.fetchFriendUpdates(account, authtoken,
                     mLastUpdated);
              users =  (List<User>) update[0];
@@ -124,6 +124,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         } catch (final JSONException e) {
             syncResult.stats.numParseExceptions++;
             Log.e(TAG, "JSONException", e);
+        }
+        finally {
+        	dataCursor.close();
         }
     }
 }
