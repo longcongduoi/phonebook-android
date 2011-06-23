@@ -305,7 +305,16 @@ public class DatabaseHelper {
 	    			ContactsContract.Contacts.DISPLAY_NAME
 	    		},
 	    		null, null, ContactsContract.Contacts._ID),
-	    	rawContactsCursor = getRawContactsCursor(cr, false);
+    	rawContactsCursor = getRawContactsCursor(cr, false);
+
+	    Cursor phonesCursor = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
+        		new String[] {
+	    			ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+	    			ContactsContract.CommonDataKinds.Phone.NUMBER
+	    		}, 		
+        		null,
+        		null, null);
+
 	    
 	    Log.i(TAG, "There are "+contactsCursor.getCount()+" contacts");
 	    
@@ -330,25 +339,11 @@ public class DatabaseHelper {
 	        {
 	        	switch (joinerResult) {
 	        		case BOTH: // handle case where a row with the same key is in both cursors
-	        			String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(
-	        					ContactsContract.Contacts._ID));
-	        			String serverId = getContactServerId(contactId, rawContactsCursor); 
-	        				// dataCursor.getString(dataCursor.getColumnIndex(
-	        					// ContactsContract.RawContacts.SOURCE_ID));
-	        			
-	        			String contactName = contactsCursor.getString(contactsCursor.getColumnIndex(
-	        					ContactsContract.Contacts.DISPLAY_NAME));
-	        	        Cursor phones = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
-	        	        		null, 		
-	        	        		ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = "+ contactId,
-	        	        		null, null);
-	        	            
-	        	        Log.i(TAG, "There are "+phones.getCount()+" phone numbers");
-	        	        if(phones.getCount() == 0) break;
-        	            phones.moveToFirst();
-        	            String contactNumber = phones.getString(phones
-        	                    .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
-
+	        			String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID)),
+	        				serverId = getContactServerId(contactId, rawContactsCursor), 
+	        				contactName = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)),
+	        				contactNumber = getContactPhoneNumber(contactId, phonesCursor);
+	        			if(contactNumber == null) break;
 	        			contacts.add(new Contact(contactId, serverId, contactNumber, contactName));
 	        			Log.i(TAG, "added contact: "+contactId+", serverId: "+serverId+", "+contactNumber+", "+contactName);
 	        		break;
@@ -362,9 +357,21 @@ public class DatabaseHelper {
 	    }
 	    groupsCursor.close();
 	    contactsCursor.close();
+	    phonesCursor.close();
 	    return groups;
 	}
 	
+	private static String getContactPhoneNumber(String contactId, Cursor phonesCursor) {
+		phonesCursor.moveToFirst();
+		do {
+			String cId = phonesCursor.getString(phonesCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
+			if(!cId.equals(contactId)) continue;
+			return phonesCursor.getString(phonesCursor
+                    .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
+		} while(phonesCursor.moveToNext());
+		return null;
+	}
+
 	private static String getContactServerId(String contactId, Cursor rawContactsCursor) {
 		rawContactsCursor.moveToFirst();
 		do {
