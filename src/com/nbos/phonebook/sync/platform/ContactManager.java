@@ -500,7 +500,7 @@ public class ContactManager {
     	for(Contact c : sharedBook.contacts)
     		users.add(new User(c.getName(), c.getNumber(), c.getId()));
     	Log.i(TAG, "There are "+users.size()+" users");
-    	// syncContacts(ctx, accountName, users, contacts, dataCursor);
+    	syncContacts(ctx, accountName, users, contacts, dataCursor);
     	for(User u : users)
     		updateSharedBookContact(u, groupId, ctx);
 	    
