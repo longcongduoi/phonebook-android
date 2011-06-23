@@ -456,7 +456,7 @@ public class ContactManager {
 	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;
 	    ContentValues values = new ContentValues();
 	    values.put(Constants.CONTACT_SERVER_ID, sourceId);
-	    int rows = cr.update(uri, values, ContactsContract.RawContacts._ID + " = " + contactId, null);
+	    int rows = cr.update(uri, values, ContactsContract.RawContacts.CONTACT_ID + " = " + contactId, null);
 	    Log.i(TAG, rows + " rows updated");
 	}
 

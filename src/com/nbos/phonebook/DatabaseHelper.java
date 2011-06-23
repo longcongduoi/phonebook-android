@@ -340,10 +340,10 @@ public class DatabaseHelper {
 	        					ContactsContract.Contacts.DISPLAY_NAME));
 	        	        Cursor phones = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
 	        	        		null, 		
-	        	        		ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID +" = "+ contactId,
+	        	        		ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = "+ contactId,
 	        	        		null, null);
 	        	            
-	        	        // Log.i(TAG, "There are "+phones.getCount()+" phone numbers");
+	        	        Log.i(TAG, "There are "+phones.getCount()+" phone numbers");
 	        	        if(phones.getCount() == 0) break;
         	            phones.moveToFirst();
         	            String contactNumber = phones.getString(phones
