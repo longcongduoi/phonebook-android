@@ -46,6 +46,11 @@ public class Test {
     	DatabaseHelper.getGroups(false, ctx);
     }
     
+
+    public static void getDirtyGroups(Context ctx) {
+    	DatabaseHelper.getGroups(true, ctx);
+    }
+    
     public static void getGroupList(Context ctx) {
     	Cursor c = ctx.getContentResolver().query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
     	    	ContactsContract.Groups.DELETED + "=0",	    		

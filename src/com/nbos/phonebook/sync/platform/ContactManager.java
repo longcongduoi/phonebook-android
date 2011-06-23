@@ -114,10 +114,10 @@ public class ContactManager {
 		rawContactsCursor.moveToFirst();
 		do
 		{
-			String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
+			String serverId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
 			// String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.SOURCE_ID));
 			try {
-				if(sourceId.equals(user.getUserId()))
+				if(serverId.equals(user.getUserId()))
 					return rawContactsCursor.getLong(0);
 			}
 			catch(Exception e){}
@@ -129,7 +129,7 @@ public class ContactManager {
 				// check if the rest of the information is the same
 				if(u.getFirstName().equals(user.getFirstName()))
 				{
-					Log.i(TAG, "Existing contact; ph: "+u.getCellPhone()+", name: "+u.getFirstName()+", serverId: "+user.getUserId()+", contactId: "+u.getContactId());
+					Log.i(TAG, "Existing contact; ph: "+u.getCellPhone()+", name: "+u.getFirstName()+", serverId: "+user.getUserId()+", contactId: "+u.getContactId()+", phone serverId: "+u.getUserId());
 					// update the serverId of the contact
 					DatabaseHelper.updateContactServerId(u.getContactId(), user.getUserId(), resolver);
 					return Long.parseLong(u.getContactId());
@@ -500,7 +500,7 @@ public class ContactManager {
     	for(Contact c : sharedBook.contacts)
     		users.add(new User(c.getName(), c.getNumber(), c.getId()));
     	Log.i(TAG, "There are "+users.size()+" users");
-    	syncContacts(ctx, accountName, users, contacts, dataCursor);
+    	// syncContacts(ctx, accountName, users, contacts, dataCursor);
     	for(User u : users)
     		updateSharedBookContact(u, groupId, ctx);
 	    

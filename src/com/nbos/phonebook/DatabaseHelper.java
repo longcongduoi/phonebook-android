@@ -289,9 +289,15 @@ public class DatabaseHelper {
 	    String where = ContactsContract.Groups.DELETED + " = 0 ";
 	    if(newOnly)
 	    	where += " and " + ContactsContract.Groups.DIRTY + " = 1 ";
-	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
+	    Cursor groupsCursor = cr.query(ContactsContract.Groups.CONTENT_SUMMARY_URI, 
+	    		new String [] {
+	    			ContactsContract.Groups.TITLE,
+	    			ContactsContract.Groups._ID,
+	    			ContactsContract.Groups.SOURCE_ID,
+	    			ContactsContract.Groups.DIRTY
+	    		},
 	    		where, null, null);
-	    Log.i(TAG, "There are "+cursor.getCount()+" groups");
+	    Log.i(TAG, "There are "+groupsCursor.getCount()+" groups");
 	    Cursor contactsCursor = cr.query(ContactsContract.Contacts.CONTENT_URI,
 	    		// null,
 	    	    new String[] {
@@ -303,13 +309,13 @@ public class DatabaseHelper {
 	    
 	    Log.i(TAG, "There are "+contactsCursor.getCount()+" contacts");
 	    
-	    while(cursor.moveToNext())
+	    while(groupsCursor.moveToNext())
 	    {
 	    	List<Contact> contacts = new ArrayList<Contact>();
-	    	String name = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.TITLE));
-	    	String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID));
-	    	String groupSourceId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.SOURCE_ID));
-	    	String dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DIRTY));
+	    	String name = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.TITLE));
+	    	String groupId = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups._ID));
+	    	String groupSourceId = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.SOURCE_ID));
+	    	String dirty = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.DIRTY));
 		    Cursor dataCursor = getContactsInGroup(new Integer(groupId).toString(), cr);
 		    Log.i(TAG, "There are "+dataCursor.getCount()+" contacts in group: "+groupId);
 	    	
@@ -351,9 +357,10 @@ public class DatabaseHelper {
 	        groups.add(new Group(groupId, groupSourceId, name, null, contacts));
 	        Log.i(TAG, "dirty is "+dirty);
 	        Log.i(TAG, "Added group["+groupId+"] "+name+" with "+contacts.size()+" contacts");
+	        dataCursor.close();
 	    	// books
 	    }
-	    cursor.close();
+	    groupsCursor.close();
 	    contactsCursor.close();
 	    return groups;
 	}
@@ -396,6 +403,7 @@ public class DatabaseHelper {
     }
 	
 	private static String getSourceIdFromGroupId(Cursor groupsCursor, String groupId) {
+		if(groupsCursor.getCount() == 0) return null;
 		groupsCursor.moveToFirst();
 		do {
 			String gId = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups._ID)),
