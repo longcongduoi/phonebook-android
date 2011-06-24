@@ -48,7 +48,7 @@ public class DatabaseHelper {
 				// ContactsContract.Contacts.DISPLAY_NAME);
 	}
 
-	public static String getContactIdFromSourceId(ContentResolver cr, String id) {
+	/*public static String getContactIdFromSourceId(ContentResolver cr, String id) {
 		Cursor cursor = cr.query(ContactsContract.RawContacts.CONTENT_URI, null, 
 				Constants.CONTACT_SERVER_ID + " = " + id, 
 				null, null);
@@ -63,8 +63,18 @@ public class DatabaseHelper {
 		}
 		return rawContactId;
 				// ContactsContract.Contacts.DISPLAY_NAME);
-	}
+	}*/
 
+	public static String getContactIdFromServerId(ContentResolver cr, String serverId, Cursor rawContactsCursor) {
+		rawContactsCursor.moveToFirst();
+		do {
+			String sId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
+			if(sId != null && sId.equals(serverId))
+				return rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
+		} while(rawContactsCursor.moveToNext());
+		return null;
+	}
+	
 	public static Cursor getBook(Activity activity, String id) {
     	return activity.getContentResolver().query(
     			Uri.parse("content://"+Provider.AUTHORITY+"/"+Provider.BookContent.CONTENT_PATH),
@@ -105,7 +115,7 @@ public class DatabaseHelper {
 
 	public static void updateToGroup(String groupId, String contactId, ContentResolver cr) {
 		   // this.removeFromGroup(personId, groupId);
-			Log.i(TAG, "updating contact to group: "+groupId);
+			Log.i(TAG, "updating contact to group: "+groupId+", contactId: "+contactId);
 			if(DatabaseHelper.isContactInGroup(groupId, contactId, cr)) return;
 		    ContentValues values = new ContentValues();
 		    values.put(ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID,
@@ -447,7 +457,7 @@ public class DatabaseHelper {
 	    int num = cr.update(
 	    		ContactsContract.RawContacts.CONTENT_URI, values,
 	    		ContactsContract.RawContacts.CONTACT_ID + " = " + contactId, null);
-	    Log.i(TAG, "Updated "+num+" contacts to serverId: "+serverId);
+	    Log.i(TAG, "Updated "+num+" contacts with contactId: "+contactId+" to serverId: "+serverId);
 	}
 
     public static Cursor getData(Context ctx) {

@@ -473,12 +473,12 @@ public class ContactManager {
 	}
 
 	public static void syncSharedBooks(Context mContext, String accountName,
-			List<Group> sharedBooks, List<User> contacts, Cursor dataCursor) {
+			List<Group> sharedBooks, List<User> contacts, Cursor dataCursor, Cursor rawContactsCursor) {
 		for(Group b : sharedBooks)
-			ContactManager.updateSharedBook(mContext, accountName, b, contacts, dataCursor);
+			ContactManager.updateSharedBook(mContext, accountName, b, contacts, dataCursor, rawContactsCursor);
 	}
 
-	private static void updateSharedBook(Context ctx, String accountName, Group sharedBook, List<User> contacts, Cursor dataCursor) {
+	private static void updateSharedBook(Context ctx, String accountName, Group sharedBook, List<User> contacts, Cursor dataCursor, Cursor rawContactsCursor) {
 	    // Uri uri = Uri.parse(Constants.SHARE_BOOK_PROVIDER);
 	    int id = Integer.parseInt(sharedBook.groupId);
 	    ContentResolver cr = ctx.getContentResolver();
@@ -502,12 +502,12 @@ public class ContactManager {
     	Log.i(TAG, "There are "+users.size()+" users");
     	syncContacts(ctx, accountName, users, contacts, dataCursor);
     	for(User u : users)
-    		updateSharedBookContact(u, groupId, ctx);
+    		updateSharedBookContact(u, groupId, ctx, rawContactsCursor);
 	    
 	}
 
-	private static void updateSharedBookContact(User u, String groupId, Context ctx) {
-		String contactId = DatabaseHelper.getContactIdFromSourceId(ctx.getContentResolver(), u.getUserId());
+	private static void updateSharedBookContact(User u, String groupId, Context ctx, Cursor rawContactsCursor) {
+		String contactId = DatabaseHelper.getContactIdFromServerId(ctx.getContentResolver(), u.getUserId(), rawContactsCursor);
 		DatabaseHelper.updateToGroup(groupId, contactId, ctx.getContentResolver());
 	}
 
@@ -523,13 +523,14 @@ public class ContactManager {
 	    Log.i(TAG, "updated "+ rows + " rows to sourceId: "+sourceId);
 	}
 
-	public static void syncGroups(Context mContext, String name,
-			List<Group> groups, List<User> contacts, Cursor dataCursor) {
+	public static void syncGroups(Context mContext, String name, 
+			List<Group> groups, List<User> contacts, Cursor dataCursor, Cursor rawContactsCursor) 
+	{
 		for(Group g : groups)
-			ContactManager.updateGroup(mContext, name, g, contacts, dataCursor);
+			ContactManager.updateGroup(mContext, name, g, contacts, dataCursor, rawContactsCursor);
 	}
 
-	private static void updateGroup(Context ctx, String name, Group g, List<User> contacts, Cursor dataCursor) {
+	private static void updateGroup(Context ctx, String name, Group g, List<User> contacts, Cursor dataCursor, Cursor rawContactsCursor) {
 	    String id = g.groupId;
 	    ContentResolver cr = ctx.getContentResolver();
 	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_URI, null,  
@@ -543,7 +544,13 @@ public class ContactManager {
 	    	Log.i(TAG, "cursor has "+cursor.getCount()+" rows");
 	    }
 	    cursor.moveToFirst();
-	    String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID));
+	    String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID)),
+	    	dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DIRTY));
+	    if(dirty.equals("1"))
+	    {
+	    	Log.i(TAG, "Group is dirty, skipping update");
+	    	return;
+	    }
 	    
     	Log.i(TAG, "Update group, id: "+groupId);
     	List<User> users = new ArrayList<User>();
@@ -552,12 +559,16 @@ public class ContactManager {
     	Log.i(TAG, "There are "+users.size()+" users in group "+g.name);
     	syncContacts(ctx, name, users, contacts, dataCursor);
     	for(User u : users)
-    		updateGroupContact(u, groupId, ctx);
+    		updateGroupContact(u, groupId, ctx, rawContactsCursor);
+    	cursor.close();
 	    
 	}
 
-	private static void updateGroupContact(User u, String groupId, Context ctx) {
-		String contactId = DatabaseHelper.getContactIdFromSourceId(ctx.getContentResolver(), u.getUserId());
-		DatabaseHelper.updateToGroup(groupId, contactId, ctx.getContentResolver());
+	private static void updateGroupContact(User u, String groupId, Context ctx, Cursor rawContactsCursor) {
+		
+		String contactId = DatabaseHelper.getContactIdFromServerId(ctx.getContentResolver(), u.getUserId(), rawContactsCursor);
+		Log.i(TAG, "ServerId: "+u.getUserId()+", contactId: "+contactId);
+		// if(contactId != null)
+			DatabaseHelper.updateToGroup(groupId, contactId, ctx.getContentResolver());
 	}
 }

@@ -76,7 +76,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         String authtoken = null;
         
         // ContactManager.setDirtyContacts(mContext); // for testing
-        Cursor dataCursor = null;
+        Cursor dataCursor = null,
+        	rawContactsCursor = DatabaseHelper.getRawContactsCursor(mContext.getContentResolver(), false);
+        
         try {
              // use the account manager to request the credentials
              authtoken =
@@ -93,8 +95,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
              ContactManager.syncContacts(mContext, account.name, users, contacts, dataCursor);
              contacts = DatabaseHelper.getContacts(false, mContext);
              dataCursor = DatabaseHelper.getData(mContext);
-             ContactManager.syncGroups(mContext, account.name, groups, contacts, dataCursor);
-             ContactManager.syncSharedBooks(mContext, account.name, sharedBooks, contacts, dataCursor);
+             ContactManager.syncGroups(mContext, account.name, groups, contacts, dataCursor, rawContactsCursor);
+             ContactManager.syncSharedBooks(mContext, account.name, sharedBooks, contacts, dataCursor, rawContactsCursor);
              
              NetworkUtilities.sendFriendUpdates(account, authtoken,
                      mLastUpdated, true, mContext);
