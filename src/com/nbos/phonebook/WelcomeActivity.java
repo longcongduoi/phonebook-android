@@ -98,7 +98,7 @@ public class WelcomeActivity extends ListActivity {
     	String phoneNumber = getPhoneNumber();
     	Log.i(tag, "phone number: "+phoneNumber);
     	// Test.getContacts(this.getApplicationContext());
-    	Test.getGroups(this.getApplicationContext());
+    	// Test.getGroups(this.getApplicationContext());
     	// Test.getRawContacts(this.getApplicationContext());
     	// Test.getGroupList(this.getApplicationContext());
     }

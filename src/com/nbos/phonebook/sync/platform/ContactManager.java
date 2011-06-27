@@ -218,6 +218,7 @@ public class ContactManager {
         ContentResolver resolver, String accountName, User user,
         long rawContactId, BatchOperation batchOperation, Cursor dataCursor) {
     	Log.i(TAG, "Update contact: "+user.getFirstName()+", rawContactId: "+rawContactId);
+    	if(dataCursor.getCount() == 0) return;
         Uri uri;
         String cellPhone = null;
         String otherPhone = null;
@@ -230,7 +231,9 @@ public class ContactManager {
         final ContactOperations contactOp =
             ContactOperations.updateExistingContact(context, rawContactId,
                 batchOperation);
+        
         dataCursor.moveToFirst();
+        
         try {
             do {
             	long rawContactIdee = dataCursor.getLong(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
@@ -507,12 +510,6 @@ public class ContactManager {
 	    
 	}
 
-	private static void updateSharedBookContact(User u, String groupId, Context ctx, Cursor rawContactsCursor) {
-		String contactId = DatabaseHelper.getContactIdFromServerId(ctx.getContentResolver(), u.getUserId(), rawContactsCursor);
-		Log.i(TAG, "Got contactId: "+contactId+", from serverId: "+u.getUserId());
-		DatabaseHelper.updateToGroup(groupId, contactId, ctx.getContentResolver());
-	}
-
 	public static void updateGroup(JSONObject group, Context context) throws JSONException {
         int sourceId = group.getInt("sourceId"),
 			groupId = group.getInt("groupId");
@@ -573,6 +570,6 @@ public class ContactManager {
 			rawContactId = DatabaseHelper.getRawContactId(contactId, rawContactsCursor);
 		Log.i(TAG, "ServerId: "+u.getUserId()+", contactId: "+contactId+", rawContactId: "+rawContactId);
 		// if(contactId != null)
-			DatabaseHelper.updateToGroup(groupId, rawContactId, ctx.getContentResolver());
+			DatabaseHelper.updateToGroup(groupId, contactId, rawContactId, ctx.getContentResolver());
 	}
 }

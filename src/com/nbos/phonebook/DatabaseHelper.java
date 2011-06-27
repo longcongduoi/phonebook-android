@@ -113,11 +113,11 @@ public class DatabaseHelper {
 		    DatabaseHelper.setGroupDirty(groupId, cr);		    
 	}
 
-	public static void updateToGroup(String groupId, String rawContactId, ContentResolver cr) {
+	public static void updateToGroup(String groupId, String contactId, String rawContactId, ContentResolver cr) {
 		   // this.removeFromGroup(personId, groupId);
 			Log.i(TAG, "updating contact to group: "+groupId+", raw contactId: "+rawContactId);
 			if(rawContactId == null) return;
-			if(DatabaseHelper.isContactInGroup(groupId, rawContactId, cr)) return;
+			if(DatabaseHelper.isContactInGroup(groupId, contactId, cr)) return;
 		    ContentValues values = new ContentValues();
 		    values.put(ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID,
 		            rawContactId);
