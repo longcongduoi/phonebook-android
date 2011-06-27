@@ -501,13 +501,15 @@ public class ContactManager {
     		users.add(new User(c.getName(), c.getNumber(), c.getId()));
     	Log.i(TAG, "There are "+users.size()+" users");
     	syncContacts(ctx, accountName, users, contacts, dataCursor);
+    	rawContactsCursor.requery();
     	for(User u : users)
-    		updateSharedBookContact(u, groupId, ctx, rawContactsCursor);
+    		updateGroupContact(u, groupId, ctx, rawContactsCursor);
 	    
 	}
 
 	private static void updateSharedBookContact(User u, String groupId, Context ctx, Cursor rawContactsCursor) {
 		String contactId = DatabaseHelper.getContactIdFromServerId(ctx.getContentResolver(), u.getUserId(), rawContactsCursor);
+		Log.i(TAG, "Got contactId: "+contactId+", from serverId: "+u.getUserId());
 		DatabaseHelper.updateToGroup(groupId, contactId, ctx.getContentResolver());
 	}
 
@@ -558,6 +560,7 @@ public class ContactManager {
     		users.add(new User(c.getName(), c.getNumber(), c.getId()));
     	Log.i(TAG, "There are "+users.size()+" users in group "+g.name);
     	syncContacts(ctx, name, users, contacts, dataCursor);
+    	rawContactsCursor.requery();
     	for(User u : users)
     		updateGroupContact(u, groupId, ctx, rawContactsCursor);
     	cursor.close();
@@ -566,9 +569,10 @@ public class ContactManager {
 
 	private static void updateGroupContact(User u, String groupId, Context ctx, Cursor rawContactsCursor) {
 		
-		String contactId = DatabaseHelper.getContactIdFromServerId(ctx.getContentResolver(), u.getUserId(), rawContactsCursor);
-		Log.i(TAG, "ServerId: "+u.getUserId()+", contactId: "+contactId);
+		String contactId = DatabaseHelper.getContactIdFromServerId(ctx.getContentResolver(), u.getUserId(), rawContactsCursor),
+			rawContactId = DatabaseHelper.getRawContactId(contactId, rawContactsCursor);
+		Log.i(TAG, "ServerId: "+u.getUserId()+", contactId: "+contactId+", rawContactId: "+rawContactId);
 		// if(contactId != null)
-			DatabaseHelper.updateToGroup(groupId, contactId, ctx.getContentResolver());
+			DatabaseHelper.updateToGroup(groupId, rawContactId, ctx.getContentResolver());
 	}
 }

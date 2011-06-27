@@ -50,7 +50,7 @@
     
     <application
         android:icon="@drawable/icon"
-        android:label="@string/label">
+        android:label="@string/label" android:debuggable="true">
 		<provider android:name="com.nbos.phonebook.contentprovider.Provider" android:authorities="com.nbos.phonebook.provider.defaultname" />        
         <!-- The authenticator service -->
         <service

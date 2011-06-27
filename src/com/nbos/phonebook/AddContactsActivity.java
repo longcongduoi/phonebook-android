@@ -22,7 +22,7 @@ import com.nbos.phonebook.value.ContactRow;
 
 public class AddContactsActivity extends ListActivity {
 
-	Cursor m_cursor;
+	Cursor m_cursor, rawContactsCursor;
 	String tag = "AddContactsActivity",
 		id, name;
 	
@@ -39,6 +39,8 @@ public class AddContactsActivity extends ListActivity {
 	    }
 	    setTitle("Phonebook: Add contacts to "+name);
 	    Log.i(tag, "Intent is: "+getIntent().getClass().getName());
+	    rawContactsCursor = DatabaseHelper.getRawContactsCursor(getApplicationContext().getContentResolver(), false);
+	    
 	    populateContacts();
 	    getListView().setTextFilterEnabled(true);
 	}
@@ -75,7 +77,7 @@ public class AddContactsActivity extends ListActivity {
         Cursor dataCursor = DatabaseHelper.getContactsInGroup(id, getContentResolver());
 	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
-	    		dataCursor,	new String[] {ContactsContract.Data.RAW_CONTACT_ID}
+	    		dataCursor,	new String[] {ContactsContract.Data.CONTACT_ID}
 	    );
 
         m_cursor = new MatrixCursor( 
@@ -108,9 +110,11 @@ public class AddContactsActivity extends ListActivity {
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		int currentPosition = this.getListView().getFirstVisiblePosition();
 		m_cursor.moveToPosition(position);
-		String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID));
-		Log.i(tag, "Contact id is: "+contactId);//+", raw contact id: "+contactId+", lookup key: "+lookupKey);
-		DatabaseHelper.addToGroup(this.id, contactId, getContentResolver());
+		String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID)),
+			rawContactId = DatabaseHelper.getRawContactId(contactId, rawContactsCursor);
+		
+		Log.i(tag, "Contact id is: "+contactId+", raw contactId is: "+rawContactId);//+", raw contact id: "+contactId+", lookup key: "+lookupKey);
+		DatabaseHelper.addToGroup(this.id, rawContactId, getContentResolver());
 		populateContacts();
 		this.setSelection(currentPosition);
 	}

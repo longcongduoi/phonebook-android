@@ -94,12 +94,12 @@ public class DatabaseHelper {
 
 	}
 
-	public static void addToGroup(String groupId, String contactId, ContentResolver cr) {
+	public static void addToGroup(String groupId, String rawContactId, ContentResolver cr) {
 		   // this.removeFromGroup(personId, groupId);
-			Log.i(TAG, "Added contact to group: "+groupId);
+			Log.i(TAG, "Added contact to group: "+groupId+", contactId: "+rawContactId);
 		    ContentValues values = new ContentValues();
 		    values.put(ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID,
-		            contactId);
+		            rawContactId);
 		    values.put(
 		            ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID,
 		            groupId);
@@ -113,13 +113,14 @@ public class DatabaseHelper {
 		    DatabaseHelper.setGroupDirty(groupId, cr);		    
 	}
 
-	public static void updateToGroup(String groupId, String contactId, ContentResolver cr) {
+	public static void updateToGroup(String groupId, String rawContactId, ContentResolver cr) {
 		   // this.removeFromGroup(personId, groupId);
-			Log.i(TAG, "updating contact to group: "+groupId+", contactId: "+contactId);
-			if(DatabaseHelper.isContactInGroup(groupId, contactId, cr)) return;
+			Log.i(TAG, "updating contact to group: "+groupId+", raw contactId: "+rawContactId);
+			if(rawContactId == null) return;
+			if(DatabaseHelper.isContactInGroup(groupId, rawContactId, cr)) return;
 		    ContentValues values = new ContentValues();
 		    values.put(ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID,
-		            contactId);
+		            rawContactId);
 		    values.put(
 		            ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID,
 		            groupId);
@@ -128,8 +129,9 @@ public class DatabaseHelper {
 		                    ContactsContract.CommonDataKinds.GroupMembership.MIMETYPE,
 		                    ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE);
 
-		    cr.insert(
+		    Uri uri = cr.insert(
 		            ContactsContract.Data.CONTENT_URI, values);
+		    Log.i(TAG, "insert uri is: "+uri);
 		    // DatabaseHelper.setGroupDirty(groupId, cr);		    
 	}
 
@@ -139,13 +141,14 @@ public class DatabaseHelper {
 	    		// null,
 	    	    new String[] {
 	    			ContactsContract.Contacts._ID, 
-	    			ContactsContract.Data.RAW_CONTACT_ID, 
+	    			ContactsContract.Data.CONTACT_ID,
+	    			ContactsContract.Data.RAW_CONTACT_ID,
 	    			ContactsContract.RawContacts._ID,
 	    			ContactsContract.Contacts.DISPLAY_NAME,
 	    			ContactsContract.CommonDataKinds.Photo.PHOTO
 	    		},
 	    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+" = "+groupId,
-	    	    null, ContactsContract.Data.RAW_CONTACT_ID);
+	    	    null, ContactsContract.Data.CONTACT_ID);
 	}
 	
 	public static boolean isContactInGroup(String groupId, String contactId,
@@ -155,13 +158,13 @@ public class DatabaseHelper {
 	    		// null,
 	    	    new String[] {
 	    			ContactsContract.Contacts._ID, 
-	    			ContactsContract.Data.RAW_CONTACT_ID, 
+	    			ContactsContract.Data.CONTACT_ID, 
 	    			ContactsContract.RawContacts._ID,
 	    			ContactsContract.Contacts.DISPLAY_NAME
 	    		},
 	    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+" = "+groupId
-	    	    +" and "+ContactsContract.Data.RAW_CONTACT_ID + " = "+contactId,
-	    	    null, ContactsContract.Data.RAW_CONTACT_ID);
+	    	    +" and "+ContactsContract.Data.CONTACT_ID + " = "+contactId,
+	    	    null, ContactsContract.Data.CONTACT_ID);
 	    Log.i(TAG, "isContactInGroup() groupId: "+groupId+", contactId: "+contactId+", num results: "+c.getCount());
 	    return c.getCount() > 0;
 	}
@@ -248,10 +251,12 @@ public class DatabaseHelper {
 	        String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
 	        String sync1 = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.SYNC1));
 	        String dirty = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
+	        // String accountName = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.ACCOUNT_NAME));
+	        // String accountType = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.ACCOUNT_TYPE));
 	        // String version = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.VERSION));
 	        String name = getContactName(contactsCursor, contactId); 
 	        String phoneNumber = getContactNumber(phonesCursor, contactId); 
-	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", dirty: "+dirty+", sync1: "+sync1);
+	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", dirty: "+dirty+", sync1: "+sync1);//+", accountName: "+accountName+", accountType: "+accountType);
 	        if(name == null || phoneNumber == null) continue;
 	        users.add(new User(name, phoneNumber, sourceId, contactId));
 	    } while(rawContactsCursor.moveToNext());
@@ -264,10 +269,11 @@ public class DatabaseHelper {
 	    String where = newOnly ? ContactsContract.RawContacts.DIRTY + " = 1" : null;
         final String[] PROJECTION =
             new String[] {
+        		ContactsContract.RawContacts._ID,
         		ContactsContract.RawContacts.CONTACT_ID, 
         		Constants.CONTACT_SERVER_ID, 
-        		ContactsContract.RawContacts.DIRTY
-        	};
+        		ContactsContract.RawContacts.DIRTY,
+        };
 	    
 		return cr.query(ContactsContract.RawContacts.CONTENT_URI, PROJECTION, where, null, ContactsContract.RawContacts._ID);	
 	}
@@ -304,6 +310,8 @@ public class DatabaseHelper {
 	    			ContactsContract.Groups.TITLE,
 	    			ContactsContract.Groups._ID,
 	    			ContactsContract.Groups.SOURCE_ID,
+	    			ContactsContract.Groups.ACCOUNT_NAME,
+	    			ContactsContract.Groups.ACCOUNT_TYPE,
 	    			ContactsContract.Groups.DIRTY
 	    		},
 	    		where, null, null);
@@ -335,6 +343,9 @@ public class DatabaseHelper {
 	    	String groupId = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups._ID));
 	    	String groupSourceId = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.SOURCE_ID));
 	    	String dirty = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.DIRTY));
+	    	String accName = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.ACCOUNT_NAME));
+	    	String accType = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.ACCOUNT_TYPE));
+	    	Log.i(TAG, "Group: "+name+", account: "+accName+", account type: "+accType);
 		    Cursor dataCursor = getContactsInGroup(new Integer(groupId).toString(), cr);
 		    Log.i(TAG, "There are "+dataCursor.getCount()+" contacts in group: "+groupId);
 	    	
@@ -343,7 +354,7 @@ public class DatabaseHelper {
 		    		new String[]
 		    		{ContactsContract.Contacts._ID},
 		    		dataCursor,
-		    		new String[] {ContactsContract.Data.RAW_CONTACT_ID}
+		    		new String[] {ContactsContract.Data.CONTACT_ID}
 		    );
 	        for (CursorJoiner.Result joinerResult : joiner) 
 	        {
@@ -467,6 +478,17 @@ public class DatabaseHelper {
 
     	return ctx.getContentResolver().query(Data.CONTENT_URI, PROJECTION, null, null, null);
     }
+
+	public static String getRawContactId(String contactId,
+			Cursor rawContactsCursor) {
+		rawContactsCursor.moveToFirst();
+		do {
+			String cId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
+			if(cId != null && cId.equals(contactId))
+				return rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts._ID));
+		} while(rawContactsCursor.moveToNext());
+		return null;
+	}
 
 	
 }

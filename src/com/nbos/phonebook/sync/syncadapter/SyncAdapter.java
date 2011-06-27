@@ -77,7 +77,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         
         // ContactManager.setDirtyContacts(mContext); // for testing
         Cursor dataCursor = null,
-        	rawContactsCursor = DatabaseHelper.getRawContactsCursor(mContext.getContentResolver(), false);
+        	rawContactsCursor = null;
         
         try {
              // use the account manager to request the credentials
@@ -95,6 +95,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
              ContactManager.syncContacts(mContext, account.name, users, contacts, dataCursor);
              contacts = DatabaseHelper.getContacts(false, mContext);
              dataCursor = DatabaseHelper.getData(mContext);
+             rawContactsCursor = DatabaseHelper.getRawContactsCursor(mContext.getContentResolver(), false);
              ContactManager.syncGroups(mContext, account.name, groups, contacts, dataCursor, rawContactsCursor);
              ContactManager.syncSharedBooks(mContext, account.name, sharedBooks, contacts, dataCursor, rawContactsCursor);
              

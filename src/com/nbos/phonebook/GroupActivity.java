@@ -137,7 +137,7 @@ public class GroupActivity extends ListActivity {
     	String [] args = { id, contactId  };
         int b = getContentResolver().delete(ContactsContract.Data.CONTENT_URI, 
         		ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+ " = ? "
-        		+ " and "+ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID +" = ? ", 
+        		+ " and "+ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID +" = ? ", 
         		args);
         
         Toast.makeText(this, "Removed", Toast.LENGTH_SHORT).show();
@@ -233,7 +233,7 @@ public class GroupActivity extends ListActivity {
  	    
  	    IntCursorJoiner joiner = new IntCursorJoiner(
  	    		contactsCursor, new String[] {ContactsContract.Contacts._ID} ,
- 	    		dataCursor, new String[] {ContactsContract.Data.RAW_CONTACT_ID}
+ 	    		dataCursor, new String[] {ContactsContract.Data.CONTACT_ID}
  	    );
          m_cursor = new MatrixCursor( 
          	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME}, 10);
