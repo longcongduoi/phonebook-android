@@ -490,5 +490,25 @@ public class DatabaseHelper {
 		return null;
 	}
 
+	public static void deleteContactFromGroup(String contactId, String groupId,
+			Context ctx) {
+		Log.i(TAG, "Deleting contact from group: "+groupId+", contactId: "+contactId);
+	    ContentValues values = new ContentValues();
+	    values.put(ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID,
+	            contactId);
+	    values.put(
+	            ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID,
+	            groupId);
+
+	    ctx.getContentResolver().delete(
+	            ContactsContract.Data.CONTENT_URI, 
+	            ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID
+	            + " = ? and "
+	            + ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID
+	            +" = ?",
+	            new String[] {groupId, contactId});
+		
+	}
+
 	
 }

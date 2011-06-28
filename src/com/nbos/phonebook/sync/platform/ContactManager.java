@@ -17,7 +17,9 @@
 package com.nbos.phonebook.sync.platform;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -43,8 +45,8 @@ import com.nbos.phonebook.R;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
-import com.nbos.phonebook.sync.client.User;
 import com.nbos.phonebook.sync.client.Group;
+import com.nbos.phonebook.sync.client.User;
 
 /**
  * Class for managing contacts sync related mOperations
@@ -497,17 +499,28 @@ public class ContactManager {
 	    }
 	    cursor.moveToFirst();
 	    String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID));
-	    
-    	Log.i(TAG, "Update share book, id: "+groupId);
+	    // get the group cursor to remove deleted contacts
+	    Cursor groupCursor = DatabaseHelper.getContactsInGroup(groupId, ctx.getContentResolver());
+    	
+	    Log.i(TAG, "Update share book, id: "+groupId);
     	List<User> users = new ArrayList<User>();
     	for(Contact c : sharedBook.contacts)
     		users.add(new User(c.getName(), c.getNumber(), c.getId()));
     	Log.i(TAG, "There are "+users.size()+" users");
     	syncContacts(ctx, accountName, users, contacts, dataCursor);
     	rawContactsCursor.requery();
+    	Set<String> contactIds = new HashSet<String>();
     	for(User u : users)
-    		updateGroupContact(u, groupId, ctx, rawContactsCursor);
-	    
+    		contactIds.add(updateGroupContact(u, groupId, ctx, rawContactsCursor));
+    	
+    	Log.i(TAG, "Contact ids in sharebook: "+contactIds);
+    	groupCursor.moveToFirst();
+    	do {
+    		String contactId = groupCursor.getString(groupCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID));
+    		if(!contactIds.contains(contactId))
+    			DatabaseHelper.deleteContactFromGroup(contactId, groupId, ctx);
+    	} while(groupCursor.moveToNext());
+	    // dele
 	}
 
 	public static void updateGroup(JSONObject group, Context context) throws JSONException {
@@ -564,12 +577,13 @@ public class ContactManager {
 	    
 	}
 
-	private static void updateGroupContact(User u, String groupId, Context ctx, Cursor rawContactsCursor) {
+	private static String updateGroupContact(User u, String groupId, Context ctx, Cursor rawContactsCursor) {
 		
 		String contactId = DatabaseHelper.getContactIdFromServerId(ctx.getContentResolver(), u.getUserId(), rawContactsCursor),
 			rawContactId = DatabaseHelper.getRawContactId(contactId, rawContactsCursor);
 		Log.i(TAG, "ServerId: "+u.getUserId()+", contactId: "+contactId+", rawContactId: "+rawContactId);
 		// if(contactId != null)
 			DatabaseHelper.updateToGroup(groupId, contactId, rawContactId, ctx.getContentResolver());
+		return contactId;
 	}
 }
