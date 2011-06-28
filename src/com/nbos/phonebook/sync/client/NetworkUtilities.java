@@ -334,8 +334,8 @@ public class NetworkUtilities {
             }
             
             Log.i(TAG, "There are "+sharedBooks.length()+" shared books");
-            for (int i = 0; i < sharedBooks.length(); i++) { // server is giving wrong json
-                books.add(Group.valueOf(sharedBooks.getJSONArray(i).getJSONObject(0)));
+            for (int i = 0; i < sharedBooks.length(); i++) { 
+                books.add(Group.valueOf(sharedBooks.getJSONObject(i)));
             }
 
         } else {
