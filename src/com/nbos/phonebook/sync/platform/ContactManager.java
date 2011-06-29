@@ -77,7 +77,7 @@ public class ContactManager {
         final Cursor rawContactsCursor =
             resolver.query(RawContacts.CONTENT_URI, UserIdQuery.PROJECTION,
                 null, null, null);
-        Log.i(TAG, "There are "+rawContactsCursor.getCount()+" raw contacts");
+        Log.i(TAG, "There are "+rawContactsCursor.getCount()+" raw contacts, num columns: "+rawContactsCursor.getColumnCount());
         Log.i(TAG, "There are "+contacts.size()+" contacts");
         // syncSharedBooks(context);
         Log.d(TAG, "In SyncContacts");
@@ -85,7 +85,9 @@ public class ContactManager {
             // userId = Integer.parseInt(user.getUserId());
             // Check to see if the contact needs to be inserted or updated
             rawContactId = lookupRawContact(resolver, user, rawContactsCursor, contacts);
-            Log.d(TAG, "Raw contact id is: "+rawContactId);
+            boolean dirty = isDirtyContact(rawContactId, rawContactsCursor); 
+            Log.d(TAG, "Raw contact id is: "+rawContactId+", dirty: "+dirty);
+            if(dirty) continue;
             if (rawContactId != 0) {
                 if (!user.isDeleted()) {
                     // update contact
@@ -110,6 +112,18 @@ public class ContactManager {
         }
         batchOperation.execute();
     }
+
+	private static boolean isDirtyContact(long rawContactId, Cursor rawContactsCursor) {
+		if(rawContactsCursor.getCount() == 0) return false;
+		rawContactsCursor.moveToFirst();
+		do {
+			Long rId = rawContactsCursor.getLong(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts._ID));
+			if(rId != rawContactId) continue;
+			String dirty = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
+			if(dirty.equals("1")) return true;
+		} while(rawContactsCursor.moveToNext());
+		return false;
+	}
 
 	private static long lookupRawContact(ContentResolver resolver, User user, Cursor rawContactsCursor, List<User> contacts) {
 		if(rawContactsCursor.getCount() == 0) return 0;
@@ -380,7 +394,7 @@ public class ContactManager {
     private interface UserIdQuery {
         public final static String[] PROJECTION =
             // new String[] {RawContacts._ID, RawContacts.SOURCE_ID};
-        	new String[] {RawContacts._ID, Constants.CONTACT_SERVER_ID};
+        	new String[] {RawContacts._ID, Constants.CONTACT_SERVER_ID, RawContacts.DIRTY};
         public final static int COLUMN_ID = 0;
 
         public static final String SELECTION =
@@ -515,6 +529,7 @@ public class ContactManager {
     	
     	Log.i(TAG, "Contact ids in sharebook: "+contactIds);
     	groupCursor.moveToFirst();
+    	if(groupCursor.getCount() > 0)
     	do {
     		String contactId = groupCursor.getString(groupCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID));
     		if(!contactIds.contains(contactId))
