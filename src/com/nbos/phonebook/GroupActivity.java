@@ -42,7 +42,7 @@ import com.nbos.phonebook.value.ContactRow;
 
 public class GroupActivity extends ListActivity {
 
-	String id, name;
+	String id, name, owner;
 	static String tag = "GroupActivity";
 	MatrixCursor m_cursor;
     List<byte[]> photos;
@@ -58,6 +58,8 @@ public class GroupActivity extends ListActivity {
 	    {
 	    	id = extras.getString("id");
 	    	name = extras.getString("name");
+	    	owner = extras.getString("owner");
+	    	Log.i(tag, "Owner is: "+owner);
 	    }
 		queryGroup();
 		registerForContextMenu(getListView());  
@@ -66,6 +68,7 @@ public class GroupActivity extends ListActivity {
 
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+		if(owner != null) return;
 		super.onCreateContextMenu(menu, v, menuInfo);
 	    // Get the info on which item was selected
 	    AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
@@ -172,6 +175,7 @@ public class GroupActivity extends ListActivity {
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
+		if(owner != null) return false;
 	    MenuInflater inflater = getMenuInflater();
 	    inflater.inflate(R.menu.group_menu, menu);
 	    return true;
@@ -182,7 +186,10 @@ public class GroupActivity extends ListActivity {
 	
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
-		Log.i(tag, "Clicked ..");
+	    m_cursor.moveToPosition(position);
+	    String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID));
+	    Log.i(tag, "position is: "+position+", contactId: "+contactId+", name: "+name);
+		callFromGroup(contactId);
 	}
 
 
@@ -192,7 +199,10 @@ public class GroupActivity extends ListActivity {
 	ImageCursorAdapter adapter;
 	
     private void queryGroup() {
+    	if(owner == null) // 
     		setTitle("Group: "+name+" ("+numContacts()+" contacts sharing with)");
+    	else
+    		setTitle("Group: "+name+" ("+owner+" is sharing)");
     	dataCursor = DatabaseHelper.getContactsInGroup(id, this.getContentResolver());
   	   	getContactsFromGroupCursor("");
         String[] fields = new String[] {
