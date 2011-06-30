@@ -1,5 +1,7 @@
 package com.nbos.phonebook;
 
+import java.util.Set;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -32,24 +34,29 @@ public class IncomingCallReceiver extends BroadcastReceiver {
 				callState = "IDLE";
 				break;
 			case TelephonyManager.CALL_STATE_RINGING:
+				String groups = DatabaseHelper.getGroupNamesFromPhoneNumber(incomingNumber, mContext);
+				if(groups == null) break;
+				Toast.makeText(mContext, "Phonebooks: " + groups, Toast.LENGTH_LONG).show();
+
 				// -- check international call or not.
-				if (incomingNumber.startsWith("00")) {
+				/*if (incomingNumber.startsWith("00")) {
 					Toast.makeText(mContext,"International Call- " + incomingNumber,Toast.LENGTH_LONG).show();
 					callState = "International - Ringing (" + incomingNumber+ ")";
 				} else {
 					Toast.makeText(mContext, "Local Call - " + incomingNumber, Toast.LENGTH_LONG).show();
 					callState = "Local - Ringing (" + incomingNumber + ")";
-				}
+				}*/
 				break;
 			case TelephonyManager.CALL_STATE_OFFHOOK:
 				String dialingNumber = mIntent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
+				/*if(dialingNumber == null) break;
 				if (dialingNumber.startsWith("00")) {
 					Toast.makeText(mContext,"International - " + dialingNumber,Toast.LENGTH_LONG).show();
 					callState = "International - Dialing (" + dialingNumber+ ")";
 				} else {
 					Toast.makeText(mContext, "Local Call - " + dialingNumber,Toast.LENGTH_LONG).show();
 					callState = "Local - Dialing (" + dialingNumber + ")";
-				}
+				}*/
 				break;
 			}
 			Log.i(">>>Broadcast", "onCallStateChanged " + callState);

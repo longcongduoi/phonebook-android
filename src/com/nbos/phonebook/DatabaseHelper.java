@@ -1,7 +1,9 @@
 package com.nbos.phonebook;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -508,6 +510,76 @@ public class DatabaseHelper {
 	            +" = ?",
 	            new String[] {groupId, contactId});
 		
+	}
+
+	public static String getGroupNamesFromPhoneNumber(String phoneNumber, Context context) {
+		Log.i(TAG, "Getting groups for phone number: "+phoneNumber);
+		if(phoneNumber == null) return null;
+    	Cursor phonesCursor = context.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
+                new String[] {
+        		ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+        		ContactsContract.CommonDataKinds.Phone.NUMBER }, 
+        		ContactsContract.CommonDataKinds.Phone.NUMBER +" = ? ", 
+                new String[] { phoneNumber  }, null);
+		Log.i(TAG, "There are "+phonesCursor.getCount()+" contact entries");
+		if(phonesCursor.getCount() == 0) return null;
+		phonesCursor.moveToFirst();
+		String contactId = phonesCursor.getString(phonesCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
+
+		Cursor contactGroupsCursor = context.getContentResolver()
+    		.query(ContactsContract.Data.CONTENT_URI, 
+	    	    new String[] {
+    				ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID, 
+    				ContactsContract.Data.CONTACT_ID },
+    				ContactsContract.Data.CONTACT_ID + " = ? "
+    				+ " and "+ContactsContract.CommonDataKinds.GroupMembership.MIMETYPE
+    				+ " = ? ",
+                new String[] { contactId, ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE }, 
+                ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID);
+    	Log.i(TAG, "contactId: "+contactId+", is in "+contactGroupsCursor.getCount()+" groups");
+    	contactGroupsCursor.moveToFirst();
+    	String groupIdsIn = "(";
+    	int count = 0, num = contactGroupsCursor.getCount();
+    	do {
+    		
+    		String groupId = contactGroupsCursor.getString(contactGroupsCursor.getColumnIndex(
+    				ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID));
+    		Log.i(TAG, "Group id: "+groupId);
+    		groupIdsIn += groupId;
+    		if(count < num -1) 
+    			groupIdsIn += ", ";
+    		count++;
+    			
+    	} while(contactGroupsCursor.moveToNext());
+    	groupIdsIn += ")";
+    	Log.i(TAG, "groups in = "+groupIdsIn);
+    	Cursor groupsCursor = context.getContentResolver().query(
+    			ContactsContract.Groups.CONTENT_URI, 
+    			new String[] {
+    				ContactsContract.Groups.TITLE
+    			},
+	    		ContactsContract.Groups.DELETED + " = 0 and " 
+    			+ ContactsContract.Groups._ID + " in "+groupIdsIn, null, null);
+    	Log.i(TAG, "There are "+groupsCursor.getCount()+" groups");
+    	if(groupsCursor.getCount() == 0) return null;
+    	Set<String> groups = new HashSet<String>();
+    	
+    	 
+    	groupsCursor.moveToFirst();
+    	do {
+    		String groupName = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.TITLE));
+    		groups.add(groupName);
+    	} while(groupsCursor.moveToNext());
+    	
+    	count = 0; num = groups.size();
+    	String groupsString = "";
+    	for(String g : groups) {
+    		groupsString += g;
+    		if(count < num - 1) groupsString += ", ";
+    		count ++;
+    	}
+    	Log.i(TAG, "return groups: "+groupsString);
+		return groupsString;
 	}
 
 	
