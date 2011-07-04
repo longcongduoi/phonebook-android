@@ -102,7 +102,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
              NetworkUtilities.sendFriendUpdates(account, authtoken,
                      mLastUpdated, true, mContext);
              mLastUpdated = new Date();                     
-             Widget.AppService.message = "Last updated: "+DateFormat.getInstance().format(mLastUpdated);
+             Widget.AppService.message = "Phonebook last updated: "+DateFormat.getInstance().format(mLastUpdated);
              mContext.startService(new Intent(mContext, AppService.class));
             // update the last synced date.
             
