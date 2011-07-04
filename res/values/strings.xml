@@ -113,5 +113,8 @@
     <string name="add_contact_to_share_with">Select contacts to share with</string>
     <string name="no_contacts_to_share_with">There are no contacts to share this group with</string>
     <string name="tel_number">Phone number</string>
+    <string name="hello_widget">Hello this is my widget</string>
+    
+    <string name="widget_loading">Loading phonebook</string>
     
 </resources>

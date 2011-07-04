@@ -14,21 +14,10 @@
      limitations under the License.
 -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/widget"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    style="@style/WidgetBackground">
-
-    <TextView  
-        android:id="@+id/widget_message"
-        android:layout_width="fill_parent" 
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dip"
-        android:padding="10dip"
-        android:gravity="center"
-        android:text="@string/widget_loading"
-        style="@style/Text.Loading" />
-
-</LinearLayout>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The stateful background drawable for a widget -->
+    <item android:state_window_focused="false" android:drawable="@drawable/widget_bg_normal" />
+    <item android:state_pressed="true" android:drawable="@drawable/widget_bg_pressed" />
+    <item android:state_focused="true" android:drawable="@drawable/widget_bg_selected" />
+    <item android:drawable="@drawable/widget_bg_normal" />
+</selector>

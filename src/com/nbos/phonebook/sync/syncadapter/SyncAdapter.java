@@ -17,7 +17,7 @@
 package com.nbos.phonebook.sync.syncadapter;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -31,22 +31,22 @@ import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
-import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SyncResult;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.util.Log;
 
 import com.nbos.phonebook.DatabaseHelper;
+import com.nbos.phonebook.Widget;
+import com.nbos.phonebook.Widget.AppService;
 import com.nbos.phonebook.sync.Constants;
+import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.NetworkUtilities;
 import com.nbos.phonebook.sync.client.User;
 import com.nbos.phonebook.sync.client.User.Status;
 import com.nbos.phonebook.sync.platform.ContactManager;
-import com.nbos.phonebook.sync.client.Group;
 
 /**
  * SyncAdapter implementation for syncing sample SyncAdapter contacts to the
@@ -101,8 +101,11 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
              
              NetworkUtilities.sendFriendUpdates(account, authtoken,
                      mLastUpdated, true, mContext);
+             mLastUpdated = new Date();                     
+             Widget.AppService.message = "Last updated: "+DateFormat.getInstance().format(mLastUpdated);
+             mContext.startService(new Intent(mContext, AppService.class));
             // update the last synced date.
-            mLastUpdated = new Date();
+            
             // update platform contacts.
             // fetch and update status messages for all the synced users.
             // statuses = NetworkUtilities.fetchFriendStatuses(account, authtoken);

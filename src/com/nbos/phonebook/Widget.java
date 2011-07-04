@@ -86,6 +86,8 @@ public class Widget extends AppWidgetProvider {
 	public static class AppService extends Service {
 
 		String tag = "MyAppService";
+		static String [] messages = {};
+		public static String message = "";
 		
 	    @Override
 	    public void onStart(Intent intent, int startId) {
@@ -102,6 +104,7 @@ public class Widget extends AppWidgetProvider {
 			Toast.makeText(context, "onUpdate", Toast.LENGTH_SHORT).show();
 			Log.i(tag, "update my widget");
 			RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget);
+			Log.i(tag, "got remote widget, message is: "+message);
 			// Intent configIntent = new Intent(context, StartActivity.class);
 			// configIntent.setAction(MyAppWidgetProvider.ACTION_WIDGET_CONFIGURE);
 	 
@@ -110,10 +113,11 @@ public class Widget extends AppWidgetProvider {
 			active.putExtra("msg", "Message for Button 1");
 			//when you will click button1 the message "Message for Button 1" will appear as a notification
 	//you can do whatever you want anyway on the press of this button
-			PendingIntent actionPendingIntent = PendingIntent.getBroadcast(context, 0, active, 0);
+			// PendingIntent actionPendingIntent = PendingIntent.getBroadcast(context, 0, active, 0);
 			// PendingIntent configPendingIntent = PendingIntent.getActivity(context, 0, configIntent, 0);
-	 
-			remoteViews.setOnClickPendingIntent(R.id.button_one, actionPendingIntent);
+			
+			remoteViews.setTextViewText(R.id.widget_message, message);
+			// remoteViews.setOnClickPendingIntent(R.id.button_one, actionPendingIntent);
 			// remoteViews.setOnClickPendingIntent(R.id.button_two, configPendingIntent);
 	 
 			// appWidgetManager.updateAppWidget(appWidgetIds, remoteViews);
