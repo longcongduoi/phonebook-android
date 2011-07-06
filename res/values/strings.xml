@@ -117,4 +117,6 @@
     
     <string name="widget_loading">Loading phonebook</string>
     
+    <string name="confirm_phone_message">An SMS will be sent to the above phone. You will need to enter the confirmation code in the message to complete your registration or sign on.</string>
+    
 </resources>

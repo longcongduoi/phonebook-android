@@ -189,6 +189,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         Log.i(TAG, "finishConfirmCredentials()");
         final Account account = new Account(mUsername, Constants.ACCOUNT_TYPE);
         mAccountManager.setPassword(account, mPassword);
+        mAccountManager.setUserData(account, Constants.PHONE_NUMBER_KEY, mPhone);
         final Intent intent = new Intent();
         intent.putExtra(AccountManager.KEY_BOOLEAN_RESULT, result);
         setAccountAuthenticatorResult(intent.getExtras());
@@ -212,6 +213,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
 
         if (mRequestNewAccount) {
             mAccountManager.addAccountExplicitly(account, mPassword, null);
+            mAccountManager.setUserData(account, Constants.PHONE_NUMBER_KEY, mPhone);            
             // Set contacts sync for this account.
             ContentResolver.setSyncAutomatically(account,
                 ContactsContract.AUTHORITY, true);

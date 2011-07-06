@@ -32,7 +32,8 @@ public class Constants {
         // "com.example.android.samplesync";
 
 	public static final String SHARE_BOOK_PROVIDER = "content://com.nbos.phonebook.provider.defaultname/book",
-		CONTACT_SERVER_ID = ContactsContract.RawContacts.SYNC1;
+		CONTACT_SERVER_ID = ContactsContract.RawContacts.SYNC1,
+		PHONE_NUMBER_KEY = "ph";
     
 
 }

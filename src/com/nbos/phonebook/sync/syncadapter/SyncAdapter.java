@@ -81,6 +81,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         
         try {
              // use the account manager to request the credentials
+        	String phoneNumber = mAccountManager.getUserData(account, Constants.PHONE_NUMBER_KEY);
+        	Log.i(TAG, "phone number is: "+phoneNumber);
              authtoken =
                 mAccountManager.blockingGetAuthToken(account,
                     Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
