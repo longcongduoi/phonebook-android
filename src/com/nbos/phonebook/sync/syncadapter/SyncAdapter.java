@@ -87,6 +87,11 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 mAccountManager.blockingGetAuthToken(account,
                     Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
              // fetch updates from the sample service over the cloud
+             boolean valid = NetworkUtilities.checkValidAccount(account, authtoken, 
+            		 mAccountManager.getUserData(account, Constants.PHONE_NUMBER_KEY));
+             // start the confirmation activity if not valid
+             
+             Log.i(TAG, "valid account is: "+valid);
              List<User> contacts = DatabaseHelper.getContacts(false, mContext);
              dataCursor = DatabaseHelper.getData(mContext);
              Object[] update = NetworkUtilities.fetchFriendUpdates(account, authtoken,

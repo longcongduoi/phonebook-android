@@ -69,6 +69,7 @@ public class NetworkUtilities {
     public static final String AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register";
     public static final String 
+    	CHECK_VALID_ACCOUNT_URI = BASE_URL + "/mobile/valid",
     	FETCH_FRIEND_UPDATES_URI = BASE_URL + "/mobile/contacts",
         SEND_CONTACT_UPDATES_URI = BASE_URL + "/mobile/updateContacts",
         SEND_GROUP_UPDATES_URI = BASE_URL + "/mobile/updateGroups",
@@ -425,7 +426,7 @@ public class NetworkUtilities {
         	params.add(new BasicNameValuePair("shareBookId_"+index, book.groupId));
         	params.add(new BasicNameValuePair("shareContactId_"+index, book.contactId));
         }
-        JSONArray  bookUpdates = post(SEND_SHARED_BOOK_UPDATES_URI, params);
+        JSONArray  bookUpdates = new JSONArray(post(SEND_SHARED_BOOK_UPDATES_URI, params));
         for (int i = 0; i < bookUpdates.length(); i++)
         	ContactManager.updateBook(bookUpdates.getJSONObject(i), mContext);
         ContactManager.resetDirtySharedBooks(mContext);
@@ -451,13 +452,12 @@ public class NetworkUtilities {
         		params.add(new BasicNameValuePair("serverId_"+index+"_"+cIndex, bContact.getServerId()));
         	}
         }
-        JSONArray groupUpdates = post(SEND_GROUP_UPDATES_URI, params);
+        JSONArray groupUpdates = new JSONArray(post(SEND_GROUP_UPDATES_URI, params));
         for (int i = 0; i < groupUpdates.length(); i++)
         	ContactManager.updateGroup(groupUpdates.getJSONObject(i), mContext);
         ContactManager.resetDirtyGroups(mContext);
 
 	}
-
 
 	private static void sendContactUpdates(List<User> contacts) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
@@ -473,10 +473,19 @@ public class NetworkUtilities {
         	params.add(new BasicNameValuePair("contactId_"+index, user.getContactId()));
         }
 		
-        JSONArray contactUpdates = post(SEND_CONTACT_UPDATES_URI, params);
+        JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
         for (int i = 0; i < contactUpdates.length(); i++)
         	ContactManager.updateContact(contactUpdates.getJSONObject(i), mContext);
         ContactManager.resetDirtyContacts(mContext);
+	}
+
+	public static boolean checkValidAccount(Account account, String authtoken, String phone) throws ClientProtocolException, JSONException, IOException {
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair(PARAM_USERNAME, account.name));
+        params.add(new BasicNameValuePair(PARAM_PASSWORD, authtoken));
+        params.add(new BasicNameValuePair(PARAM_PHONE_NUMBER, phone));
+        JSONObject response = new JSONObject(post(CHECK_VALID_ACCOUNT_URI, params));
+        return response.getBoolean("valid");
 	}
 
 	private static List<NameValuePair> getAuthParams() {
@@ -500,7 +509,7 @@ public class NetworkUtilities {
 
 	}
 	
-	public static JSONArray post(String url, List<NameValuePair> params) throws ClientProtocolException, IOException, JSONException {
+	public static String post(String url, List<NameValuePair> params) throws ClientProtocolException, IOException, JSONException {
         HttpEntity entity = new UrlEncodedFormEntity(params);
         final HttpPost post = new HttpPost(url);
         Log.i(TAG, "Sending to: "+url);
@@ -510,6 +519,7 @@ public class NetworkUtilities {
         final HttpResponse resp = mHttpClient.execute(post);
         final String response = EntityUtils.toString(resp.getEntity());
         Log.i(TAG, "Response is: "+response);
-        return new JSONArray(response);
+        return response;
 	}
+
 }
