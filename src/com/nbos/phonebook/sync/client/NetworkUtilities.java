@@ -257,11 +257,15 @@ public class NetworkUtilities {
             try {
                 resp = mHttpClient.execute(post);
                 if (resp.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                    // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                        Log.i(TAG, "Successful authentication");
-                        Log.i(TAG, "data: "+EntityUtils.toString(resp.getEntity()));
-                    //}
-                    sendValidationResult(true, "Successful authentication", handler, context);
+                	String response = EntityUtils.toString(resp.getEntity());
+                	Log.i(TAG, "Successful authentication");
+                    Log.i(TAG, "data: "+response);
+                    JSONObject result = new JSONObject(response);
+                    boolean validated = result.getBoolean("validated");
+                    if(validated)
+                    	sendValidationResult(true, "Validation was successful", handler, context);
+                    else
+                    	sendValidationResult(false, "Validation was not successful", handler, context);
                     return true;
                 } else {
                     // if (Log.isLoggable(TAG, Log.VERBOSE)) {
