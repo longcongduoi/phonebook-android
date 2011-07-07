@@ -70,7 +70,8 @@ public class NetworkUtilities {
         "http://10.9.8.29:8080/phonebook";
     public static final String AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
-    	VALIDATION_URI = BASE_URL + "/mobile/validate";
+    	VALIDATION_URI = BASE_URL + "/mobile/validate",
+    	NEW_VALIDATION_CODE_URI = BASE_URL + "/mobile/newValidationCode";
     public static final String 
     	CHECK_VALID_ACCOUNT_URI = BASE_URL + "/mobile/valid",
     	FETCH_FRIEND_UPDATES_URI = BASE_URL + "/mobile/contacts",
@@ -280,6 +281,50 @@ public class NetworkUtilities {
                 return false;
             } 
         }
+
+    
+    public static boolean newValidateCode(String username, String password, String ph,
+            Handler handler, final Context context) {
+        	Log.i(TAG, "Validate, ph: "+ph);
+            final HttpResponse resp;
+
+            final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+            params.add(new BasicNameValuePair(PARAM_USERNAME, username));
+            params.add(new BasicNameValuePair(PARAM_PASSWORD, password));
+            params.add(new BasicNameValuePair(PARAM_PHONE_NUMBER, ph));
+            HttpEntity entity = null;
+            try {
+                entity = new UrlEncodedFormEntity(params);
+            } catch (final UnsupportedEncodingException e) {
+                // this should never happen.
+                throw new AssertionError(e);
+            }
+            
+            final HttpPost post = new HttpPost(NEW_VALIDATION_CODE_URI);
+            post.addHeader(entity.getContentType());
+            post.setEntity(entity);
+            maybeCreateHttpClient();
+            Log.i(TAG, "Posting to: "+NEW_VALIDATION_CODE_URI);
+
+            try {
+                resp = mHttpClient.execute(post);
+                if (resp.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                	String response = EntityUtils.toString(resp.getEntity());
+                	Log.i(TAG, "Successful authentication");
+                    Log.i(TAG, "data: "+response);
+                    sendNewValidationCodeResult(true, "New validation code was sent to "+ph, handler, context);
+                    return true;
+                } else {
+                    Log.v(TAG, "Error authenticating: " + resp.getStatusLine());
+                    sendNewValidationCodeResult(false, "Error authenticating: " + resp.getStatusLine(), handler, context);
+                    return false;
+                }
+            } catch (final Exception e) {
+                Log.v(TAG, "Exception: ", e);
+                sendNewValidationCodeResult(false, "Exception: "+e.getMessage(), handler, context);
+                return false;
+            } 
+        }
     
     /**
      * Sends the authentication response from server back to the caller main UI
@@ -311,6 +356,19 @@ public class NetworkUtilities {
             handler.post(new Runnable() {
                 public void run() {
                     ((ValidationActivity) context).onValidationResult(result, message);
+                }
+            });
+        }
+
+    private static void sendNewValidationCodeResult(final Boolean result, final String message, final Handler handler,
+            final Context context) {
+        	Log.i(TAG, "sendValidationResult("+result+")");
+            if (handler == null || context == null) {
+                return;
+            }
+            handler.post(new Runnable() {
+                public void run() {
+                    ((ValidationActivity) context).onNewValidationCodeResult(result, message);
                 }
             });
         }
@@ -594,6 +652,18 @@ public class NetworkUtilities {
         final Runnable runnable = new Runnable() {
             public void run() {
                 validate(userName, password, phoneNumber, validationCode, handler, context);
+            }
+        };
+        // run on background thread.
+        return NetworkUtilities.performOnBackgroundThread(runnable);
+	}
+
+	public static Thread attemptNewValidateCode(final String userName,
+			final String password, final String phoneNumber, final Handler handler,
+			final Context context) {
+        final Runnable runnable = new Runnable() {
+            public void run() {
+                newValidateCode(userName, password, phoneNumber, handler, context);
             }
         };
         // run on background thread.

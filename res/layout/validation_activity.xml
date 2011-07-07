@@ -46,9 +46,9 @@
                 android:inputType="textEmailAddress" android:id="@+id/valid_code_edit"/>
             <TextView android:text="@string/empty" android:layout_width="wrap_content" android:id="@+id/validation_message" android:layout_marginBottom="5dip" android:layout_height="wrap_content" android:textAppearance="?android:attr/textAppearanceSmall"></TextView>
             <Button android:layout_width="wrap_content" android:minWidth="100dip" android:onClick="handleValidate" android:layout_height="wrap_content" android:text="@string/validate" android:layout_gravity="left" android:id="@+id/validate_button"></Button>
-            <TextView android:text="@string/empty" android:id="@+id/message_bottom" android:layout_marginBottom="5dip" android:textAppearance="?android:attr/textAppearanceSmall" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
             <TextView android:text="@string/valid_get_new_code_text" android:layout_width="wrap_content" android:id="@+id/textView1" android:layout_height="wrap_content"></TextView>
             <Button android:onClick="handleGetNewValidation" android:layout_height="wrap_content" android:layout_width="wrap_content" android:text="@string/valid_get_new_code" android:id="@+id/valid_get_new_button"></Button>
+            <TextView android:text="@string/empty" android:layout_width="wrap_content" android:layout_marginBottom="5dip" android:layout_height="wrap_content" android:textAppearance="?android:attr/textAppearanceSmall" android:id="@+id/new_validation_message"></TextView>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

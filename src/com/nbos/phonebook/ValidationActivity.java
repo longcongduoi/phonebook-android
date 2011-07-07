@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
 import com.nbos.phonebook.sync.client.NetworkUtilities;
@@ -19,7 +20,7 @@ import com.nbos.phonebook.sync.client.NetworkUtilities;
 public class ValidationActivity extends Activity {
 
 	static String TAG = "ValidationActivity";
-	TextView messageText;
+	TextView messageText, newValidationCodeMessage;
 	EditText validationCodeEdit;
 	String userName, password, phoneNumber;
 	private final Handler mHandler = new Handler();
@@ -30,6 +31,7 @@ public class ValidationActivity extends Activity {
 	    super.onCreate(savedInstanceState);
 	    setContentView(R.layout.validation_activity);
         messageText = (TextView) findViewById(R.id.validation_message);
+        newValidationCodeMessage = (TextView) findViewById(R.id.new_validation_message);
         validationCodeEdit = (EditText) findViewById(R.id.valid_code_edit);
         final Intent intent = getIntent();
         userName = intent.getStringExtra(NetworkUtilities.PARAM_USERNAME);
@@ -75,6 +77,12 @@ public class ValidationActivity extends Activity {
 
 	public void handleGetNewValidation(View view) {
 		Log.i(TAG, "Handle get new validation");
+        showProgress();
+        // Start authenticating...
+        mValidThread =
+            NetworkUtilities.attemptNewValidateCode(userName, password, phoneNumber, mHandler,
+                ValidationActivity.this);
+		
 	}
     /**
      * Shows the progress UI for a lengthy operation.
@@ -93,7 +101,19 @@ public class ValidationActivity extends Activity {
         hideProgress();
         messageText.setText(message);
         if(result) {
+        	Toast.makeText(this, "Validation of your account was successful", Toast.LENGTH_LONG).show();
+        	finish();
+        }
+    }
+    
+    public void onNewValidationCodeResult(boolean result, String message) {
+        Log.i(TAG, "onNewValidationCodeResult(" + result + ")");
+        // Hide the progress dialog
+        hideProgress();
+        newValidationCodeMessage.setText(message);
+        if(result) {
         	// messageText.
         }
     }
+    
 }
