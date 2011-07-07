@@ -119,4 +119,12 @@
     
     <string name="confirm_phone_message">An SMS will be sent to the above phone. You will need to enter the confirmation code in the message to complete your registration or sign on.</string>
     
+    <string name="valid_key_label">Please enter the validation code from the SMS</string>
+    
+    <string name="validate">Validate</string>
+    
+    <string name="valid_get_new_code">SMS me a new validation code</string>
+    
+    <string name="valid_get_new_code_text">If you have not receieved an SMS, click below to get another SMS with the validation code.</string>
+    
 </resources>

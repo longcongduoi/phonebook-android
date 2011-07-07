@@ -117,6 +117,7 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider" />
         </receiver>
         <service android:name="Widget$AppService" />
+        <activity android:name="ValidationActivity"></activity>
         
     </application>
     <uses-sdk

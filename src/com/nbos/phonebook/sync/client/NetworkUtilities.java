@@ -50,6 +50,7 @@ import android.os.Handler;
 import android.util.Log;
 
 import com.nbos.phonebook.DatabaseHelper;
+import com.nbos.phonebook.ValidationActivity;
 import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
 import com.nbos.phonebook.sync.platform.ContactManager;
 
@@ -61,13 +62,15 @@ public class NetworkUtilities {
     public static final String PARAM_USERNAME = "username";
     public static final String PARAM_PASSWORD = "password";
     public static final String PARAM_PHONE_NUMBER = "ph";
+    public static final String PARAM_VALIDATION_CODE = "valid";
     public static final String PARAM_UPDATED = "timestamp";
     public static final String USER_AGENT = "AuthenticationService/1.0";
     public static final int REGISTRATION_TIMEOUT = 30 * 1000; // ms
     public static final String BASE_URL =
         "http://10.9.8.29:8080/phonebook";
     public static final String AUTH_URI = BASE_URL + "/mobile/index",
-    	REG_URL = BASE_URL + "/mobile/register";
+    	REG_URL = BASE_URL + "/mobile/register",
+    	VALIDATION_URI = BASE_URL + "/mobile/validate";
     public static final String 
     	CHECK_VALID_ACCOUNT_URI = BASE_URL + "/mobile/valid",
     	FETCH_FRIEND_UPDATES_URI = BASE_URL + "/mobile/contacts",
@@ -226,6 +229,53 @@ public class NetworkUtilities {
                 //}
             }
         }
+
+    public static boolean validate(String username, String password, String ph, String validationCode,
+            Handler handler, final Context context) {
+        	Log.i(TAG, "Validate, ph: "+ph+", code: "+validationCode);
+            final HttpResponse resp;
+
+            final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+            params.add(new BasicNameValuePair(PARAM_USERNAME, username));
+            params.add(new BasicNameValuePair(PARAM_PASSWORD, password));
+            params.add(new BasicNameValuePair(PARAM_PHONE_NUMBER, ph));
+            params.add(new BasicNameValuePair(PARAM_VALIDATION_CODE, validationCode));
+            HttpEntity entity = null;
+            try {
+                entity = new UrlEncodedFormEntity(params);
+            } catch (final UnsupportedEncodingException e) {
+                // this should never happen.
+                throw new AssertionError(e);
+            }
+            
+            final HttpPost post = new HttpPost(VALIDATION_URI);
+            post.addHeader(entity.getContentType());
+            post.setEntity(entity);
+            maybeCreateHttpClient();
+            Log.i(TAG, "Posting to: "+VALIDATION_URI);
+
+            try {
+                resp = mHttpClient.execute(post);
+                if (resp.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                    // if (Log.isLoggable(TAG, Log.VERBOSE)) {
+                        Log.i(TAG, "Successful authentication");
+                        Log.i(TAG, "data: "+EntityUtils.toString(resp.getEntity()));
+                    //}
+                    sendValidationResult(true, "Successful authentication", handler, context);
+                    return true;
+                } else {
+                    // if (Log.isLoggable(TAG, Log.VERBOSE)) {
+                        Log.v(TAG, "Error authenticating: " + resp.getStatusLine());
+                    // }
+                    sendValidationResult(false, "Error authenticating: " + resp.getStatusLine(), handler, context);
+                    return false;
+                }
+            } catch (final Exception e) {
+                Log.v(TAG, "IOException when getting authtoken", e);
+                sendValidationResult(false, "Exception: "+e.getMessage(), handler, context);
+                return false;
+            } 
+        }
     
     /**
      * Sends the authentication response from server back to the caller main UI
@@ -247,6 +297,19 @@ public class NetworkUtilities {
             }
         });
     }
+
+    private static void sendValidationResult(final Boolean result, final String message, final Handler handler,
+            final Context context) {
+        	Log.i(TAG, "sendValidationResult("+result+")");
+            if (handler == null || context == null) {
+                return;
+            }
+            handler.post(new Runnable() {
+                public void run() {
+                    ((ValidationActivity) context).onValidationResult(result, message);
+                }
+            });
+        }
 
     /**
      * Attempts to authenticate the user credentials on the server.
@@ -520,6 +583,17 @@ public class NetworkUtilities {
         final String response = EntityUtils.toString(resp.getEntity());
         Log.i(TAG, "Response is: "+response);
         return response;
+	}
+
+	public static Thread attemptValidate(final String userName, final String password,
+			final String phoneNumber, final String validationCode, final Handler handler, final Context context) {
+        final Runnable runnable = new Runnable() {
+            public void run() {
+                validate(userName, password, phoneNumber, validationCode, handler, context);
+            }
+        };
+        // run on background thread.
+        return NetworkUtilities.performOnBackgroundThread(runnable);
 	}
 
 }

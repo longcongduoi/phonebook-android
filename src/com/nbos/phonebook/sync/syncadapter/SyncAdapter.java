@@ -39,9 +39,11 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.nbos.phonebook.DatabaseHelper;
+import com.nbos.phonebook.ValidationActivity;
 import com.nbos.phonebook.Widget;
 import com.nbos.phonebook.Widget.AppService;
 import com.nbos.phonebook.sync.Constants;
+import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
 import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.NetworkUtilities;
 import com.nbos.phonebook.sync.client.User;
@@ -92,6 +94,20 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
              // start the confirmation activity if not valid
              
              Log.i(TAG, "valid account is: "+valid);
+             if(!valid) 
+             {
+                 final Intent intent = new Intent(mContext, ValidationActivity.class);
+                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                 intent.putExtra(NetworkUtilities.PARAM_USERNAME, account.name);
+                 intent.putExtra(NetworkUtilities.PARAM_PASSWORD, authtoken);
+                 intent.putExtra(NetworkUtilities.PARAM_PHONE_NUMBER, phoneNumber);
+                 mContext.startActivity(intent);
+                 
+                 // intent.putExtra(AuthenticatorActivity.PARAM_AUTHTOKEN_TYPE, authTokenType);
+                 // intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
+                 return;
+
+             }
              List<User> contacts = DatabaseHelper.getContacts(false, mContext);
              dataCursor = DatabaseHelper.getData(mContext);
              Object[] update = NetworkUtilities.fetchFriendUpdates(account, authtoken,
@@ -139,7 +155,11 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             Log.e(TAG, "JSONException", e);
         }
         finally {
-        	dataCursor.close();
+        	if(dataCursor != null)
+        		dataCursor.close();
+        	if(rawContactsCursor != null)
+        		rawContactsCursor.close();
+        	
         }
     }
 }
