@@ -127,4 +127,6 @@
     
     <string name="valid_get_new_code_text">If you have not receieved an SMS, click below to get another SMS with the validation code.</string>
     
+    <string name="Ok">Ok</string>
+    
 </resources>

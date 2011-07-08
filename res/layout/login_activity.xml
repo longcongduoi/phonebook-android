@@ -43,7 +43,7 @@
             <EditText
                 android:id="@+id/username_edit"
                 android:singleLine="true"
-                android:layout_width="fill_parent"
+                android:layout_width="fill_parent"	
                 android:layout_height="wrap_content"
                 android:minWidth="250dip"
                 android:scrollHorizontally="true"

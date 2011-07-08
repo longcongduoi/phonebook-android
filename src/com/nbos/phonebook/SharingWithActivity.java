@@ -4,13 +4,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ListActivity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.database.MatrixCursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.text.AlteredCharSequence;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -18,9 +23,12 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.widget.RadioButton;
 import android.widget.SimpleCursorAdapter;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.Toast;
 
+import com.nbos.phonebook.R.menu;
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.value.ContactRow;
@@ -58,7 +66,9 @@ public class SharingWithActivity extends ListActivity {
 	    String contactName = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 		
 	    menu.setHeaderTitle("Menu: "+contactName);
-		menu.add(0, v.getId(), 0, "Remove share");
+	    
+		menu.add(0, v.getId(), 0, "Stop share");
+		menu.add(1,v.getId(),0,   "Permissions");
 		}
 	
 	
@@ -73,16 +83,28 @@ public class SharingWithActivity extends ListActivity {
 
 	    Log.i(tag, "position is: "+info.position+", contactId: "+contactId+", name: "+name);
 	    
-		if (item.getTitle() == "Remove from sharing") {
+		if (item.getTitle() == "Stop share") {
 			Log.i(tag, "Remove: " + item.getItemId());
 			removeSharing(contactId);
 		} 
-		else {
+		else if (item.getTitle() == "Permissions"){
+			sharingPermissions(contactId);
+		}
+		else{
 			return false;
 		}
-		return true;
-	}   	
-
+		return true;   
+	}		
+	
+	private  void sharingPermissions(String contactId) {
+		String contactName = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+		Log.i(tag, "Permissions for "+contactName);
+		Dialog dialog = new Dialog(SharingWithActivity.this);
+	    dialog.setContentView(R.layout.permissions);
+	    dialog.setTitle("Permissions for "+contactName);
+	    dialog.show();
+	}
+	
 	private void removeSharing(String contactId) {
 		
 		

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:id="@+id/linearLayout1">
+	<RadioGroup
+	android:id="@+id/widget1"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical"
+	>
+		<RadioButton
+		android:id="@+id/widget2"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="ReadOnly"
+		android:checked="true"
+		android:layout_gravity="left"
+		android:layout_weight="0"
+		>
+		</RadioButton>
+		<RadioButton
+		android:id="@+id/widget3"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="Add"
+		android:layout_gravity="left"
+		android:layout_weight="0"
+		>
+		</RadioButton>
+		<RadioButton
+		android:id="@+id/widget25"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="Add/Delete"
+		android:layout_weight="0"
+		android:layout_gravity="left"
+		>
+		</RadioButton>
+		<RadioButton
+		android:id="@+id/widget24"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="Add/Delete/Edit"
+		android:layout_weight="0"
+		android:layout_gravity="left"
+		>
+		</RadioButton>
+	</RadioGroup>
+	<Button android:layout_height="wrap_content" android:text="@string/Ok" android:id="@+id/button1" android:layout_width="wrap_content"></Button>
+
+</LinearLayout>

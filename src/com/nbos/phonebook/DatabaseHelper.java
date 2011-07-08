@@ -508,7 +508,7 @@ public class DatabaseHelper {
 	            + " = ? and "
 	            + ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID
 	            +" = ?",
-	            new String[] {groupId, contactId});
+	            new String[] {groupId, contactId});	
 		
 	}
 
@@ -537,6 +537,7 @@ public class DatabaseHelper {
                 new String[] { contactId, ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE }, 
                 ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID);
     	Log.i(TAG, "contactId: "+contactId+", is in "+contactGroupsCursor.getCount()+" groups");
+    	if(contactGroupsCursor.getCount() == 0) return null;
     	contactGroupsCursor.moveToFirst();
     	String groupIdsIn = "(";
     	int count = 0, num = contactGroupsCursor.getCount();
