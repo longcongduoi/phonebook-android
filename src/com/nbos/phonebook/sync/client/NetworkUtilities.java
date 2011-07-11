@@ -16,12 +16,19 @@
 
 package com.nbos.phonebook.sync.client;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.http.HttpEntity;
@@ -77,7 +84,9 @@ public class NetworkUtilities {
     	FETCH_FRIEND_UPDATES_URI = BASE_URL + "/mobile/contacts",
         SEND_CONTACT_UPDATES_URI = BASE_URL + "/mobile/updateContacts",
         SEND_GROUP_UPDATES_URI = BASE_URL + "/mobile/updateGroups",
-    	SEND_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/updateSharedBooks";
+    	SEND_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/updateSharedBooks",
+    	UPLOAD_CONTACT_PIC_URI = BASE_URL + "/fileUploader/process";
+    // String urlServer = "http://10.9.8.29:8080/phonebook/fileUploader/process";
     public static final String FETCH_STATUS_URI = BASE_URL + "/fetch_status";
     private static HttpClient mHttpClient;
 
@@ -668,6 +677,70 @@ public class NetworkUtilities {
         };
         // run on background thread.
         return NetworkUtilities.performOnBackgroundThread(runnable);
+	}
+
+	public static void upload(String uploadUrl, byte[] data, String contentType, Map<String, String> params) {
+		System.out.println("Uploading to "+uploadUrl);
+		HttpURLConnection connection = null;
+		DataOutputStream outputStream = null;
+
+		// String pathToOurFile = "/tmp/avatar/1310118336631/card_errors.gif";
+		// String uploadUrl = "http://10.9.8.29:8080/phonebook/fileUploader/process";
+		String lineEnd = "\r\n";
+		String twoHyphens = "--";
+		String boundary =  "*****";
+
+		try
+		{
+
+		URL url = new URL(uploadUrl);
+		connection = (HttpURLConnection) url.openConnection();
+
+		// Allow Inputs & Outputs
+		connection.setDoInput(true);
+		connection.setDoOutput(true);
+		connection.setUseCaches(false);
+
+		// Enable POST method
+		connection.setRequestMethod("POST");
+
+		connection.setRequestProperty("Connection", "Keep-Alive");
+		connection.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);
+
+		outputStream = new DataOutputStream( connection.getOutputStream() );
+		for (Map.Entry<String, String> entry : params.entrySet()) {
+		    String name = entry.getKey();
+		    String value = entry.getValue();
+		    System.out.println("param: "+name+", value: "+value);
+		    outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+		    outputStream.writeBytes("Content-Disposition: form-data; name=\""+name+"\"" + lineEnd);
+		    outputStream.writeBytes(lineEnd);
+		    outputStream.writeBytes(value);
+		    outputStream.writeBytes(lineEnd);
+		}
+
+		outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+		// outputStream.writeBytes("Content-Disposition: form-data; name=\"file\";filename=\"" + pathToOurFile +"\"" + lineEnd);
+		outputStream.writeBytes("Content-Disposition: form-data; name=\"file\";filename=\"" + "image."+contentType +"\"" + lineEnd);
+		outputStream.writeBytes(lineEnd);
+
+		outputStream.write(data, 0, data.length);
+
+		outputStream.writeBytes(lineEnd);
+		outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+		// Responses from the server (code and message)
+		int serverResponseCode = connection.getResponseCode();
+		String serverResponseMessage = connection.getResponseMessage();
+
+		outputStream.flush();
+		outputStream.close();
+		}
+		catch (Exception ex)
+		{
+			ex.printStackTrace();
+		}		
+		System.out.println("uploaded");
 	}
 
 }

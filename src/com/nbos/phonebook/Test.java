@@ -1,5 +1,9 @@
 package com.nbos.phonebook;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -11,6 +15,8 @@ import android.util.Log;
 
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
+import com.nbos.phonebook.sync.client.ContactPicture;
+import com.nbos.phonebook.sync.client.NetworkUtilities;
 
 public class Test {
 	static String tag = "Test";
@@ -80,5 +86,23 @@ public class Test {
     		ctx.getContentResolver().query(Data.CONTENT_URI, null, null, null, null);
     	Log.i(tag, "There are "+c.getCount()+" data items");
     
+    }
+    
+    public static void getContactPictures(Context ctx) {
+    	List<ContactPicture> pics = DatabaseHelper.getContactPictures(ctx.getContentResolver(), true);
+		Map<String, String> params = new HashMap<String, String>();
+		params.put("upload", "avatar");
+		params.put("errorAction", "error");
+		params.put("errorController", "file");
+		params.put("successAction", "success");
+		params.put("successController", "file");
+		params.put("id", "12");
+
+    	for(ContactPicture pic : pics)
+    	{
+    		String contentType = pic.mimeType.split("/")[1];
+    		Log.i(tag, "uploading "+contentType);
+    		NetworkUtilities.upload(NetworkUtilities.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
+    	}
     }
 }

@@ -1,5 +1,12 @@
 package com.nbos.phonebook;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -25,10 +32,12 @@ import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
+import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.SharingBook;
 import com.nbos.phonebook.sync.client.User;
 import com.nbos.phonebook.sync.platform.BatchOperation;
+import com.nbos.phonebook.util.SimpleImageInfo;
 
 public class DatabaseHelper {
 	static String TAG = "DATA";
@@ -250,7 +259,7 @@ public class DatabaseHelper {
 	    do {
 	        String contactId =
 	            	rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
-	        String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
+	        String serverId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
 	        String sync1 = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.SYNC1));
 	        String dirty = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
 	        // String accountName = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.ACCOUNT_NAME));
@@ -260,13 +269,72 @@ public class DatabaseHelper {
 	        String phoneNumber = getContactNumber(phonesCursor, contactId); 
 	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", dirty: "+dirty+", sync1: "+sync1);//+", accountName: "+accountName+", accountType: "+accountType);
 	        if(name == null || phoneNumber == null) continue;
-	        users.add(new User(name, phoneNumber, sourceId, contactId));
+	        users.add(new User(name, phoneNumber, serverId, contactId));
 	    } while(rawContactsCursor.moveToNext());
 	    contactsCursor.close();
 	    phonesCursor.close();
 	    return users;
 	}
 	
+	public static List<ContactPicture> getContactPictures(ContentResolver cr, boolean newOnly) {
+		List<ContactPicture> pics = new ArrayList<ContactPicture>();
+	    Cursor rawContactsCursor = getRawContactsCursor(cr, newOnly),
+	    	dataCursor = cr.query(ContactsContract.Data.CONTENT_URI,
+	    		// null,
+	    	    new String[] {
+	    			ContactsContract.Contacts._ID, 
+	    			ContactsContract.Data.CONTACT_ID,
+	    			ContactsContract.Data.RAW_CONTACT_ID,
+	    			ContactsContract.RawContacts._ID,
+	    			ContactsContract.Contacts.DISPLAY_NAME,
+	    			ContactsContract.CommonDataKinds.Photo.PHOTO
+	    		},
+	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null",
+	    	    null, ContactsContract.Data.CONTACT_ID);
+	    Log.i(TAG, "There are "+rawContactsCursor.getCount()+" raw contacts entries for newOnly: "+newOnly);
+	    Log.i(TAG, "There are "+dataCursor.getCount()+" data entries");
+	    dataCursor.moveToFirst();
+	    rawContactsCursor.moveToFirst();
+	    do {
+	    	String contactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID)),
+	    		serverId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
+	    	ContactPicture pic = null;
+			try {
+				pic = getContactPicture(dataCursor, contactId, serverId);
+				if(pic != null) pics.add(pic);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+	    	
+	    } while(rawContactsCursor.moveToNext());
+		
+	    rawContactsCursor.close();
+	    dataCursor.close();
+		return pics;
+	}
+	
+	private static ContactPicture getContactPicture(Cursor dataCursor,
+			String contactId, String serverId) throws IOException {
+		dataCursor.moveToFirst();
+	    do {
+	    	String cId = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID));
+	    	if(!cId.equals(contactId)) continue;
+	    	String name = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+	    	byte[] pic = dataCursor.getBlob(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
+	    	String contentType = findMimeTypeForImage(pic); 
+	    		// dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.MIMETYPE));
+	    	// String serverId
+	    	Log.i(TAG, "Contact["+contactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
+	    	return new ContactPicture(pic, serverId, contentType);
+	    } while(dataCursor.moveToNext());
+	    return null;
+	}
+
+    public static String findMimeTypeForImage(final byte[] bytes) throws IOException {
+    	SimpleImageInfo info = new SimpleImageInfo(bytes);
+    	return info.getMimeType();
+    }
+
 	public static Cursor getRawContactsCursor(ContentResolver cr, boolean newOnly) {
 	    String where = newOnly ? ContactsContract.RawContacts.DIRTY + " = 1" : null;
         final String[] PROJECTION =
@@ -583,5 +651,104 @@ public class DatabaseHelper {
 		return groupsString;
 	}
 
+	/*public static void uploadFile(String filename) {
+		try {
+			DefaultHttpClient httpclient = new DefaultHttpClient();
+			File f = new File(filename);
+
+			HttpPost httpost = new HttpPost("http://myremotehost:8080/upload/upload");
+			MultipartEntity entity = new MultipartEntity();
+			entity.addPart("myIdentifier", new StringBody("somevalue"));
+			entity.addPart("myFile", new FileBody(f));
+			// entity.addPart("myFile", new FileBody();
+			httpost.setEntity(entity);
+
+			HttpResponse response;
+							
+			response = httpclient.execute(httpost);
+
+			Log.d("httpPost", "Login form get: " + response.getStatusLine());
+
+			if (entity != null) {
+				entity.consumeContent();
+			}
+			// success = true;
+		} catch (Exception ex) {
+			Log.d("FormReviewer", "Upload failed: " + ex.getMessage() + " Stacktrace: " + ex.getStackTrace());
+			// success = false;
+		} finally {
+			// mDebugHandler.post(mFinishUpload);
+		}
+		
+	}*/
 	
+	public static void upload() {
+		HttpURLConnection connection = null;
+		DataOutputStream outputStream = null;
+		DataInputStream inputStream = null;
+
+		String pathToOurFile = "/data/file_to_send.mp3";
+		String urlServer = "http://10.9.8.21:8080/phonebook/fileUploader/process";
+		String lineEnd = "\r\n";
+		String twoHyphens = "--";
+		String boundary =  "*****";
+
+		int bytesRead, bytesAvailable, bufferSize;
+		byte[] buffer;
+		int maxBufferSize = 1*1024*1024;
+
+		try
+		{
+		FileInputStream fileInputStream = new FileInputStream(new File(pathToOurFile) );
+
+		URL url = new URL(urlServer);
+		connection = (HttpURLConnection) url.openConnection();
+
+		// Allow Inputs & Outputs
+		connection.setDoInput(true);
+		connection.setDoOutput(true);
+		connection.setUseCaches(false);
+
+		// Enable POST method
+		connection.setRequestMethod("POST");
+
+		connection.setRequestProperty("Connection", "Keep-Alive");
+		connection.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);
+
+		outputStream = new DataOutputStream( connection.getOutputStream() );
+		outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+		outputStream.writeBytes("Content-Disposition: form-data; name=\"upload\";filename=\"" + pathToOurFile +"\"" + lineEnd);
+		outputStream.writeBytes(lineEnd);
+
+		bytesAvailable = fileInputStream.available();
+		bufferSize = Math.min(bytesAvailable, maxBufferSize);
+		buffer = new byte[bufferSize];
+
+		// Read file
+		bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+		while (bytesRead > 0)
+		{
+		outputStream.write(buffer, 0, bufferSize);
+		bytesAvailable = fileInputStream.available();
+		bufferSize = Math.min(bytesAvailable, maxBufferSize);
+		bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+		}
+
+		outputStream.writeBytes(lineEnd);
+		outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+		// Responses from the server (code and message)
+		int serverResponseCode = connection.getResponseCode();
+		String serverResponseMessage = connection.getResponseMessage();
+
+		fileInputStream.close();
+		outputStream.flush();
+		outputStream.close();
+		}
+		catch (Exception ex)
+		{
+		//Exception handling
+		}		
+	}
 }
