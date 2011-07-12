@@ -96,12 +96,14 @@ public class Test {
 		params.put("errorController", "file");
 		params.put("successAction", "success");
 		params.put("successController", "file");
-		params.put("id", "12");
 
     	for(ContactPicture pic : pics)
     	{
     		String contentType = pic.mimeType.split("/")[1];
     		Log.i(tag, "uploading "+contentType);
+    		params.remove("id");
+    		params.put("id", pic.serverId);
+
     		NetworkUtilities.upload(NetworkUtilities.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
     	}
     }

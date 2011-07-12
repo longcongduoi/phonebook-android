@@ -16,12 +16,16 @@
 
 package com.nbos.phonebook.sync.client;
 
-import java.io.DataInputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -697,21 +701,25 @@ public class NetworkUtilities {
 		connection = (HttpURLConnection) url.openConnection();
 
 		// Allow Inputs & Outputs
-		connection.setDoInput(true);
+		// connection.setDoInput(true);
 		connection.setDoOutput(true);
-		connection.setUseCaches(false);
+		// connection.setUseCaches(false);
 
 		// Enable POST method
 		connection.setRequestMethod("POST");
 
 		connection.setRequestProperty("Connection", "Keep-Alive");
 		connection.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);
+		
+		//connection.setInstanceFollowRedirects(true);
+		// HttpURLConnection.setFollowRedirects(true);
+		Log.i(TAG, "Follow redirects: "+connection.getInstanceFollowRedirects());
 
 		outputStream = new DataOutputStream( connection.getOutputStream() );
 		for (Map.Entry<String, String> entry : params.entrySet()) {
 		    String name = entry.getKey();
 		    String value = entry.getValue();
-		    System.out.println("param: "+name+", value: "+value);
+		    Log.i(TAG, "param: "+name+", value: "+value);
 		    outputStream.writeBytes(twoHyphens + boundary + lineEnd);
 		    outputStream.writeBytes("Content-Disposition: form-data; name=\""+name+"\"" + lineEnd);
 		    outputStream.writeBytes(lineEnd);
@@ -732,6 +740,18 @@ public class NetworkUtilities {
 		// Responses from the server (code and message)
 		int serverResponseCode = connection.getResponseCode();
 		String serverResponseMessage = connection.getResponseMessage();
+		String location = connection.getHeaderField("Location");
+		Log.i(TAG, "response code: "+serverResponseCode+", message: "+serverResponseMessage+", location: "+location);
+		if(serverResponseCode == 302)
+		{
+			url = new URL(location);
+			connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("GET");
+			connection.connect();
+		}
+		
+		InputStream in = new BufferedInputStream(connection.getInputStream());
+		Log.i(TAG, "Response: "+convertStreamToString(in));
 
 		outputStream.flush();
 		outputStream.close();
@@ -742,5 +762,34 @@ public class NetworkUtilities {
 		}		
 		System.out.println("uploaded");
 	}
+	
+    public static String convertStreamToString(InputStream is)
+    throws IOException {
+	/*
+	 * To convert the InputStream to String we use the
+	 * Reader.read(char[] buffer) method. We iterate until the
+	 * Reader return -1 which means there's no more data to
+	 * read. We use the StringWriter class to produce the string.
+	 */
+		if (is != null) {
+		    Writer writer = new StringWriter();
+		
+		    char[] buffer = new char[1024];
+		    try {
+		        Reader reader = new BufferedReader(
+		                new InputStreamReader(is, "UTF-8"));
+		        int n;
+		        while ((n = reader.read(buffer)) != -1) {
+		            writer.write(buffer, 0, n);
+		        }
+		    } finally {
+		        is.close();
+		    }
+		    return writer.toString();
+		} else {        
+		    return "";
+		}
+    }
+	
 
 }
