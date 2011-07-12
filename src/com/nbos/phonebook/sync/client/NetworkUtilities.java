@@ -31,6 +31,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -548,7 +549,7 @@ public class NetworkUtilities {
 		mContext = context;
 		accountName = account.name;
 		authToken = authtoken;
-		sendContactUpdates(DatabaseHelper.getContacts(newOnly, mContext));
+		sendContactUpdates(DatabaseHelper.getContacts(newOnly, mContext), newOnly);
         sendGroupUpdates(DatabaseHelper.getGroups(newOnly, mContext));
         sendSharedBookUpdates(DatabaseHelper.getSharingBooks(true, mContext));
 	}
@@ -597,7 +598,7 @@ public class NetworkUtilities {
 
 	}
 
-	private static void sendContactUpdates(List<User> contacts) throws ClientProtocolException, IOException, JSONException {
+	private static void sendContactUpdates(List<User> contacts, boolean newOnly) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
 		
         params.add(new BasicNameValuePair("numContacts", new Integer(contacts.size()).toString()));
@@ -614,7 +615,28 @@ public class NetworkUtilities {
         JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
         for (int i = 0; i < contactUpdates.length(); i++)
         	ContactManager.updateContact(contactUpdates.getJSONObject(i), mContext);
+        // send the profile pictures here
+        sendContactPictureUpdates(newOnly);
         ContactManager.resetDirtyContacts(mContext);
+	}
+
+	private static void sendContactPictureUpdates(boolean newOnly) {
+    	List<ContactPicture> pics = DatabaseHelper.getContactPictures(mContext.getContentResolver(), newOnly);
+		Map<String, String> params = new HashMap<String, String>();
+		params.put("upload", "avatar");
+		params.put("errorAction", "error");
+		params.put("errorController", "file");
+		params.put("successAction", "success");
+		params.put("successController", "file");
+
+    	for(ContactPicture pic : pics)
+    	{
+    		String contentType = pic.mimeType.split("/")[1];
+    		Log.i(TAG, "uploading "+contentType);
+    		params.remove("id");
+    		params.put("id", pic.serverId);
+    		NetworkUtilities.upload(NetworkUtilities.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
+    	}
 	}
 
 	public static boolean checkValidAccount(Account account, String authtoken, String phone) throws ClientProtocolException, JSONException, IOException {
