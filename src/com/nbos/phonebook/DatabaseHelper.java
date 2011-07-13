@@ -34,6 +34,7 @@ import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.Group;
+import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.SharingBook;
 import com.nbos.phonebook.sync.client.User;
 import com.nbos.phonebook.sync.platform.BatchOperation;
@@ -231,7 +232,7 @@ public class DatabaseHelper {
 		batchOperation.execute();
 	}
     
-	public static List<User> getContacts(boolean newOnly, Context ctx) {
+	public static List<PhoneContact> getContacts(boolean newOnly, Context ctx) {
 	    ContentResolver cr = ctx.getContentResolver();
 	    
         final String[] CONTACTS_PROJECTION =
@@ -253,7 +254,7 @@ public class DatabaseHelper {
 	    			PHONES_PROJECTION, null, null, null);
 	    
 	    Log.i(TAG, "There are "+rawContactsCursor.getCount()+" contacts ");
-	    List<User> users = new ArrayList<User>();
+	    List<PhoneContact> users = new ArrayList<PhoneContact>();
 	    if(rawContactsCursor.getCount() == 0) return users;
 	    rawContactsCursor.moveToFirst();
 	    do {
@@ -269,7 +270,7 @@ public class DatabaseHelper {
 	        String phoneNumber = getContactNumber(phonesCursor, contactId); 
 	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", dirty: "+dirty+", sync1: "+sync1);//+", accountName: "+accountName+", accountType: "+accountType);
 	        if(name == null || phoneNumber == null) continue;
-	        users.add(new User(name, phoneNumber, serverId, contactId));
+	        users.add(new PhoneContact(name, phoneNumber, serverId, contactId));
 	    } while(rawContactsCursor.moveToNext());
 	    contactsCursor.close();
 	    phonesCursor.close();
@@ -293,6 +294,9 @@ public class DatabaseHelper {
 	    	    null, ContactsContract.Data.CONTACT_ID);
 	    Log.i(TAG, "There are "+rawContactsCursor.getCount()+" raw contacts entries for newOnly: "+newOnly);
 	    Log.i(TAG, "There are "+dataCursor.getCount()+" data entries");
+	    
+	    if(rawContactsCursor.getCount() == 0) return pics;
+	    
 	    dataCursor.moveToFirst();
 	    rawContactsCursor.moveToFirst();
 	    do {
@@ -435,7 +439,7 @@ public class DatabaseHelper {
 	        				contactName = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)),
 	        				contactNumber = getContactPhoneNumber(contactId, phonesCursor);
 	        			if(contactNumber == null) break;
-	        			contacts.add(new Contact(contactId, serverId, contactNumber, contactName));
+	        			contacts.add(new Contact(contactName, contactNumber, serverId));
 	        			Log.i(TAG, "added contact: "+contactId+", serverId: "+serverId+", "+contactNumber+", "+contactName);
 	        		break;
 	        	}

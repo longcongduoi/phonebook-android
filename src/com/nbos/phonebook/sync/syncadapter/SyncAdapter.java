@@ -43,12 +43,12 @@ import com.nbos.phonebook.ValidationActivity;
 import com.nbos.phonebook.Widget;
 import com.nbos.phonebook.Widget.AppService;
 import com.nbos.phonebook.sync.Constants;
-import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
+import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.NetworkUtilities;
-import com.nbos.phonebook.sync.client.User;
+import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.User.Status;
-import com.nbos.phonebook.sync.platform.ContactManager;
+import com.nbos.phonebook.sync.platform.SyncManager;
 
 /**
  * SyncAdapter implementation for syncing sample SyncAdapter contacts to the
@@ -71,7 +71,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority,
         ContentProviderClient provider, SyncResult syncResult) {
-        List<User> users;
+        List<Contact> contacts;
         List<Group> groups;
         List<Group> sharedBooks;
         List<Status> statuses;
@@ -108,19 +108,30 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                  return;
 
              }
-             List<User> contacts = DatabaseHelper.getContacts(false, mContext);
+             List<PhoneContact> allContacts = DatabaseHelper.getContacts(false, mContext);
              dataCursor = DatabaseHelper.getData(mContext);
              Object[] update = NetworkUtilities.fetchFriendUpdates(account, authtoken,
                     mLastUpdated);
-             users =  (List<User>) update[0];
+             contacts =  (List<Contact>) update[0];
              groups = (List<Group>) update[1];
              sharedBooks = (List<Group>) update[2];
-             ContactManager.syncContacts(mContext, account.name, users, contacts, dataCursor);
-             contacts = DatabaseHelper.getContacts(false, mContext);
-             dataCursor = DatabaseHelper.getData(mContext);
-             rawContactsCursor = DatabaseHelper.getRawContactsCursor(mContext.getContentResolver(), false);
-             ContactManager.syncGroups(mContext, account.name, groups, contacts, dataCursor, rawContactsCursor);
-             ContactManager.syncSharedBooks(mContext, account.name, sharedBooks, contacts, dataCursor, rawContactsCursor);
+             SyncManager syncManager = new SyncManager(mContext, account.name, allContacts, dataCursor);
+             syncManager.syncContacts(contacts);
+             syncManager.refreshCursors();
+             /*
+             // ContactManager.syncContacts(mContext, account.name, users, allContacts, dataCursor);
+             // allContacts = DatabaseHelper.getContacts(false, mContext);
+             syncManager.setAllContacts(DatabaseHelper.getContacts(false, mContext));
+             // dataCursor = DatabaseHelper.getData(mContext);
+             syncManager.setDataCursor(DatabaseHelper.getData(mContext));
+             // rawContactsCursor = DatabaseHelper.getRawContactsCursor(mContext.getContentResolver(), false);
+             syncManager.setRawContactsCursor(DatabaseHelper.getRawContactsCursor(mContext.getContentResolver(), false));
+             // ContactManager.syncGroups(mContext, account.name, groups, allContacts, dataCursor, rawContactsCursor);
+              * 
+              */
+             syncManager.syncGroups(groups);
+             syncManager.syncGroups(sharedBooks);
+             // ContactManager.syncSharedBooks(mContext, account.name, sharedBooks, allContacts, dataCursor, rawContactsCursor);
              
              NetworkUtilities.sendFriendUpdates(account, authtoken,
                      mLastUpdated, true, mContext);

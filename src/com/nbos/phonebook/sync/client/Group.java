@@ -32,10 +32,10 @@ public class Group {
 		for(int i=0; i< contactsArray.length(); i++)
 		{
 			JSONObject c = contactsArray.getJSONObject(i);
-			int cid = c.getInt("id");
+			int serverId = c.getInt("id");
 			String cName = c.getString("name"),
 				number = c.getString("number");
-			contacts.add(new Contact(new Integer(cid).toString(), "0", number, cName));
+			contacts.add(new Contact(cName, number, new Integer(serverId).toString()));
 		}
 		Log.i(tag, "There are "+contacts.size()+" contacts in group "+name);
 		return new Group(new Integer(id).toString(), null, name, owner, contacts);

@@ -429,7 +429,7 @@ public class NetworkUtilities {
     public static Object[] fetchFriendUpdates(Account account,
         String authtoken, Date lastUpdated) throws JSONException,
         ParseException, IOException, AuthenticationException {
-        final List<User> friendList = new ArrayList<User>();
+        final List<Contact> friendList = new ArrayList<Contact>();
         final List<Group> groupsList = new ArrayList<Group>();
         final List<Group> books = new ArrayList<Group>();
         final List<NameValuePair> params = new ArrayList<NameValuePair>();
@@ -466,7 +466,7 @@ public class NetworkUtilities {
             	sharedBooks = update.getJSONArray(2);
             Log.d(TAG, response);
             for (int i = 0; i < friends.length(); i++) {
-                friendList.add(User.valueOf(friends.getJSONObject(i)));
+                friendList.add(Contact.valueOf(friends.getJSONObject(i)));
             }
 
             for (int i = 0; i < groups.length(); i++) {
@@ -587,8 +587,8 @@ public class NetworkUtilities {
         	{
         		Contact bContact = bookContacts.get(j);
         		String cIndex = new Integer(j).toString();
-        		params.add(new BasicNameValuePair("contactId_"+index+"_"+cIndex, bContact.getId()));
-        		params.add(new BasicNameValuePair("serverId_"+index+"_"+cIndex, bContact.getServerId()));
+        		// params.add(new BasicNameValuePair("contactId_"+index+"_"+cIndex, bContact.contactId));
+        		params.add(new BasicNameValuePair("serverId_"+index+"_"+cIndex, bContact.serverId));
         	}
         }
         JSONArray groupUpdates = new JSONArray(post(SEND_GROUP_UPDATES_URI, params));
@@ -598,18 +598,18 @@ public class NetworkUtilities {
 
 	}
 
-	private static void sendContactUpdates(List<User> contacts, boolean newOnly) throws ClientProtocolException, IOException, JSONException {
+	private static void sendContactUpdates(List<PhoneContact> contacts, boolean newOnly) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
 		
         params.add(new BasicNameValuePair("numContacts", new Integer(contacts.size()).toString()));
         for(int i=0; i< contacts.size(); i++)
         {
         	String index = new Integer(i).toString();
-        	User user =  contacts.get(i);
-        	params.add(new BasicNameValuePair("name_"+index, user.getFirstName()));
-        	params.add(new BasicNameValuePair("number_"+index, user.getCellPhone()));
-        	params.add(new BasicNameValuePair("id_"+index, user.getUserId()));
-        	params.add(new BasicNameValuePair("contactId_"+index, user.getContactId()));
+        	PhoneContact contact =  contacts.get(i);
+        	params.add(new BasicNameValuePair("name_"+index, contact.name));
+        	params.add(new BasicNameValuePair("number_"+index, contact.number));
+        	params.add(new BasicNameValuePair("id_"+index, contact.serverId));
+        	params.add(new BasicNameValuePair("contactId_"+index, contact.contactId));
         }
 		
         JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));

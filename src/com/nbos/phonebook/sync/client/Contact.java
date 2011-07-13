@@ -1,34 +1,39 @@
 package com.nbos.phonebook.sync.client;
 
+import org.json.JSONObject;
+
+import android.util.Log;
+
 public class Contact {
-	String id, serverId;
-	String name, number;
-	public Contact(String id, String serverId, String number, String name) {
-		super();
-		this.id = id;
+	static String tag = "Contact";
+	public String serverId, picId,
+		name, number, email;
+	public boolean deleted;
+	
+	public Contact(String name, String number, String serverId, String picId) {
+		this(name, number, serverId);
+		this.picId = picId;
+	}
+
+	public Contact(String name, String number, String serverId) {
 		this.serverId = serverId;
 		this.number = number;
 		this.name = name;
 	}
-	public String getId() {
-		return id;
-	}
-	public void setId(String id) {
-		this.id = id;
-	}
-	public String getServerId() {
-		return serverId;
-	}
-	public String getNumber() {
-		return number;
-	}
-	public void setNumber(String number) {
-		this.number = number;
-	}
-	public String getName() {
-		return name;
-	}
-	public void setName(String name) {
-		this.name = name;
-	}
+
+	public static Contact valueOf(JSONObject user) {
+        try {
+            String name = user.has("name") ? user.getString("name") : null,
+            	number = user.has("number") ? user.getString("number") : null,
+            	serverId = new Integer(user.getInt("id")).toString(),
+            	picId = user.getString("pic");
+            Log.i(tag, "name: "+name+", picId is: "+picId);
+            return new Contact(name, number, serverId, picId); 
+        } catch (final Exception ex) {
+            Log.i(tag, "Error parsing JSON user object" + ex.toString());
+
+        }
+        return null;
+    }
+	
 }

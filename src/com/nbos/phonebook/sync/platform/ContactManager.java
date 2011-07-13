@@ -16,10 +16,7 @@
 
 package com.nbos.phonebook.sync.platform;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,7 +42,7 @@ import com.nbos.phonebook.R;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
-import com.nbos.phonebook.sync.client.Group;
+import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.User;
 
 /**
@@ -64,11 +61,11 @@ public class ContactManager {
      * @param context The context of Authenticator Activity
      * @param account The username for the account
      * @param users The list of users
-     * @param contacts 
+     * @param allContacts All contacts
      * @param dataCursor 
      */
-    public static synchronized void syncContacts(Context context,
-        String account, List<User> users, List<User> contacts, Cursor dataCursor) {
+    /*public static synchronized void syncContacts(Context context,
+        String account, List<User> users, List<User> allContacts, Cursor dataCursor) {
         long rawContactId = 0;
         final ContentResolver resolver = context.getContentResolver();
         final BatchOperation batchOperation =
@@ -78,13 +75,13 @@ public class ContactManager {
             resolver.query(RawContacts.CONTENT_URI, UserIdQuery.PROJECTION,
                 null, null, null);
         Log.i(TAG, "There are "+rawContactsCursor.getCount()+" raw contacts, num columns: "+rawContactsCursor.getColumnCount());
-        Log.i(TAG, "There are "+contacts.size()+" contacts");
+        Log.i(TAG, "There are "+allContacts.size()+" contacts");
         // syncSharedBooks(context);
         Log.d(TAG, "In SyncContacts");
         for (final User user : users) {
             // userId = Integer.parseInt(user.getUserId());
             // Check to see if the contact needs to be inserted or updated
-            rawContactId = lookupRawContact(resolver, user, rawContactsCursor, contacts);
+            rawContactId = lookupRawContact(resolver, user, rawContactsCursor, allContacts);
             boolean dirty = isDirtyContact(rawContactId, rawContactsCursor); 
             Log.d(TAG, "Raw contact id is: "+rawContactId+", dirty: "+dirty);
             if(dirty) continue;
@@ -111,9 +108,9 @@ public class ContactManager {
             }
         }
         batchOperation.execute();
-    }
+    }*/
 
-	private static boolean isDirtyContact(long rawContactId, Cursor rawContactsCursor) {
+	public static boolean isDirtyContact(long rawContactId, Cursor rawContactsCursor) {
 		if(rawContactsCursor.getCount() == 0) return false;
 		rawContactsCursor.moveToFirst();
 		do {
@@ -125,7 +122,7 @@ public class ContactManager {
 		return false;
 	}
 
-	private static long lookupRawContact(ContentResolver resolver, User user, Cursor rawContactsCursor, List<User> contacts) {
+	public static long lookupRawContact(ContentResolver resolver, Contact contact, Cursor rawContactsCursor, List<PhoneContact> allContacts) {
 		if(rawContactsCursor.getCount() == 0) return 0;
 		rawContactsCursor.moveToFirst();
 		do
@@ -133,22 +130,22 @@ public class ContactManager {
 			String serverId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
 			// String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.SOURCE_ID));
 			try {
-				if(serverId.equals(user.getUserId()))
+				if(serverId.equals(contact.serverId))
 					return rawContactsCursor.getLong(0);
 			}
 			catch(Exception e){}
 			
 		} while(rawContactsCursor.moveToNext());
 		// could not find the contact, do a phone number search
-		for(User u : contacts) {
-			if(u.getCellPhone().equals(user.getCellPhone())) {// maybe a contact
+		for(PhoneContact u : allContacts) {
+			if(u.number.equals(contact.number)) {// maybe a contact
 				// check if the rest of the information is the same
-				if(u.getFirstName().equals(user.getFirstName()))
+				if(u.name.equals(contact.name))
 				{
-					Log.i(TAG, "Existing contact; ph: "+u.getCellPhone()+", name: "+u.getFirstName()+", serverId: "+user.getUserId()+", contactId: "+u.getContactId()+", phone serverId: "+u.getUserId());
+					Log.i(TAG, "Existing contact; ph: "+u.number+", name: "+u.name+", serverId: "+contact.serverId+", contactId: "+u.contactId+", phone serverId: "+u.serverId);
 					// update the serverId of the contact
-					DatabaseHelper.updateContactServerId(u.getContactId(), user.getUserId(), resolver);
-					return Long.parseLong(u.getContactId());
+					DatabaseHelper.updateContactServerId(u.contactId, contact.serverId, resolver);
+					return Long.parseLong(u.contactId);
 				}
 			}
 		}
@@ -205,18 +202,19 @@ public class ContactManager {
      * 
      * @param context the Authenticator Activity context
      * @param accountName the account the contact belongs to
-     * @param user the sample SyncAdapter User object
+     * @param contact the sample SyncAdapter User object
      */
-    private static void addContact(Context context, String accountName,
-        User user, BatchOperation batchOperation) {
+    public static void addContact(Context context, String accountName,
+        Contact contact, BatchOperation batchOperation) {
         // Put the data in the contacts provider
         final ContactOperations contactOp =
-            ContactOperations.createNewContact(context, Integer.parseInt(user.getUserId()),
+            ContactOperations.createNewContact(context, Integer.parseInt(contact.serverId),
                 accountName, batchOperation);
-        contactOp.addName(user.getFirstName(), user.getLastName()).addEmail(
-            user.getEmail()).addPhone(user.getCellPhone(), Phone.TYPE_MOBILE)
-            .addPhone(user.getHomePhone(), Phone.TYPE_OTHER).addProfileAction(
-                Integer.parseInt(user.getUserId()));
+        contactOp.addName(contact.name, "")//user.getLastName())
+        .addEmail(
+            contact.email).addPhone(contact.number, Phone.TYPE_MOBILE)
+            .addPhone(contact.number, Phone.TYPE_OTHER).addProfileAction(
+                Integer.parseInt(contact.serverId));
     }
 
     /**
@@ -225,15 +223,15 @@ public class ContactManager {
      * @param context the Authenticator Activity context
      * @param resolver the ContentResolver to use
      * @param accountName the account the contact belongs to
-     * @param user the sample SyncAdapter contact object.
+     * @param contact the sample SyncAdapter contact object.
      * @param rawContactId the unique Id for this rawContact in contacts
      *        provider
      * @param dataCursor 
      */
-    private static void updateContact(Context context,
-        ContentResolver resolver, String accountName, User user,
+    public static void updateContact(Context context,
+        ContentResolver resolver, String accountName, Contact contact,
         long rawContactId, BatchOperation batchOperation, Cursor dataCursor) {
-    	Log.i(TAG, "Update contact: "+user.getFirstName()+", rawContactId: "+rawContactId);
+    	Log.i(TAG, "Update contact: "+contact.name+", rawContactId: "+rawContactId);
     	if(dataCursor.getCount() == 0) return;
         Uri uri;
         String cellPhone = null;
@@ -263,8 +261,8 @@ public class ContactManager {
                         dataCursor.getString(DataQuery.COLUMN_FAMILY_NAME);
                     final String firstName =
                         dataCursor.getString(DataQuery.COLUMN_GIVEN_NAME);
-                    contactOp.updateName(uri, firstName, lastName, user
-                        .getFirstName(), user.getLastName());
+                    contactOp.updateName(uri, firstName, lastName, contact.name, "");
+                        // .getFirstName(), contact.getLastName());
                 }
 
                 else if (mimeType.equals(Phone.CONTENT_ITEM_TYPE)) {
@@ -272,18 +270,18 @@ public class ContactManager {
 
                     if (type == Phone.TYPE_MOBILE) {
                         cellPhone = dataCursor.getString(DataQuery.COLUMN_PHONE_NUMBER);
-                        contactOp.updatePhone(cellPhone, user.getCellPhone(),
+                        contactOp.updatePhone(cellPhone, contact.number,
                             uri);
                     } else if (type == Phone.TYPE_OTHER) {
                         otherPhone = dataCursor.getString(DataQuery.COLUMN_PHONE_NUMBER);
-                        contactOp.updatePhone(otherPhone, user.getHomePhone(),
+                        contactOp.updatePhone(otherPhone, contact.number,
                             uri);
                     }
                 }
 
                 else if (Data.MIMETYPE.equals(Email.CONTENT_ITEM_TYPE)) {
                     email = dataCursor.getString(DataQuery.COLUMN_EMAIL_ADDRESS);
-                    contactOp.updateEmail(user.getEmail(), email, uri);
+                    contactOp.updateEmail(contact.email, email, uri);
 
                 }
             } while (dataCursor.moveToNext());// while
@@ -293,17 +291,17 @@ public class ContactManager {
 
         // Add the cell phone, if present and not updated above
         if (cellPhone == null) {
-            contactOp.addPhone(user.getCellPhone(), Phone.TYPE_MOBILE);
+            contactOp.addPhone(contact.number, Phone.TYPE_MOBILE);
         }
 
         // Add the other phone, if present and not updated above
         if (otherPhone == null) {
-            contactOp.addPhone(user.getHomePhone(), Phone.TYPE_OTHER);
+            contactOp.addPhone(contact.number, Phone.TYPE_OTHER);
         }
 
         // Add the email address, if present and not updated above
         if (email == null) {
-            contactOp.addEmail(user.getEmail());
+            contactOp.addEmail(contact.email);
         }
 
     }
@@ -315,7 +313,7 @@ public class ContactManager {
      * @param rawContactId the unique Id for this rawContact in contacts
      *        provider
      */
-    private static void deleteContact(Context context, long rawContactId,
+    public static void deleteContact(Context context, long rawContactId,
         BatchOperation batchOperation) {
         batchOperation.add(ContactOperations.newDeleteCpo(
             ContentUris.withAppendedId(RawContacts.CONTENT_URI, rawContactId),
@@ -391,7 +389,7 @@ public class ContactManager {
      * Constants for a query to find a contact given a sample SyncAdapter user
      * ID.
      */
-    private interface UserIdQuery {
+    public interface UserIdQuery {
         public final static String[] PROJECTION =
             // new String[] {RawContacts._ID, RawContacts.SOURCE_ID};
         	new String[] {RawContacts._ID, Constants.CONTACT_SERVER_ID, RawContacts.DIRTY};
@@ -491,7 +489,7 @@ public class ContactManager {
         Log.i(TAG, rows + " rows updated");
 	}
 
-	public static void syncSharedBooks(Context mContext, String accountName,
+	/*public static void syncSharedBooks(Context mContext, String accountName,
 			List<Group> sharedBooks, List<User> contacts, Cursor dataCursor, Cursor rawContactsCursor) {
 		for(Group b : sharedBooks)
 			ContactManager.updateSharedBook(mContext, accountName, b, contacts, dataCursor, rawContactsCursor);
@@ -536,7 +534,7 @@ public class ContactManager {
     			DatabaseHelper.deleteContactFromGroup(contactId, groupId, ctx);
     	} while(groupCursor.moveToNext());
 	    // dele
-	}
+	}*/
 
 	public static void updateGroup(JSONObject group, Context context) throws JSONException {
         int sourceId = group.getInt("sourceId"),
@@ -550,14 +548,14 @@ public class ContactManager {
 	    Log.i(TAG, "updated "+ rows + " rows to sourceId: "+sourceId);
 	}
 
-	public static void syncGroups(Context mContext, String name, 
+	/*public static void syncGroups(Context mContext, String name, 
 			List<Group> groups, List<User> contacts, Cursor dataCursor, Cursor rawContactsCursor) 
 	{
 		for(Group g : groups)
 			ContactManager.updateGroup(mContext, name, g, contacts, dataCursor, rawContactsCursor);
 	}
 
-	private static void updateGroup(Context ctx, String name, Group g, List<User> contacts, Cursor dataCursor, Cursor rawContactsCursor) {
+	private static void updateGroup(Context ctx, String name, Group g, List<User> allContacts, Cursor dataCursor, Cursor rawContactsCursor) {
 	    String id = g.groupId;
 	    ContentResolver cr = ctx.getContentResolver();
 	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_URI, null,  
@@ -584,7 +582,7 @@ public class ContactManager {
     	for(Contact c : g.contacts)
     		users.add(new User(c.getName(), c.getNumber(), c.getId()));
     	Log.i(TAG, "There are "+users.size()+" users in group "+g.name);
-    	syncContacts(ctx, name, users, contacts, dataCursor);
+    	syncContacts(ctx, name, users, allContacts, dataCursor);
     	rawContactsCursor.requery();
     	for(User u : users)
     		updateGroupContact(u, groupId, ctx, rawContactsCursor);
@@ -600,5 +598,5 @@ public class ContactManager {
 		// if(contactId != null)
 			DatabaseHelper.updateToGroup(groupId, contactId, rawContactId, ctx.getContentResolver());
 		return contactId;
-	}
+	}*/
 }
