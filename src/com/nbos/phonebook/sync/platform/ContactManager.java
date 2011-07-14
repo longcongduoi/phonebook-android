@@ -122,7 +122,7 @@ public class ContactManager {
 		return false;
 	}
 
-	public static long lookupRawContact(ContentResolver resolver, Contact contact, Cursor rawContactsCursor, List<PhoneContact> allContacts) {
+	/*public static long lookupRawContact(ContentResolver resolver, Contact contact, Cursor rawContactsCursor, List<PhoneContact> allContacts) {
 		if(rawContactsCursor.getCount() == 0) return 0;
 		rawContactsCursor.moveToFirst();
 		do
@@ -150,7 +150,7 @@ public class ContactManager {
 			}
 		}
 		return 0;
-	}
+	}*/
 
 	/**
      * Add a list of status messages to the contacts provider.
@@ -328,7 +328,7 @@ public class ContactManager {
      * @param userId the sample SyncAdapter user ID to lookup
      * @return the RawContact id, or 0 if not found
      */
-    private static long lookupRawContact(ContentResolver resolver, long userId) {
+    /*private static long lookupRawContact(ContentResolver resolver, long userId) {
         long authorId = 0;
         final Cursor c =
             resolver.query(RawContacts.CONTENT_URI, UserIdQuery.PROJECTION,
@@ -344,7 +344,7 @@ public class ContactManager {
             }
         }
         return authorId;
-    }
+    }*/
 
     /**
      * Returns the Data id for a sample SyncAdapter contact's profile row, or 0
@@ -390,15 +390,15 @@ public class ContactManager {
      * ID.
      */
     public interface UserIdQuery {
-        public final static String[] PROJECTION =
+        // public final static String[] PROJECTION =
             // new String[] {RawContacts._ID, RawContacts.SOURCE_ID};
-        	new String[] {RawContacts._ID, Constants.CONTACT_SERVER_ID, RawContacts.DIRTY};
+        	// new String[] {RawContacts._ID, Constants.CONTACT_SERVER_ID, RawContacts.DIRTY};
         public final static int COLUMN_ID = 0;
 
-        public static final String SELECTION =
+        // public static final String SELECTION =
             // RawContacts.ACCOUNT_TYPE + "='" + Constants.ACCOUNT_TYPE + "' AND " +
             //      RawContacts.SOURCE_ID + "=?";
-        	Constants.CONTACT_SERVER_ID + "=?";
+        	// Constants.CONTACT_SERVER_ID + "=?";
     }
 
     /**
@@ -430,7 +430,7 @@ public class ContactManager {
 	    values = new ContentValues();
 	    values.put(BookTable.DIRTY, "0");
 	    int num = cr.update(
-	    		Uri.parse(Constants.SHARE_BOOK_PROVIDER), values,
+	    		Constants.SHARE_BOOK_URI, values,
 	    		null, null);
 	    Log.i(TAG, "Updated "+num+" sharebooks to dirty = 0");
 
@@ -466,15 +466,10 @@ public class ContactManager {
 	}
 
 	public static void updateContact(JSONObject contact, Context context) throws JSONException {
-        int sourceId = contact.getInt("sourceId"),
+        int serverId = contact.getInt("sourceId"),
         	contactId = contact.getInt("contactId");
-        Log.i(TAG, "updateContact, sourceId: "+sourceId+", contactId: "+contactId);
-	    ContentResolver cr = context.getContentResolver();
-	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;
-	    ContentValues values = new ContentValues();
-	    values.put(Constants.CONTACT_SERVER_ID, sourceId);
-	    int rows = cr.update(uri, values, ContactsContract.RawContacts.CONTACT_ID + " = " + contactId, null);
-	    Log.i(TAG, rows + " rows updated");
+        Log.i(TAG, "updateContact, sourceId: "+serverId+", contactId: "+contactId);
+        DatabaseHelper.updateContactServerId(new Integer(contactId).toString(), new Integer(serverId).toString(), context.getContentResolver());
 	}
 
 	public static void updateBook(JSONObject book, Context context) throws JSONException {

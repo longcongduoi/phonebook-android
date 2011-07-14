@@ -76,10 +76,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         List<Group> sharedBooks;
         List<Status> statuses;
         String authtoken = null;
-        
+        SyncManager syncManager = null;
         // ContactManager.setDirtyContacts(mContext); // for testing
-        Cursor dataCursor = null,
-        	rawContactsCursor = null;
+        // Cursor dataCursor = null,
+        	// rawContactsCursor = null;
         
         try {
              // use the account manager to request the credentials
@@ -108,30 +108,16 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                  return;
 
              }
-             List<PhoneContact> allContacts = DatabaseHelper.getContacts(false, mContext);
-             dataCursor = DatabaseHelper.getData(mContext);
              Object[] update = NetworkUtilities.fetchFriendUpdates(account, authtoken,
                     mLastUpdated);
              contacts =  (List<Contact>) update[0];
              groups = (List<Group>) update[1];
              sharedBooks = (List<Group>) update[2];
-             SyncManager syncManager = new SyncManager(mContext, account.name, allContacts, dataCursor);
+             syncManager = new SyncManager(mContext, account.name);
              syncManager.syncContacts(contacts);
              syncManager.refreshCursors();
-             /*
-             // ContactManager.syncContacts(mContext, account.name, users, allContacts, dataCursor);
-             // allContacts = DatabaseHelper.getContacts(false, mContext);
-             syncManager.setAllContacts(DatabaseHelper.getContacts(false, mContext));
-             // dataCursor = DatabaseHelper.getData(mContext);
-             syncManager.setDataCursor(DatabaseHelper.getData(mContext));
-             // rawContactsCursor = DatabaseHelper.getRawContactsCursor(mContext.getContentResolver(), false);
-             syncManager.setRawContactsCursor(DatabaseHelper.getRawContactsCursor(mContext.getContentResolver(), false));
-             // ContactManager.syncGroups(mContext, account.name, groups, allContacts, dataCursor, rawContactsCursor);
-              * 
-              */
-             syncManager.syncGroups(groups);
-             syncManager.syncGroups(sharedBooks);
-             // ContactManager.syncSharedBooks(mContext, account.name, sharedBooks, allContacts, dataCursor, rawContactsCursor);
+             syncManager.syncGroups(groups, false);
+             syncManager.syncGroups(sharedBooks, true);
              
              NetworkUtilities.sendFriendUpdates(account, authtoken,
                      mLastUpdated, true, mContext);
@@ -166,11 +152,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             Log.e(TAG, "JSONException", e);
         }
         finally {
-        	if(dataCursor != null)
-        		dataCursor.close();
-        	if(rawContactsCursor != null)
-        		rawContactsCursor.close();
-        	
+        	if(syncManager != null)
+        		syncManager.close();
         }
     }
 }

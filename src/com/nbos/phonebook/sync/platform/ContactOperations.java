@@ -86,7 +86,7 @@ public class ContactOperations {
         this(context, batchOperation);
         mBackReference = mBatchOperation.size();
         mIsNewContact = true;
-        mValues.put(Constants.CONTACT_SERVER_ID, userId);
+        // mValues.put(Constants.CONTACT_SERVER_ID, userId);
         // mValues.put(RawContacts.SOURCE_ID, userId);
         mValues.put(RawContacts.ACCOUNT_TYPE, Constants.ACCOUNT_TYPE);
         mValues.put(RawContacts.ACCOUNT_NAME, accountName);

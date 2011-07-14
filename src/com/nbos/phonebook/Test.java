@@ -26,7 +26,7 @@ public class Test {
 	    values = new ContentValues();
 	    values.put(BookTable.DIRTY, (Integer) null);
 	    int num = cr.update(
-	    		Uri.parse(Constants.SHARE_BOOK_PROVIDER), values,
+	    		Constants.SHARE_BOOK_URI, values,
 	    		null, null);
 	    Log.i(tag, "Updated "+num+" sharebooks to dirty = 0");
 	}
@@ -41,10 +41,10 @@ public class Test {
     	c.moveToFirst();
     	do {
 			String cId = c.getString(c.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
-			String serverId = c.getString(c.getColumnIndex(Constants.CONTACT_SERVER_ID));
-			Log.i(tag, "contactId: "+cId+", serverId: "+serverId);
+			//String serverId = c.getString(c.getColumnIndex(Constants.CONTACT_SERVER_ID));
+			Log.i(tag, "contactId: "+cId);//+", serverId: "+serverId);
     	} while(c.moveToNext());
-    	DatabaseHelper.getSourceIdFromContactId(c, "793");
+    	// DatabaseHelper.getSourceIdFromContactId(c, "793");
 	}
 
     
@@ -70,7 +70,7 @@ public class Test {
     	} while(c.moveToNext());
     }
     
-    public static void setContactsServerIdToNull(Context ctx) {
+    /*public static void setContactsServerIdToNull(Context ctx) {
 	    ContentValues values = new ContentValues();
 	    values.put(Constants.CONTACT_SERVER_ID, (String) null);
 	    ContentResolver cr = ctx.getContentResolver();
@@ -79,7 +79,7 @@ public class Test {
 	    		null, null);
 	    Log.i(tag, "Updated "+num+" contacts serverId to null");
 
-    }
+    }*/
     
     public static void getData(Context ctx) {
     	final Cursor c =

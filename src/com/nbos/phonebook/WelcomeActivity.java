@@ -97,7 +97,7 @@ public class WelcomeActivity extends ListActivity {
         getListView().setTextFilterEnabled(true);
     	String phoneNumber = getPhoneNumber();
     	Log.i(tag, "phone number: "+phoneNumber);
-    	// Test.getContacts(this.getApplicationContext());
+    	Test.getContacts(this.getApplicationContext());
     }
 
 
