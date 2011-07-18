@@ -162,6 +162,7 @@ public class SyncManager {
 
 	private void updateContactPic(Contact c) {
 		byte[] image = downloadPic(c);
+		if(image == null) return;
         String contactId = getContactIdFromServerId(c.serverId);
         
         dataPicsCursor.moveToFirst();
