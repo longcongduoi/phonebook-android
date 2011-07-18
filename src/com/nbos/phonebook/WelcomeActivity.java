@@ -53,7 +53,28 @@ public class WelcomeActivity extends ListActivity {
 	List<Contact> m_contacts = null;
 	List<Contact> m_phoneContacts = null;
 	ProgressDialog m_ProgressDialog = null;
-    @Override
+	/** Called when the activity is first created. */
+
+	@Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+        testContentProvider();
+        populateGroups();
+        getListView().setTextFilterEnabled(true);
+    	String phoneNumber = getPhoneNumber();
+    	Log.i(tag, "phone number: "+phoneNumber);
+    	// Test.getContacts(this.getApplicationContext());
+    	// Test.getRawContactsTable(this.getApplicationContext());
+    	Test.getDataPicsTable(this.getApplicationContext());
+    	// Test.updateServerId(this.getApplicationContext());
+    	// Test.deletePicTable(this.getApplicationContext());
+    	// Test.getPicTable(this.getApplicationContext());
+    	Test.getContactPics(this.getApplicationContext());
+    	
+    }
+
+	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 	    MenuInflater inflater = getMenuInflater();
 	    inflater.inflate(R.menu.group_list_menu, menu);
@@ -87,23 +108,6 @@ public class WelcomeActivity extends ListActivity {
 		m_cursor.requery();
 	}
 	List<Group> m_groups;
-	/** Called when the activity is first created. */
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
-        testContentProvider();
-        populateGroups();
-        getListView().setTextFilterEnabled(true);
-    	String phoneNumber = getPhoneNumber();
-    	Log.i(tag, "phone number: "+phoneNumber);
-    	Test.getContacts(this.getApplicationContext());
-    	// Test.getRawContactsTable(this.getApplicationContext());
-    	// Test.getDataTable(this.getApplicationContext());
-    	// Test.updateServerId(this.getApplicationContext());
-    	// Test.getPhonebookContactTable(this.getApplicationContext());
-    	
-    }
 
 
 	private void testContentProvider() {

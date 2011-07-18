@@ -8,13 +8,14 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.net.Uri;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.database.tables.PicTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.NetworkUtilities;
@@ -132,9 +133,57 @@ public class Test {
 		} while(c.moveToNext());
 	}
 	
+	public static void getDataPicsTable(Context applicationContext) {
+		Cursor c = applicationContext.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
+	    		// null,
+	    	    new String[] {
+					Data._ID,
+	    			Data.CONTACT_ID,
+	    			Data.RAW_CONTACT_ID,
+	    			CommonDataKinds.Photo.PHOTO,
+	    			Data.MIMETYPE
+	    		},
+	    		null,
+	    		// ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null",
+	    	    null, ContactsContract.Data.CONTACT_ID);
+    	Log.i(tag, "Data pics cursor has "+c.getCount()+" rows");
+		
+		c.moveToFirst();
+		do {
+			String dataId = c.getString(c.getColumnIndex(Data._ID));
+    		String rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID));
+    		String contactId = c.getString(c.getColumnIndex(Data.CONTACT_ID));
+    		String mimeType = c.getString(c.getColumnIndex(Data.MIMETYPE));
+    		if(!mimeType.equals(ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE))
+    			continue;
+    		byte [] photo = c.getBlob(c.getColumnIndex(CommonDataKinds.Photo.PHOTO));
+    		Log.i(tag, "id: "+dataId+", raw contactId: "+rawContactId+", contactId: "+contactId+", mimeType: "+mimeType+", photo is: "+((photo == null) ? "null" : photo.length) );
+		} while(c.moveToNext());
+		c.close();
+	}
+
 	public static void updateServerId(Context applicationContext) {
 		DatabaseHelper.updateContactServerId("997", "1", applicationContext, DatabaseHelper.getRawContactsCursor(applicationContext.getContentResolver(), false));
 		getDataTable(applicationContext);
 	}
 
+	public static void getPicTable(Context ctx) {
+    	final Cursor c = ctx.getContentResolver().query(Constants.PIC_URI, null, null, null, null);
+    	Log.i(tag, "There are "+c.getCount()+" pics");
+    	c.moveToFirst();
+    	do {
+    		String serverId = c.getString(c.getColumnIndex(PicTable.SERVERID));
+    		String picId = c.getString(c.getColumnIndex(PicTable.PICID));
+    		Log.i(tag, "serverId: "+serverId+", picId: "+picId);
+    	} while(c.moveToNext());
+    }
+	
+	public static void deletePicTable(Context ctx) {
+    	int num = ctx.getContentResolver().delete(Constants.PIC_URI, null, null);
+    	Log.i(tag, "Deleted "+num+" pic entries");
+	}
+	
+	public static void getContactPics(Context ctx) {
+		DatabaseHelper.getContactPictures(ctx.getContentResolver(), false);
+	}
 }

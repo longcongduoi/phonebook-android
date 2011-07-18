@@ -1,31 +1,40 @@
 package com.nbos.phonebook.sync.platform;
 
+import java.io.BufferedInputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.http.util.ByteArrayBuffer;
+
 import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.net.Uri;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Data;
-import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 
 import com.nbos.phonebook.DatabaseHelper;
+import com.nbos.phonebook.database.tables.PicTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.Group;
+import com.nbos.phonebook.sync.client.NetworkUtilities;
 import com.nbos.phonebook.sync.client.PhoneContact;
-import com.nbos.phonebook.sync.client.User;
-import com.nbos.phonebook.sync.platform.ContactManager.UserIdQuery;
 
 public class SyncManager {
 	static String TAG = "SyncManager";
 	Context context;
     String account; 
     List<PhoneContact> allContacts; 
-    Cursor dataCursor, rawContactsCursor; //, contactsCursor;
+    Cursor dataCursor, rawContactsCursor, picsCursor, dataPicsCursor;
     
 	public SyncManager(Context context, String account) {
 		super();
@@ -87,7 +96,124 @@ public class SyncManager {
         }
         batchOperation.execute();
         refreshCursors();
-        // updateServerIds(contacts);
+        syncPictures(contacts);
+	}
+
+	private void syncPictures(List<Contact> contacts) {
+		Uri uri = Constants.PIC_URI;
+		picsCursor = context.getContentResolver().query(uri, null, null, null, null);
+		getDataPicsCursor();
+		for(Contact c : contacts) {
+			Log.i(TAG, "Contact: "+c.name+", picId: "+c.picId+", isNull: "+(c.picId == null)+", 'null': "+c.picId.equals("null"));
+			if(c.picId == null || c.picId.equals("null")) continue;
+			syncPicture(c);
+		}
+		picsCursor.close();
+		dataPicsCursor.close();
+	}
+
+	private void getDataPicsCursor() {
+    	dataPicsCursor = context.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
+	    		// null,
+	    	    new String[] {
+	    			ContactsContract.Data.CONTACT_ID,
+	    			ContactsContract.Data.RAW_CONTACT_ID,
+	    			ContactsContract.CommonDataKinds.Photo.PHOTO,
+	    		},
+	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null",
+	    	    null, ContactsContract.Data.CONTACT_ID);
+    	Log.i(TAG, "Data pics cursor has "+dataPicsCursor.getCount()+" rows");
+	}
+
+	private void syncPicture(Contact c) {
+		// check if the pic is the same in the server
+		Uri uri = Constants.PIC_URI;
+		picsCursor.moveToFirst();
+		if(picsCursor.getCount() > 0)
+		do {
+			String serverId = picsCursor.getString(picsCursor.getColumnIndex(PicTable.SERVERID));
+			String picId = picsCursor.getString(picsCursor.getColumnIndex(PicTable.PICID));
+			if(!c.serverId.equals(serverId)) continue;
+			if(c.picId.equals(picId)) // no change in pic 
+			{
+				Log.i(TAG, "no change in pic: "+c.picId+", serverId: "+serverId);
+				updateContactPic(c); // remove this
+				return;
+			}
+			downloadPic(c);
+			ContentValues values = new ContentValues();
+			values.put(PicTable.PICID, c.picId);
+			int num = context.getContentResolver().update(uri, values, 
+				PicTable.SERVERID + " = ?", new String[] {serverId});
+			Log.i(TAG, "updated "+num+" entries pic id to: "+c.picId+" for serverId "+serverId);
+			// pic id has changed, download the pic
+			return;
+		} while(picsCursor.moveToNext());
+		// not in the database, insert the values
+		downloadPic(c);
+		int num = context.getContentResolver().delete(uri, PicTable.SERVERID + " = ?", new String[]{c.serverId});
+		Log.i(TAG, "deleted "+num+" pic values where serverId = "+c.serverId);
+		ContentValues values = new ContentValues();
+		values.put(PicTable.PICID, c.picId);
+		values.put(PicTable.SERVERID, c.serverId);
+		context.getContentResolver().insert(uri, values);
+		Log.i(TAG, "inserted picId: "+c.picId+", serverId: "+c.serverId);
+	}
+
+	private void updateContactPic(Contact c) {
+		byte[] image = downloadPic(c);
+        String contactId = getContactIdFromServerId(c.serverId);
+        
+        dataPicsCursor.moveToFirst();
+        if(dataPicsCursor.getCount() > 0)
+	    do {
+	    	String cId = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.CONTACT_ID));
+	    	if(!cId.equals(contactId)) continue;
+	    	Log.i(TAG, "Updating pic for serverId: "+c.serverId);
+	    	ContentValues values = new ContentValues();
+	    	values.put(ContactsContract.CommonDataKinds.Photo.PHOTO, image);
+	    	context.getContentResolver().update(Data.CONTENT_URI, values, 
+	    			Data.CONTACT_ID + " = ? and " +
+	    			Data.MIMETYPE + " = ? ", 
+	    			new String[] {contactId, CommonDataKinds.Photo.CONTENT_ITEM_TYPE});
+	    	return;
+	    } while(dataCursor.moveToNext());
+        // insert the pic
+        Log.i(TAG, "inserting pic for serverId: "+c.serverId+", image is: "+image.length);
+        ContentValues values = new ContentValues();
+        values.put(ContactsContract.Data.RAW_CONTACT_ID, DatabaseHelper.getRawContactId(contactId, rawContactsCursor));
+        values.put(ContactsContract.Data.IS_SUPER_PRIMARY, 1);
+        values.put(ContactsContract.CommonDataKinds.Photo.PHOTO, image);
+        values.put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE);
+        
+        Uri uri = context.getContentResolver().insert(Data.CONTENT_URI, values);
+        Log.i(TAG, "pic uri is: "+uri);
+        // Uri uri = ContentUris.withAppendedId(ContactsContract.Data.CONTENT_URI, Long.parseLong(contactId));
+        // cr.update(uri, values, ContactsContract.Contacts._ID + " = " + contactId, null);
+
+	}
+
+	private byte[] downloadPic(Contact c) {
+		URL url;
+		try {
+			url = new URL(NetworkUtilities.DOWNLOAD_CONTACT_PIC_URI + c.picId);
+			URLConnection ucon = url.openConnection();
+	        InputStream is = ucon.getInputStream();
+	        BufferedInputStream bis = new BufferedInputStream(is, 8192);
+	        /*
+	         * Read bytes to the Buffer until there is nothing more to read(-1).
+	         */
+	        ByteArrayBuffer baf = new ByteArrayBuffer(50);
+	        int current = 0;
+	        while ((current = bis.read()) != -1) 
+	        	baf.append((byte) current);
+	        byte[] image = baf.toByteArray();
+	        Log.i(TAG, "Contact: "+c.serverId+", image size: "+image.length);
+	        return image;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	private void refreshCursors() {

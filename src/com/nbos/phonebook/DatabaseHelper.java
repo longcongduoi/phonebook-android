@@ -24,7 +24,6 @@ import android.database.CursorJoiner;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.Data;
-import android.provider.ContactsContract.RawContacts;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
@@ -37,7 +36,6 @@ import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.SharingBook;
-import com.nbos.phonebook.sync.client.User;
 import com.nbos.phonebook.sync.platform.BatchOperation;
 import com.nbos.phonebook.sync.platform.SampleSyncAdapterColumns;
 import com.nbos.phonebook.util.SimpleImageInfo;

@@ -91,7 +91,8 @@ public class NetworkUtilities {
         SEND_CONTACT_UPDATES_URI = BASE_URL + "/mobile/updateContacts",
         SEND_GROUP_UPDATES_URI = BASE_URL + "/mobile/updateGroups",
     	SEND_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/updateSharedBooks",
-    	UPLOAD_CONTACT_PIC_URI = BASE_URL + "/fileUploader/process";
+    	UPLOAD_CONTACT_PIC_URI = BASE_URL + "/fileUploader/process",
+    	DOWNLOAD_CONTACT_PIC_URI = BASE_URL + "/download/index/";
     // String urlServer = "http://10.9.8.29:8080/phonebook/fileUploader/process";
     public static final String FETCH_STATUS_URI = BASE_URL + "/fetch_status";
     private static HttpClient mHttpClient;

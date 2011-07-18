@@ -5,7 +5,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import com.nbos.phonebook.database.tables.BookTable;
-import com.nbos.phonebook.database.tables.ContactTable;
+import com.nbos.phonebook.database.tables.PicTable;
 
 /**
  * This database class extends the SQLiteOpenHelper
@@ -25,7 +25,7 @@ import com.nbos.phonebook.database.tables.ContactTable;
  */
 public class Database extends SQLiteOpenHelper {
 	private static final String DATABASE_NAME = "phonebook.db";
-	private static final int DATABASE_VERSION = 13;
+	private static final int DATABASE_VERSION = 14;
 
 	public Database(final Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -34,7 +34,7 @@ public class Database extends SQLiteOpenHelper {
 	@Override
 	public final void onCreate(final SQLiteDatabase db) {
 		db.execSQL(BookTable.SQL_CREATE);
-		db.execSQL(ContactTable.SQL_CREATE);
+		db.execSQL(PicTable.SQL_CREATE);
 	}
 
 	@Override
@@ -53,7 +53,7 @@ public class Database extends SQLiteOpenHelper {
 	 */
 	private final void onUpgradeDropTablesAndCreate(final SQLiteDatabase db) {
 		db.execSQL(BookTable.SQL_DROP);
-		db.execSQL(ContactTable.SQL_DROP);
+		db.execSQL(PicTable.SQL_DROP);
 		onCreate(db);
 	}
 }
