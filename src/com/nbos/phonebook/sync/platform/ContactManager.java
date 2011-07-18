@@ -465,11 +465,11 @@ public class ContactManager {
 	    Log.i("ContactManager", "Resetting "+num+" dirty on contacts");
 	}
 
-	public static void updateContact(JSONObject contact, Context context) throws JSONException {
+	public static void updateContact(JSONObject contact, Context context, Cursor rawContactsCursor) throws JSONException {
         int serverId = contact.getInt("sourceId"),
         	contactId = contact.getInt("contactId");
-        Log.i(TAG, "updateContact, sourceId: "+serverId+", contactId: "+contactId);
-        DatabaseHelper.updateContactServerId(new Integer(contactId).toString(), new Integer(serverId).toString(), context.getContentResolver());
+        // Log.i(TAG, "updateContact, sourceId: "+serverId+", contactId: "+contactId);
+        DatabaseHelper.updateContactServerId(new Integer(contactId).toString(), new Integer(serverId).toString(), context, rawContactsCursor);
 	}
 
 	public static void updateBook(JSONObject book, Context context) throws JSONException {

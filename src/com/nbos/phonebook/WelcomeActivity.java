@@ -98,6 +98,11 @@ public class WelcomeActivity extends ListActivity {
     	String phoneNumber = getPhoneNumber();
     	Log.i(tag, "phone number: "+phoneNumber);
     	Test.getContacts(this.getApplicationContext());
+    	// Test.getRawContactsTable(this.getApplicationContext());
+    	// Test.getDataTable(this.getApplicationContext());
+    	// Test.updateServerId(this.getApplicationContext());
+    	// Test.getPhonebookContactTable(this.getApplicationContext());
+    	
     }
 
 

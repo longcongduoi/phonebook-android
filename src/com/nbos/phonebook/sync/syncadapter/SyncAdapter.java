@@ -115,7 +115,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
              sharedBooks = (List<Group>) update[2];
              syncManager = new SyncManager(mContext, account.name);
              syncManager.syncContacts(contacts);
-             syncManager.refreshCursors();
              syncManager.syncGroups(groups, false);
              syncManager.syncGroups(sharedBooks, true);
              

@@ -8,11 +8,11 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 
 import com.nbos.phonebook.DatabaseHelper;
-import com.nbos.phonebook.database.tables.ContactTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.Group;
@@ -25,7 +25,7 @@ public class SyncManager {
 	Context context;
     String account; 
     List<PhoneContact> allContacts; 
-    Cursor dataCursor, rawContactsCursor, contactsCursor;
+    Cursor dataCursor, rawContactsCursor; //, contactsCursor;
     
 	public SyncManager(Context context, String account) {
 		super();
@@ -36,9 +36,16 @@ public class SyncManager {
 		this.dataCursor = DatabaseHelper.getData(context);
 		
 		rawContactsCursor = DatabaseHelper.getRawContactsCursor(context.getContentResolver(), false);
-		contactsCursor = context.getContentResolver().query(Constants.CONTACT_URI, null, null, null, null);
+		// getContactsCursor();
 	}
 
+	/*private void getContactsCursor() {
+		if(contactsCursor != null)
+			contactsCursor.close();
+		// contactsCursor = context.getContentResolver().query(Constants.CONTACT_URI, null, null, null, null);
+		// Log.i(TAG, "There are "+contactsCursor.getCount()+" phonebook contacts");
+	}*/
+	
 	public void syncContacts(List<Contact> contacts) {
         long rawContactId = 0;
         final ContentResolver resolver = context.getContentResolver();
@@ -46,7 +53,7 @@ public class SyncManager {
         
         Log.i(TAG, "There are "+rawContactsCursor.getCount()+" raw contacts, num columns: "+rawContactsCursor.getColumnCount());
         Log.i(TAG, "There are "+allContacts.size()+" phone contacts");
-        Log.i(TAG, "There are "+contactsCursor.getCount()+" phonebook contacts");
+        // Log.i(TAG, "There are "+contactsCursor.getCount()+" phonebook contacts");
         // syncSharedBooks(context);
         Log.d(TAG, "In SyncContacts");
         for (final Contact contact : contacts) {
@@ -79,13 +86,15 @@ public class SyncManager {
             }
         }
         batchOperation.execute();
+        refreshCursors();
+        // updateServerIds(contacts);
 	}
 
-	public void refreshCursors() {
+	private void refreshCursors() {
+		Log.i(TAG, "refreshCursors");
         allContacts = DatabaseHelper.getContacts(false, context);
         dataCursor.requery();
         rawContactsCursor.requery();
-        contactsCursor.requery();
 	}
 
 	public void syncGroups(List<Group> groups, boolean isSharedBook) {
@@ -144,41 +153,35 @@ public class SyncManager {
 	}
 
 	private String getContactIdFromServerId(String serverId) {
-		if(contactsCursor.getCount() == 0) return null;
-		contactsCursor.moveToFirst();
+		if(dataCursor.getCount() == 0) return null;
+		dataCursor.moveToFirst();
 		do {
-			String sId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactTable.SERVERID));
-			if(sId.equals(serverId))
-				return contactsCursor.getString(contactsCursor.getColumnIndex(ContactTable.CONTACTID));
-		} while(contactsCursor.moveToNext());
+			String mimeType = dataCursor.getString(dataCursor.getColumnIndex(Data.MIMETYPE));
+			String sId = dataCursor.getString(dataCursor.getColumnIndex(SampleSyncAdapterColumns.DATA_PID));
+			if(!mimeType.equals(SampleSyncAdapterColumns.MIME_PROFILE)
+			|| !sId.equals(serverId))
+				continue;
+			String contactId = dataCursor.getString(dataCursor.getColumnIndex(Data.CONTACT_ID));
+			Log.i(TAG, "getContactIdFromServerId("+serverId+") = "+contactId);
+			return contactId;
+		} while(dataCursor.moveToNext());
 		return null;
 	}
 
 	long lookupRawContact(Contact contact) {
-		// get the contact id for the server id
-		String contactId = null;
-		contactsCursor.moveToFirst();
-		if(contactsCursor.getCount() > 0) 
-		do
-		{
-			String serverId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactTable.SERVERID));
-			if(serverId.equals(contact.serverId))
-			{
-				contactId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactTable.CONTACTID));
-				break;
-			}
-			
-		} while(contactsCursor.moveToNext());
-		if(rawContactsCursor.getCount() == 0) return 0;
-		rawContactsCursor.moveToFirst();
-		if(contactId != null)
-		do
-		{
-			String cId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.CONTACT_ID));
-			if(cId.equals(contactId))
-				return rawContactsCursor.getLong(0);
-		} while(rawContactsCursor.moveToNext());
-		// could not find the contact, do a phone number search
+		dataCursor.moveToFirst();
+		if(dataCursor.getCount() > 0)
+		do {
+			String mimeType = dataCursor.getString(dataCursor.getColumnIndex(Data.MIMETYPE));
+			String serverId = dataCursor.getString(dataCursor.getColumnIndex(SampleSyncAdapterColumns.DATA_PID));
+			if(!mimeType.equals(SampleSyncAdapterColumns.MIME_PROFILE)
+			|| !serverId.equals(contact.serverId))
+				continue;
+			long rawContactId = dataCursor.getLong(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+			Log.i(TAG, "lookupRawContact returning rawContactId: "+rawContactId+", for serverId: "+serverId);
+		} while(dataCursor.moveToNext()); 
+
+		// could not find the contact, do a phone number search		
 		for(PhoneContact u : allContacts) {
 			if(u.number.equals(contact.number)) {// maybe a contact
 				// check if the rest of the information is the same
@@ -186,7 +189,7 @@ public class SyncManager {
 				{
 					Log.i(TAG, "Existing contact; ph: "+u.number+", name: "+u.name+", serverId: "+contact.serverId+", contactId: "+u.contactId+", phone serverId: "+u.serverId+", rawContactId: "+u.rawContactId);
 					// update the serverId of the contact
-					DatabaseHelper.updateContactServerId(u.contactId, contact.serverId, context.getContentResolver());
+					DatabaseHelper.updateContactServerId(u.contactId, contact.serverId, context, rawContactsCursor);
 					return Long.parseLong(u.rawContactId);
 				}
 			}
@@ -194,12 +197,27 @@ public class SyncManager {
 		return 0;
 	}
 
+	/*void updateServerIds(List<Contact> contacts) {
+		for(Contact contact : contacts)
+		{
+			for(PhoneContact u : allContacts) {
+				if(u.number.equals(contact.number)) {// maybe a contact
+					// check if the rest of the information is the same
+					if(u.name.equals(contact.name))
+					{
+						Log.i(TAG, "Existing contact; ph: "+u.number+", name: "+u.name+", serverId: "+contact.serverId+", contactId: "+u.contactId+", phone serverId: "+u.serverId+", rawContactId: "+u.rawContactId);
+						// update the serverId of the contact
+						DatabaseHelper.updateContactServerId(u.contactId, contact.serverId, context, rawContactsCursor);
+					}
+				}
+			}
+		}
+	}*/
+	
 	public void close() {
     	if(dataCursor != null)
     		dataCursor.close();
     	if(rawContactsCursor != null)
     		rawContactsCursor.close();
-    	if(contactsCursor != null)
-    		contactsCursor.close();
 	}
 }

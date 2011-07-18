@@ -58,6 +58,7 @@ import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.content.Context;
+import android.database.Cursor;
 import android.os.Handler;
 import android.util.Log;
 
@@ -549,7 +550,8 @@ public class NetworkUtilities {
 		mContext = context;
 		accountName = account.name;
 		authToken = authtoken;
-		sendContactUpdates(DatabaseHelper.getContacts(newOnly, mContext), newOnly);
+		Cursor rawContactsCursor = DatabaseHelper.getRawContactsCursor(mContext.getContentResolver(), false);
+		sendContactUpdates(DatabaseHelper.getContacts(newOnly, mContext), newOnly, rawContactsCursor);
         sendGroupUpdates(DatabaseHelper.getGroups(newOnly, mContext));
         sendSharedBookUpdates(DatabaseHelper.getSharingBooks(true, mContext));
 	}
@@ -598,9 +600,8 @@ public class NetworkUtilities {
 
 	}
 
-	private static void sendContactUpdates(List<PhoneContact> contacts, boolean newOnly) throws ClientProtocolException, IOException, JSONException {
+	private static void sendContactUpdates(List<PhoneContact> contacts, boolean newOnly, Cursor rawContactsCursor) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
-		
         params.add(new BasicNameValuePair("numContacts", new Integer(contacts.size()).toString()));
         for(int i=0; i< contacts.size(); i++)
         {
@@ -614,7 +615,7 @@ public class NetworkUtilities {
 		
         JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
         for (int i = 0; i < contactUpdates.length(); i++)
-        	ContactManager.updateContact(contactUpdates.getJSONObject(i), mContext);
+        	ContactManager.updateContact(contactUpdates.getJSONObject(i), mContext, rawContactsCursor);
         // send the profile pictures here
         sendContactPictureUpdates(newOnly);
         ContactManager.resetDirtyContacts(mContext);

@@ -11,6 +11,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 
 import com.nbos.phonebook.database.tables.BookTable;
@@ -107,4 +108,33 @@ public class Test {
     		NetworkUtilities.upload(NetworkUtilities.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
     	}
     }
+    
+
+	public static void getRawContactsTable(Context ctx) {
+		Cursor c = DatabaseHelper.getRawContactsCursor(ctx.getContentResolver(), false);
+		c.moveToFirst();
+		do {
+    		String contactId = c.getString(c.getColumnIndex(RawContacts.CONTACT_ID));
+    		Log.i(tag, "contactId: "+contactId);
+		} while(c.moveToNext());
+	}
+
+	public static void getDataTable(Context applicationContext) {
+		Cursor c = DatabaseHelper.getData(applicationContext);
+		c.moveToFirst();
+		do {
+    		String rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID));
+    		String contactId = c.getString(c.getColumnIndex(Data.CONTACT_ID));
+    		String serverId = c.getString(c.getColumnIndex(Data.DATA1));
+    		String data2 = c.getString(c.getColumnIndex(Data.DATA2));
+    		String mimeType = c.getString(c.getColumnIndex(Data.MIMETYPE));
+    		Log.i(tag, "raw contactId: "+rawContactId+", contactId: "+contactId+", data1: "+serverId+", data2: "+data2+", mimeType: "+mimeType);
+		} while(c.moveToNext());
+	}
+	
+	public static void updateServerId(Context applicationContext) {
+		DatabaseHelper.updateContactServerId("997", "1", applicationContext, DatabaseHelper.getRawContactsCursor(applicationContext.getContentResolver(), false));
+		getDataTable(applicationContext);
+	}
+
 }
