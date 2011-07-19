@@ -25,7 +25,7 @@ import com.nbos.phonebook.database.tables.PicTable;
  */
 public class Database extends SQLiteOpenHelper {
 	private static final String DATABASE_NAME = "phonebook.db";
-	private static final int DATABASE_VERSION = 14;
+	private static final int DATABASE_VERSION = 15;
 
 	public Database(final Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);

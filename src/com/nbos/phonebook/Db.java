@@ -30,6 +30,7 @@ import android.util.Log;
 import com.nbos.phonebook.contentprovider.Provider;
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.database.tables.PicTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.ContactPicture;
@@ -37,11 +38,12 @@ import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.SharingBook;
 import com.nbos.phonebook.sync.platform.BatchOperation;
+import com.nbos.phonebook.sync.platform.ContactOperations;
 import com.nbos.phonebook.sync.platform.SampleSyncAdapterColumns;
 import com.nbos.phonebook.util.SimpleImageInfo;
 
 public class Db {
-	static String TAG = "DATA";
+	static String tag = "DATA";
 	public static Cursor getContacts(Activity activity) {
 		return activity.managedQuery(ContactsContract.Contacts.CONTENT_URI, null, null, null,
 				ContactsContract.Contacts._ID);
@@ -102,13 +104,13 @@ public class Db {
 	    int num = cr.update(
 	    		ContactsContract.Groups.CONTENT_URI, values,
 	    		ContactsContract.Groups._ID + " = " + groupId, null);
-	    Log.i(TAG, "Updated "+num+" groups to dirty");
+	    Log.i(tag, "Updated "+num+" groups to dirty");
 
 	}
 
 	public static void addToGroup(String groupId, String rawContactId, ContentResolver cr) {
 		   // this.removeFromGroup(personId, groupId);
-			Log.i(TAG, "Added contact to group: "+groupId+", contactId: "+rawContactId);
+			Log.i(tag, "Added contact to group: "+groupId+", contactId: "+rawContactId);
 		    ContentValues values = new ContentValues();
 		    values.put(ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID,
 		            rawContactId);
@@ -127,7 +129,7 @@ public class Db {
 
 	public static void updateToGroup(String groupId, String contactId, String rawContactId, ContentResolver cr) {
 		   // this.removeFromGroup(personId, groupId);
-			Log.i(TAG, "updating contact to group: "+groupId+", raw contactId: "+rawContactId);
+			Log.i(tag, "updating contact to group: "+groupId+", raw contactId: "+rawContactId);
 			if(rawContactId == null) return;
 			if(Db.isContactInGroup(groupId, contactId, cr)) return;
 		    ContentValues values = new ContentValues();
@@ -141,8 +143,9 @@ public class Db {
 		                    ContactsContract.CommonDataKinds.GroupMembership.MIMETYPE,
 		                    ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE);
 
-		    Uri uri = cr.insert(ContactsContract.Data.CONTENT_URI, values);
-		    Log.i(TAG, "insert uri is: "+uri);
+		    Uri uri = cr.insert(
+		    	ContactOperations.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI), values);
+		    Log.i(tag, "insert uri is: "+uri);
 		    // DatabaseHelper.setGroupDirty(groupId, cr);		    
 	}
 
@@ -176,16 +179,16 @@ public class Db {
 	    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+" = "+groupId
 	    	    +" and "+ContactsContract.Data.CONTACT_ID + " = "+contactId,
 	    	    null, ContactsContract.Data.CONTACT_ID);
-	    Log.i(TAG, "isContactInGroup() groupId: "+groupId+", contactId: "+contactId+", num results: "+c.getCount());
+	    Log.i(tag, "isContactInGroup() groupId: "+groupId+", contactId: "+contactId+", num results: "+c.getCount());
 	    return c.getCount() > 0;
 	}
 
 	public static String getAccountName(Context ctx) {
         Account[] accounts = AccountManager.get(ctx).getAccounts();
-        Log.i(TAG, "There are "+accounts.length+" accounts");
+        Log.i(tag, "There are "+accounts.length+" accounts");
         for (Account account : accounts) 
         {
-        	Log.i(TAG, "account name: "+account.name+", type: "+account.type);
+        	Log.i(tag, "account name: "+account.name+", type: "+account.type);
         	if(account.type.equals(Constants.ACCOUNT_TYPE))
         		return account.name;
         }
@@ -194,10 +197,10 @@ public class Db {
 
 	public static Account getAccount(Context ctx, String name) {
         Account[] accounts = AccountManager.get(ctx).getAccounts();
-        Log.i(TAG, "There are "+accounts.length+" accounts");
+        Log.i(tag, "There are "+accounts.length+" accounts");
         for (Account account : accounts) 
         {
-        	Log.i(TAG, "account name: "+account.name+", type: "+account.type);
+        	Log.i(tag, "account name: "+account.name+", type: "+account.type);
         	if(account.type.equals(Constants.ACCOUNT_TYPE) && account.name.equals(name))
         		return account;
         }
@@ -210,7 +213,7 @@ public class Db {
         final BatchOperation batchOperation =
             new BatchOperation(context, resolver);
     	
-		Log.i(TAG, "Creating group: "+groupName);
+		Log.i(tag, "Creating group: "+groupName);
 		Uri mEntityUri = ContactsContract.Groups.CONTENT_URI.buildUpon()
 			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_NAME, accountName)
 			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_TYPE, Constants.ACCOUNT_TYPE)
@@ -254,7 +257,7 @@ public class Db {
 	    	dataCursor = getData(ctx);
 	    	// phonebookContactsCursor = cr.query(Constants.CONTACT_URI, null, null, null, null);
 	    
-	    Log.i(TAG, "There are "+rawContactsCursor.getCount()+" contacts ");
+	    Log.i(tag, "There are "+rawContactsCursor.getCount()+" contacts ");
 	    List<PhoneContact> users = new ArrayList<PhoneContact>();
 	    if(rawContactsCursor.getCount() == 0) return users;
 	    rawContactsCursor.moveToFirst();
@@ -265,7 +268,7 @@ public class Db {
 	        	dirty = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
 	        String name = getContactName(contactsCursor, contactId); 
 	        String phoneNumber = getContactNumber(phonesCursor, contactId); 
-	        Log.i(TAG, "id: "+contactId+", rawContactId: "+rawContactId+", serverId: "+serverId+", name is: "+name+", number is: "+phoneNumber+", dirty: "+dirty);//+", accountName: "+accountName+", accountType: "+accountType);
+	        Log.i(tag, "id: "+contactId+", rawContactId: "+rawContactId+", serverId: "+serverId+", name is: "+name+", number is: "+phoneNumber+", dirty: "+dirty);//+", accountName: "+accountName+", accountType: "+accountType);
 	        if(name == null || phoneNumber == null) continue;
 	        users.add(new PhoneContact(name, phoneNumber, serverId, contactId, rawContactId));
 	    } while(rawContactsCursor.moveToNext());
@@ -293,8 +296,8 @@ public class Db {
 	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null",
 	    	    null, ContactsContract.Data.CONTACT_ID);
 	    
-	    Log.i(TAG, "There are "+rawContactsCursor.getCount()+" raw contacts entries for newOnly: "+newOnly);
-	    Log.i(TAG, "There are "+dataCursor.getCount()+" data entries");
+	    Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries for newOnly: "+newOnly);
+	    Log.i(tag, "There are "+dataCursor.getCount()+" data entries");
 	    
 	    if(rawContactsCursor.getCount() == 0) return pics;
 	    
@@ -330,7 +333,7 @@ public class Db {
 	    	String contentType = findMimeTypeForImage(pic); 
 	    		// dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.MIMETYPE));
 	    	// String serverId
-	    	Log.i(TAG, "Contact["+contactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
+	    	Log.i(tag, "Contact["+contactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
 	    	return new ContactPicture(pic, serverId, contentType);
 	    } while(dataCursor.moveToNext());
 	    return null;
@@ -389,7 +392,7 @@ public class Db {
 	    			ContactsContract.Groups.DIRTY
 	    		},
 	    		where, null, null);
-	    Log.i(TAG, "There are "+groupsCursor.getCount()+" groups");
+	    Log.i(tag, "There are "+groupsCursor.getCount()+" groups");
 	    Cursor contactsCursor = cr.query(ContactsContract.Contacts.CONTENT_URI,
 	    		// null,
 	    	    new String[] {
@@ -409,7 +412,7 @@ public class Db {
         		null, null);
 
 	    
-	    Log.i(TAG, "There are "+contactsCursor.getCount()+" contacts");
+	    Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
 	    
 	    while(groupsCursor.moveToNext())
 	    {
@@ -420,9 +423,9 @@ public class Db {
 	    	String dirty = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.DIRTY));
 	    	String accName = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.ACCOUNT_NAME));
 	    	String accType = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.ACCOUNT_TYPE));
-	    	Log.i(TAG, "Group: "+name+", account: "+accName+", account type: "+accType);
+	    	Log.i(tag, "Group: "+name+", account: "+accName+", account type: "+accType);
 		    Cursor groupCursor = getContactsInGroup(new Integer(groupId).toString(), cr);
-		    Log.i(TAG, "There are "+groupCursor.getCount()+" contacts in group: "+groupId);
+		    Log.i(tag, "There are "+groupCursor.getCount()+" contacts in group: "+groupId);
 	    	
 		    IntCursorJoiner joiner = new IntCursorJoiner(
 		    		contactsCursor,
@@ -441,13 +444,13 @@ public class Db {
 	        				contactNumber = getContactPhoneNumber(contactId, phonesCursor);
 	        			if(contactNumber == null) break;
 	        			contacts.add(new Contact(contactName, contactNumber, serverId));
-	        			Log.i(TAG, "added contact: "+contactId+", serverId: "+serverId+", "+contactNumber+", "+contactName);
+	        			Log.i(tag, "added contact: "+contactId+", serverId: "+serverId+", "+contactNumber+", "+contactName);
 	        		break;
 	        	}
 	        }	    
 	        groups.add(new Group(groupId, groupSourceId, name, null, contacts));
-	        Log.i(TAG, "dirty is "+dirty);
-	        Log.i(TAG, "Added group["+groupId+"] "+name+" with "+contacts.size()+" contacts");
+	        Log.i(tag, "dirty is "+dirty);
+	        Log.i(tag, "Added group["+groupId+"] "+name+" with "+contacts.size()+" contacts");
 	        groupCursor.close();
 	    	// books
 	    }
@@ -491,14 +494,14 @@ public class Db {
     		rawContactsCursor = getRawContactsCursor(cr, false),
     		groupsCursor = getGroups(cr);
     	if(cursor != null)
-    		Log.i(TAG, "There are "+cursor.getCount()+" contacts sharing books");
+    		Log.i(tag, "There are "+cursor.getCount()+" contacts sharing books");
     	while(cursor.moveToNext())
     	{
     		String groupSourceId = getSourceIdFromGroupId(groupsCursor, 
     				cursor.getString(cursor.getColumnIndex(BookTable.BOOKID))),
     			contactSourceId = getServerIdFromContactId(dataCursor, 
     				cursor.getString(cursor.getColumnIndex(BookTable.CONTACTID)));
-    		Log.i(TAG, "groupSourceId: "+groupSourceId+", contactSourceId: "+contactSourceId);
+    		Log.i(tag, "groupSourceId: "+groupSourceId+", contactSourceId: "+contactSourceId);
     		if(groupSourceId != null && contactSourceId != null)
     			books.add(new SharingBook(groupSourceId, contactSourceId));
     	}
@@ -540,20 +543,20 @@ public class Db {
 
 	public static String getPhoneNumber(Context ctx) {
 		String ph = ((TelephonyManager) ctx.getSystemService(Context.TELEPHONY_SERVICE)).getLine1Number();
-		Log.i(TAG, "Phone number is: "+ph);
+		Log.i(tag, "Phone number is: "+ph);
 		return ph;
     }
 
 	public static void updateContactServerId(String contactId, String serverId, Context context, Cursor rawContactsCursor) {
 		String rawContactId = getRawContactId(contactId, rawContactsCursor);
-		Log.i(TAG, "Raw contact id is: "+rawContactId);
+		Log.i(tag, "Raw contact id is: "+rawContactId);
 		Uri uri = Data.CONTENT_URI;
 		Cursor c = context.getContentResolver().query(uri, null,
 				Data.CONTACT_ID + " = " + contactId + " and " +
 				Data.MIMETYPE + " = '" + SampleSyncAdapterColumns.MIME_PROFILE + "'", null, null);
 		ContentValues values = new ContentValues();
 		if(c.getCount() == 0) { // insert
-			Log.i(TAG, "inserting");
+			Log.i(tag, "inserting");
             values.put(Data.MIMETYPE, SampleSyncAdapterColumns.MIME_PROFILE);
             values.put(SampleSyncAdapterColumns.DATA_PID, serverId);
             values.put(Data.RAW_CONTACT_ID, rawContactId);
@@ -563,7 +566,7 @@ public class Db {
 		}
 		c.close();
 		// update 
-		Log.i(TAG, "updating");
+		Log.i(tag, "updating");
 		values.put(SampleSyncAdapterColumns.DATA_PID, serverId);
 		context.getContentResolver().update(uri, values, 
 				Data.CONTACT_ID + " = " + contactId + " and " +
@@ -579,7 +582,7 @@ public class Db {
     }
 
 	public static String getRawContactId(String contactId, Cursor rawContactsCursor) {
-		Log.i(TAG, "getRawContactId("+contactId+"), rawContactsCursor size: "+rawContactsCursor.getCount());
+		Log.i(tag, "getRawContactId("+contactId+"), rawContactsCursor size: "+rawContactsCursor.getCount());
 		if(contactId == null || rawContactsCursor.getCount() == 0) return null;
 		rawContactsCursor.moveToFirst();
 		do {
@@ -588,17 +591,17 @@ public class Db {
 			// Log.i(TAG, "checking: contactID: "+cId+", rawContactId: "+rawContactId);
 			if(cId != null && cId.equals(contactId))
 			{
-				Log.i(TAG, "returning: "+rawContactId);
+				Log.i(tag, "returning: "+rawContactId);
 				return rawContactId;
 			}
 		} while(rawContactsCursor.moveToNext());
-		Log.i(TAG, "returning null");
+		Log.i(tag, "returning null");
 		return null;
 	}
 
 	public static void deleteContactFromGroup(String contactId, String groupId,
 			Context ctx) {
-		Log.i(TAG, "Deleting contact from group: "+groupId+", contactId: "+contactId);
+		Log.i(tag, "Deleting contact from group: "+groupId+", contactId: "+contactId);
 	    ContentValues values = new ContentValues();
 	    values.put(ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID,
 	            contactId);
@@ -617,7 +620,7 @@ public class Db {
 	}
 
 	public static String getGroupNamesFromPhoneNumber(String phoneNumber, Context context) {
-		Log.i(TAG, "Getting groups for phone number: "+phoneNumber);
+		Log.i(tag, "Getting groups for phone number: "+phoneNumber);
 		if(phoneNumber == null) return null;
     	Cursor phonesCursor = context.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
                 new String[] {
@@ -625,7 +628,7 @@ public class Db {
         		ContactsContract.CommonDataKinds.Phone.NUMBER }, 
         		ContactsContract.CommonDataKinds.Phone.NUMBER +" = ? ", 
                 new String[] { phoneNumber  }, null);
-		Log.i(TAG, "There are "+phonesCursor.getCount()+" contact entries");
+		Log.i(tag, "There are "+phonesCursor.getCount()+" contact entries");
 		if(phonesCursor.getCount() == 0) return null;
 		phonesCursor.moveToFirst();
 		String contactId = phonesCursor.getString(phonesCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
@@ -640,7 +643,7 @@ public class Db {
     				+ " = ? ",
                 new String[] { contactId, ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE }, 
                 ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID);
-    	Log.i(TAG, "contactId: "+contactId+", is in "+contactGroupsCursor.getCount()+" groups");
+    	Log.i(tag, "contactId: "+contactId+", is in "+contactGroupsCursor.getCount()+" groups");
     	if(contactGroupsCursor.getCount() == 0) return null;
     	contactGroupsCursor.moveToFirst();
     	String groupIdsIn = "(";
@@ -649,7 +652,7 @@ public class Db {
     		
     		String groupId = contactGroupsCursor.getString(contactGroupsCursor.getColumnIndex(
     				ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID));
-    		Log.i(TAG, "Group id: "+groupId);
+    		Log.i(tag, "Group id: "+groupId);
     		groupIdsIn += groupId;
     		if(count < num -1) 
     			groupIdsIn += ", ";
@@ -657,7 +660,7 @@ public class Db {
     			
     	} while(contactGroupsCursor.moveToNext());
     	groupIdsIn += ")";
-    	Log.i(TAG, "groups in = "+groupIdsIn);
+    	Log.i(tag, "groups in = "+groupIdsIn);
     	Cursor groupsCursor = context.getContentResolver().query(
     			ContactsContract.Groups.CONTENT_URI, 
     			new String[] {
@@ -665,7 +668,7 @@ public class Db {
     			},
 	    		ContactsContract.Groups.DELETED + " = 0 and " 
     			+ ContactsContract.Groups._ID + " in "+groupIdsIn, null, null);
-    	Log.i(TAG, "There are "+groupsCursor.getCount()+" groups");
+    	Log.i(tag, "There are "+groupsCursor.getCount()+" groups");
     	if(groupsCursor.getCount() == 0) return null;
     	Set<String> groups = new HashSet<String>();
     	
@@ -683,7 +686,12 @@ public class Db {
     		if(count < num - 1) groupsString += ", ";
     		count ++;
     	}
-    	Log.i(TAG, "return groups: "+groupsString);
+    	Log.i(tag, "return groups: "+groupsString);
 		return groupsString;
+	}
+
+	public static void refreshAccount(Context ctx, String accountName) {
+    	int num = ctx.getContentResolver().delete(Constants.PIC_URI, PicTable.ACCOUNT + " = ? ", new String[]{accountName});
+    	Log.i(tag, "Deleted "+num+" pic entries");
 	}
 }

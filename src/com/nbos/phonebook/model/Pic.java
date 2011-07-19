@@ -6,13 +6,13 @@ package com.nbos.phonebook.model;
  * Generated Class. Do not modify!
  * 
  * @author MDSDACP Team - goetzfred@fh-bingen.de 
- * @date 2011.07.14	 
+ * @date 2011.07.19	 
  */
-public class Contact {
+public class Pic {
 	private Long id;
-	private java.lang.String contactid;
 	private java.lang.String serverid;
 	private java.lang.String picid;
+	private java.lang.String account;
 
 	/**
 	 * Set id
@@ -30,24 +30,6 @@ public class Contact {
 	 */
 	public Long getId() {
 		return this.id;
-	}
-
-	/**
-	 * Set contactid
-	 *
-	 * @param contactid from type java.lang.String
-	 */
-	public void setContactId(java.lang.String contactid) {
-		this.contactid = contactid;
-	}
-
-	/**
-	 * Get contactid
-	 *
-	 * @return contactid from type java.lang.String				
-	 */
-	public java.lang.String getContactId() {
-		return this.contactid;
 	}
 
 	/**
@@ -84,6 +66,24 @@ public class Contact {
 	 */
 	public java.lang.String getPicId() {
 		return this.picid;
+	}
+
+	/**
+	 * Set account
+	 *
+	 * @param account from type java.lang.String
+	 */
+	public void setAccount(java.lang.String account) {
+		this.account = account;
+	}
+
+	/**
+	 * Get account
+	 *
+	 * @return account from type java.lang.String				
+	 */
+	public java.lang.String getAccount() {
+		return this.account;
 	}
 
 }

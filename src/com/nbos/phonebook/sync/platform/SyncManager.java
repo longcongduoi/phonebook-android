@@ -140,28 +140,30 @@ public class SyncManager {
 		do {
 			String serverId = picsCursor.getString(picsCursor.getColumnIndex(PicTable.SERVERID));
 			String picId = picsCursor.getString(picsCursor.getColumnIndex(PicTable.PICID));
-			if(!c.serverId.equals(serverId)) continue;
+			String accountName = picsCursor.getString(picsCursor.getColumnIndex(PicTable.ACCOUNT));
+			if(!account.equals(accountName) || !c.serverId.equals(serverId)) continue;
 			if(c.picId.equals(picId)) // no change in pic 
 			{
 				Log.i(TAG, "no change in pic: "+c.picId+", serverId: "+serverId);
 				return;
 			}
-			downloadPic(c);
+			updateContactPic(c);
 			ContentValues values = new ContentValues();
 			values.put(PicTable.PICID, c.picId);
 			int num = context.getContentResolver().update(uri, values, 
-				PicTable.SERVERID + " = ?", new String[] {serverId});
-			Log.i(TAG, "updated "+num+" entries pic id to: "+c.picId+" for serverId "+serverId);
+				PicTable.SERVERID + " = ? and " + PicTable.ACCOUNT + " ? ", new String[] {serverId, account});
+			Log.i(TAG, "updated "+num+" entries pic id to: "+c.picId+" for serverId "+serverId+" and account: "+account);
 			// pic id has changed, download the pic
 			return;
 		} while(picsCursor.moveToNext());
 		// not in the database, insert the values
-		downloadPic(c);
-		int num = context.getContentResolver().delete(uri, PicTable.SERVERID + " = ?", new String[]{c.serverId});
+		updateContactPic(c);
+		int num = context.getContentResolver().delete(uri, PicTable.SERVERID + " = ? and " + PicTable.ACCOUNT + " = ? ", new String[]{c.serverId, account});
 		Log.i(TAG, "deleted "+num+" pic values where serverId = "+c.serverId);
 		ContentValues values = new ContentValues();
 		values.put(PicTable.PICID, c.picId);
 		values.put(PicTable.SERVERID, c.serverId);
+		values.put(PicTable.ACCOUNT, account);
 		context.getContentResolver().insert(uri, values);
 		Log.i(TAG, "inserted picId: "+c.picId+", serverId: "+c.serverId);
 	}
@@ -170,7 +172,7 @@ public class SyncManager {
 		byte[] image = downloadPic(c);
 		if(image == null) return;
         String contactId = getContactIdFromServerId(c.serverId);
-        
+        Uri uri = ContactOperations.addCallerIsSyncAdapterParameter(Data.CONTENT_URI);
         dataPicsCursor.moveToFirst();
         if(dataPicsCursor.getCount() > 0)
 	    do {
@@ -179,7 +181,7 @@ public class SyncManager {
 	    	Log.i(TAG, "Updating pic for serverId: "+c.serverId);
 	    	ContentValues values = new ContentValues();
 	    	values.put(ContactsContract.CommonDataKinds.Photo.PHOTO, image);
-	    	context.getContentResolver().update(Data.CONTENT_URI, values, 
+	    	context.getContentResolver().update(uri, values, 
 	    			Data.CONTACT_ID + " = ? and " +
 	    			Data.MIMETYPE + " = ? ", 
 	    			new String[] {contactId, CommonDataKinds.Photo.CONTENT_ITEM_TYPE});
@@ -190,11 +192,12 @@ public class SyncManager {
         ContentValues values = new ContentValues();
         values.put(ContactsContract.Data.RAW_CONTACT_ID, Db.getRawContactId(contactId, rawContactsCursor));
         values.put(ContactsContract.Data.IS_SUPER_PRIMARY, 1);
+        // values.put(ContactsContract.CALLER_IS_SYNCADAPTER, "true");
         values.put(ContactsContract.CommonDataKinds.Photo.PHOTO, image);
         values.put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE);
         
-        Uri uri = context.getContentResolver().insert(Data.CONTENT_URI, values);
-        Log.i(TAG, "pic uri is: "+uri);
+        Uri result = context.getContentResolver().insert(uri, values);
+        Log.i(TAG, "pic uri is: "+result);
         // Uri uri = ContentUris.withAppendedId(ContactsContract.Data.CONTENT_URI, Long.parseLong(contactId));
         // cr.update(uri, values, ContactsContract.Contacts._ID + " = " + contactId, null);
 

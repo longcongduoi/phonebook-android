@@ -7,7 +7,7 @@ package com.nbos.phonebook.database.tables;
  * Generated Class. Do not modify!
  * 
  * @author MDSDACP Team - goetzfred@fh-bingen.de 
- * @date 2011.07.18
+ * @date 2011.07.19
  */
 public interface PicTable {
 	String TABLE_NAME = "pic";
@@ -15,15 +15,16 @@ public interface PicTable {
 	String ID = "_id";
 	String SERVERID = "serverid";
 	String PICID = "picid";
+	String ACCOUNT = "account";
 
-	String[] ALL_COLUMNS = new String[]{ID, SERVERID, PICID};
+	String[] ALL_COLUMNS = new String[]{ID, SERVERID, PICID, ACCOUNT};
 
 	String SQL_CREATE = "CREATE TABLE " + TABLE_NAME + " ( " + ID
 			+ " INTEGER PRIMARY KEY AUTOINCREMENT " + "," + SERVERID + " TEXT"
-			+ "," + PICID + " TEXT" + " )";
+			+ "," + PICID + " TEXT" + "," + ACCOUNT + " TEXT" + " )";
 
 	String SQL_INSERT = "INSERT INTO " + TABLE_NAME + " (" + SERVERID + ","
-			+ PICID + ") VALUES ( ?, ? )";
+			+ PICID + "," + ACCOUNT + ") VALUES ( ?, ?, ? )";
 
 	String SQL_DROP = "DROP TABLE IF EXISTS " + TABLE_NAME;
 

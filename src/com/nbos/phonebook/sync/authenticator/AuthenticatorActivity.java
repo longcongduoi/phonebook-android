@@ -255,6 +255,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             }
             try {
             	Log.i(TAG, "Sending all contacts");
+            	Db.refreshAccount(getApplicationContext(), mUsername);
 				NetworkUtilities.sendAllContacts(mUsername, this.mAuthtoken, getApplicationContext());
 			} catch (Exception e) {
 				e.printStackTrace();
