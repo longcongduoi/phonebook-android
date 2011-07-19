@@ -62,7 +62,7 @@ import android.database.Cursor;
 import android.os.Handler;
 import android.util.Log;
 
-import com.nbos.phonebook.DatabaseHelper;
+import com.nbos.phonebook.Db;
 import com.nbos.phonebook.ValidationActivity;
 import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
 import com.nbos.phonebook.sync.platform.ContactManager;
@@ -551,10 +551,10 @@ public class NetworkUtilities {
 		mContext = context;
 		accountName = account.name;
 		authToken = authtoken;
-		Cursor rawContactsCursor = DatabaseHelper.getRawContactsCursor(mContext.getContentResolver(), false);
-		sendContactUpdates(DatabaseHelper.getContacts(newOnly, mContext), newOnly, rawContactsCursor);
-        sendGroupUpdates(DatabaseHelper.getGroups(newOnly, mContext));
-        sendSharedBookUpdates(DatabaseHelper.getSharingBooks(true, mContext));
+		Cursor rawContactsCursor = Db.getRawContactsCursor(mContext.getContentResolver(), false);
+		sendContactUpdates(Db.getContacts(newOnly, mContext), newOnly, rawContactsCursor);
+        sendGroupUpdates(Db.getGroups(newOnly, mContext));
+        sendSharedBookUpdates(Db.getSharingBooks(true, mContext));
 	}
 
 	
@@ -623,7 +623,7 @@ public class NetworkUtilities {
 	}
 
 	private static void sendContactPictureUpdates(boolean newOnly) {
-    	List<ContactPicture> pics = DatabaseHelper.getContactPictures(mContext.getContentResolver(), newOnly);
+    	List<ContactPicture> pics = Db.getContactPictures(mContext.getContentResolver(), newOnly);
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("upload", "avatar");
 		params.put("errorAction", "error");
@@ -667,7 +667,7 @@ public class NetworkUtilities {
 	}
 
 	public static void sendAllContacts(String username, String authtoken, Context ctx) throws ClientProtocolException, IOException, JSONException {
-        sendFriendUpdates(DatabaseHelper.getAccount(ctx, username), authtoken, null, false, ctx);
+        sendFriendUpdates(Db.getAccount(ctx, username), authtoken, null, false, ctx);
 
 	}
 	

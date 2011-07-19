@@ -36,7 +36,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
 
-import com.nbos.phonebook.DatabaseHelper;
+import com.nbos.phonebook.Db;
 import com.nbos.phonebook.R;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.NetworkUtilities;
@@ -106,7 +106,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
     }
 
     private void getPhoneNumber(Context context) {
-    	String ph = DatabaseHelper.getPhoneNumber(context);
+    	String ph = Db.getPhoneNumber(context);
     	if(ph == null) return;
     	mPhoneEdit.setText(ph);
     	// mPhoneEdit.setFocusable(false);

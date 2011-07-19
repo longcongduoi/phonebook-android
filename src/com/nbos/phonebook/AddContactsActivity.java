@@ -39,7 +39,7 @@ public class AddContactsActivity extends ListActivity {
 	    }
 	    setTitle("Phonebook: Add contacts to "+name);
 	    Log.i(tag, "Intent is: "+getIntent().getClass().getName());
-	    rawContactsCursor = DatabaseHelper.getRawContactsCursor(getApplicationContext().getContentResolver(), false);
+	    rawContactsCursor = Db.getRawContactsCursor(getApplicationContext().getContentResolver(), false);
 	    
 	    populateContacts();
 	    getListView().setTextFilterEnabled(true);
@@ -72,9 +72,9 @@ public class AddContactsActivity extends ListActivity {
 	}
 	
 	void getContactsCursor(String search) {
-        Cursor contactsCursor = DatabaseHelper.getContacts(this,search);
+        Cursor contactsCursor = Db.getContacts(this,search);
         
-        Cursor dataCursor = DatabaseHelper.getContactsInGroup(id, getContentResolver());
+        Cursor dataCursor = Db.getContactsInGroup(id, getContentResolver());
 	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
 	    		dataCursor,	new String[] {ContactsContract.Data.CONTACT_ID}
@@ -111,10 +111,10 @@ public class AddContactsActivity extends ListActivity {
 		int currentPosition = this.getListView().getFirstVisiblePosition();
 		m_cursor.moveToPosition(position);
 		String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID)),
-			rawContactId = DatabaseHelper.getRawContactId(contactId, rawContactsCursor);
+			rawContactId = Db.getRawContactId(contactId, rawContactsCursor);
 		
 		Log.i(tag, "Contact id is: "+contactId+", raw contactId is: "+rawContactId);//+", raw contact id: "+contactId+", lookup key: "+lookupKey);
-		DatabaseHelper.addToGroup(this.id, rawContactId, getContentResolver());
+		Db.addToGroup(this.id, rawContactId, getContentResolver());
 		populateContacts();
 		this.setSelection(currentPosition);
 	}

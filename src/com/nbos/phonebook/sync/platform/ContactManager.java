@@ -37,7 +37,7 @@ import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.StatusUpdates;
 import android.util.Log;
 
-import com.nbos.phonebook.DatabaseHelper;
+import com.nbos.phonebook.Db;
 import com.nbos.phonebook.R;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
@@ -469,7 +469,7 @@ public class ContactManager {
         int serverId = contact.getInt("sourceId"),
         	contactId = contact.getInt("contactId");
         // Log.i(TAG, "updateContact, sourceId: "+serverId+", contactId: "+contactId);
-        DatabaseHelper.updateContactServerId(new Integer(contactId).toString(), new Integer(serverId).toString(), context, rawContactsCursor);
+        Db.updateContactServerId(new Integer(contactId).toString(), new Integer(serverId).toString(), context, rawContactsCursor);
 	}
 
 	public static void updateBook(JSONObject book, Context context) throws JSONException {

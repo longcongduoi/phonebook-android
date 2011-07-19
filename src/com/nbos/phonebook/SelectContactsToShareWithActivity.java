@@ -73,10 +73,10 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 	}
     
 	private void getContactsCursor(String search) {
-		Cursor contactsCursor = DatabaseHelper.getContacts(this, search);
+		Cursor contactsCursor = Db.getContacts(this, search);
        
         
-        Cursor dataCursor = DatabaseHelper.getBook(this, id); 
+        Cursor dataCursor = Db.getBook(this, id); 
        
         IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},

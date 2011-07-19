@@ -35,7 +35,7 @@ public class IncomingCallReceiver extends BroadcastReceiver {
 				callState = "IDLE";
 				break;
 			case TelephonyManager.CALL_STATE_RINGING:
-				String groups = DatabaseHelper.getGroupNamesFromPhoneNumber(incomingNumber, mContext);
+				String groups = Db.getGroupNamesFromPhoneNumber(incomingNumber, mContext);
 				Log.i(tag, "groups is: "+groups);
 				if(groups == null) break;
 				Toast.makeText(mContext, "Phonebooks: " + groups, Toast.LENGTH_LONG).show();

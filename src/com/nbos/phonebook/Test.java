@@ -34,11 +34,11 @@ public class Test {
 	}
 
     public static void getContacts(Context ctx) {
-    	DatabaseHelper.getContacts(false, ctx);
+    	Db.getContacts(false, ctx);
 	}
 
     public static void getRawContacts(Context ctx) {
-    	Cursor c = DatabaseHelper.getRawContactsCursor(ctx.getContentResolver(), false);
+    	Cursor c = Db.getRawContactsCursor(ctx.getContentResolver(), false);
     	Log.i(tag, "There are "+c.getCount()+" raw contacts");
     	c.moveToFirst();
     	do {
@@ -51,12 +51,12 @@ public class Test {
 
     
     public static void getGroups(Context ctx) {
-    	DatabaseHelper.getGroups(false, ctx);
+    	Db.getGroups(false, ctx);
     }
     
 
     public static void getDirtyGroups(Context ctx) {
-    	DatabaseHelper.getGroups(true, ctx);
+    	Db.getGroups(true, ctx);
     }
     
     public static void getGroupList(Context ctx) {
@@ -91,7 +91,7 @@ public class Test {
     }
     
     public static void getContactPictures(Context ctx) {
-    	List<ContactPicture> pics = DatabaseHelper.getContactPictures(ctx.getContentResolver(), true);
+    	List<ContactPicture> pics = Db.getContactPictures(ctx.getContentResolver(), true);
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("upload", "avatar");
 		params.put("errorAction", "error");
@@ -112,7 +112,7 @@ public class Test {
     
 
 	public static void getRawContactsTable(Context ctx) {
-		Cursor c = DatabaseHelper.getRawContactsCursor(ctx.getContentResolver(), false);
+		Cursor c = Db.getRawContactsCursor(ctx.getContentResolver(), false);
 		c.moveToFirst();
 		do {
     		String contactId = c.getString(c.getColumnIndex(RawContacts.CONTACT_ID));
@@ -121,7 +121,7 @@ public class Test {
 	}
 
 	public static void getDataTable(Context applicationContext) {
-		Cursor c = DatabaseHelper.getData(applicationContext);
+		Cursor c = Db.getData(applicationContext);
 		c.moveToFirst();
 		do {
     		String rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID));
@@ -163,7 +163,7 @@ public class Test {
 	}
 
 	public static void updateServerId(Context applicationContext) {
-		DatabaseHelper.updateContactServerId("997", "1", applicationContext, DatabaseHelper.getRawContactsCursor(applicationContext.getContentResolver(), false));
+		Db.updateContactServerId("997", "1", applicationContext, Db.getRawContactsCursor(applicationContext.getContentResolver(), false));
 		getDataTable(applicationContext);
 	}
 
@@ -184,6 +184,6 @@ public class Test {
 	}
 	
 	public static void getContactPics(Context ctx) {
-		DatabaseHelper.getContactPictures(ctx.getContentResolver(), false);
+		Db.getContactPictures(ctx.getContentResolver(), false);
 	}
 }

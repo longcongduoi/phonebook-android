@@ -38,7 +38,7 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.nbos.phonebook.DatabaseHelper;
+import com.nbos.phonebook.Db;
 import com.nbos.phonebook.ValidationActivity;
 import com.nbos.phonebook.Widget;
 import com.nbos.phonebook.Widget.AppService;
@@ -71,10 +71,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority,
         ContentProviderClient provider, SyncResult syncResult) {
-        List<Contact> contacts;
-        List<Group> groups;
-        List<Group> sharedBooks;
-        List<Status> statuses;
         String authtoken = null;
         SyncManager syncManager = null;
         // ContactManager.setDirtyContacts(mContext); // for testing
@@ -108,18 +104,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                  return;
 
              }
-             Object[] update = NetworkUtilities.fetchFriendUpdates(account, authtoken,
-                    mLastUpdated);
-             contacts =  (List<Contact>) update[0];
-             groups = (List<Group>) update[1];
-             sharedBooks = (List<Group>) update[2];
-             syncManager = new SyncManager(mContext, account.name);
-             syncManager.syncContacts(contacts);
-             syncManager.syncGroups(groups, false);
-             syncManager.syncGroups(sharedBooks, true);
+             Object[] update = NetworkUtilities.fetchFriendUpdates(account, authtoken, mLastUpdated);
+             syncManager = new SyncManager(mContext, account.name, update);
              
-             NetworkUtilities.sendFriendUpdates(account, authtoken,
-                     mLastUpdated, true, mContext);
+             NetworkUtilities.sendFriendUpdates(account, authtoken, mLastUpdated, true, mContext);
              mLastUpdated = new Date();                     
              Widget.AppService.message = "Phonebook last updated: "+DateFormat.getInstance().format(mLastUpdated);
              mContext.startService(new Intent(mContext, AppService.class));

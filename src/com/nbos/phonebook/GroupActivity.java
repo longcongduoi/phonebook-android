@@ -153,7 +153,7 @@ public class GroupActivity extends ListActivity {
 								+ " = ? ", args);
 
 		Toast.makeText(this, "Removed", Toast.LENGTH_SHORT).show();
-		DatabaseHelper.setGroupDirty(id, getContentResolver());
+		Db.setGroupDirty(id, getContentResolver());
 		// notify registered observers that a row was updated
 		getContentResolver().notifyChange(ContactsContract.Data.CONTENT_URI,
 				null);
@@ -161,10 +161,10 @@ public class GroupActivity extends ListActivity {
 	}
 
 	private int numContacts() {
-		Cursor contactsCursor = DatabaseHelper.getContacts(this);// getContacts();
+		Cursor contactsCursor = Db.getContacts(this);// getContacts();
 		Log.i(tag, "There are " + contactsCursor.getCount() + " contacts");
 		int numContacts = 0;
-		Cursor dataCursor = DatabaseHelper.getBook(this, id);
+		Cursor dataCursor = Db.getBook(this, id);
 		Log.i(tag, "There are " + dataCursor.getCount()
 				+ " contacts sharing this group");
 		IntCursorJoiner joiner = new IntCursorJoiner(contactsCursor,
@@ -213,7 +213,7 @@ public class GroupActivity extends ListActivity {
 					+ " contacts sharing with)");
 		else
 			setTitle("Group: " + name + " (" + owner + " is sharing)");
-		dataCursor = DatabaseHelper.getContactsInGroup(id,
+		dataCursor = Db.getContactsInGroup(id,
 				this.getContentResolver());
 		getContactsFromGroupCursor("");
 		String[] fields = new String[] { ContactsContract.Contacts.DISPLAY_NAME };
@@ -248,7 +248,7 @@ public class GroupActivity extends ListActivity {
 		photos = new ArrayList<byte[]>();
 		Log.i(tag, "There are " + dataCursor.getCount()
 				+ " contacts in data for groupId: " + id);
-		Cursor contactsCursor = DatabaseHelper.getContacts(this, search);
+		Cursor contactsCursor = Db.getContacts(this, search);
 		Log.i(tag, "There are " + contactsCursor.getCount()
 				+ " contacts matching " + search);
 

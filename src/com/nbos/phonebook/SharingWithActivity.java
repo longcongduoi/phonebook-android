@@ -113,10 +113,10 @@ public class SharingWithActivity extends ListActivity {
 	MatrixCursor m_cursor;
 	private void populateContacts() {	
 		
-        Cursor contactsCursor = DatabaseHelper.getContacts(this);
+        Cursor contactsCursor = Db.getContacts(this);
         Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
 		
-        Cursor dataCursor = DatabaseHelper.getBook(this, id);
+        Cursor dataCursor = Db.getBook(this, id);
         
         Log.i(tag, "all columns: "+BookTable.ALL_COLUMNS.length+", data columns: "+dataCursor.getColumnCount());
         while(dataCursor.moveToNext())

@@ -1,5 +1,6 @@
 package com.nbos.phonebook.sync.client;
 
+
 public class PhoneContact extends Contact {
 
 	public String contactId, rawContactId;

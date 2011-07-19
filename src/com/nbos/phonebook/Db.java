@@ -40,14 +40,14 @@ import com.nbos.phonebook.sync.platform.BatchOperation;
 import com.nbos.phonebook.sync.platform.SampleSyncAdapterColumns;
 import com.nbos.phonebook.util.SimpleImageInfo;
 
-public class DatabaseHelper {
+public class Db {
 	static String TAG = "DATA";
 	public static Cursor getContacts(Activity activity) {
 		return activity.managedQuery(ContactsContract.Contacts.CONTENT_URI, null, null, null,
 				ContactsContract.Contacts._ID);
 				// ContactsContract.Contacts.DISPLAY_NAME);
 	}
-
+	
 	public static Cursor getGroups(ContentResolver cr) {
 	    return cr.query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
 	    		ContactsContract.Groups.DELETED + " = 0 ", null, null);
@@ -122,14 +122,14 @@ public class DatabaseHelper {
 
 		    cr.insert(
 		            ContactsContract.Data.CONTENT_URI, values);
-		    DatabaseHelper.setGroupDirty(groupId, cr);		    
+		    Db.setGroupDirty(groupId, cr);		    
 	}
 
 	public static void updateToGroup(String groupId, String contactId, String rawContactId, ContentResolver cr) {
 		   // this.removeFromGroup(personId, groupId);
 			Log.i(TAG, "updating contact to group: "+groupId+", raw contactId: "+rawContactId);
 			if(rawContactId == null) return;
-			if(DatabaseHelper.isContactInGroup(groupId, contactId, cr)) return;
+			if(Db.isContactInGroup(groupId, contactId, cr)) return;
 		    ContentValues values = new ContentValues();
 		    values.put(ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID,
 		            rawContactId);
@@ -141,8 +141,7 @@ public class DatabaseHelper {
 		                    ContactsContract.CommonDataKinds.GroupMembership.MIMETYPE,
 		                    ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE);
 
-		    Uri uri = cr.insert(
-		            ContactsContract.Data.CONTENT_URI, values);
+		    Uri uri = cr.insert(ContactsContract.Data.CONTENT_URI, values);
 		    Log.i(TAG, "insert uri is: "+uri);
 		    // DatabaseHelper.setGroupDirty(groupId, cr);		    
 	}
@@ -260,15 +259,13 @@ public class DatabaseHelper {
 	    if(rawContactsCursor.getCount() == 0) return users;
 	    rawContactsCursor.moveToFirst();
 	    do {
-	        String rawContactId =
-            	rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts._ID));
-	        String contactId =
-	            	rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
-	        String serverId = getServerIdFromContactId(dataCursor, contactId);
-	        String dirty = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
+	        String rawContactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts._ID)),
+	        	contactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID)),
+	        	serverId = getServerIdFromContactId(dataCursor, contactId),
+	        	dirty = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
 	        String name = getContactName(contactsCursor, contactId); 
 	        String phoneNumber = getContactNumber(phonesCursor, contactId); 
-	        Log.i(TAG, "id: "+contactId+", name is: "+name+", number is: "+phoneNumber+", dirty: "+dirty);//+", accountName: "+accountName+", accountType: "+accountType);
+	        Log.i(TAG, "id: "+contactId+", rawContactId: "+rawContactId+", serverId: "+serverId+", name is: "+name+", number is: "+phoneNumber+", dirty: "+dirty);//+", accountName: "+accountName+", accountType: "+accountType);
 	        if(name == null || phoneNumber == null) continue;
 	        users.add(new PhoneContact(name, phoneNumber, serverId, contactId, rawContactId));
 	    } while(rawContactsCursor.moveToNext());
@@ -368,7 +365,6 @@ public class DatabaseHelper {
 
 	private static String getContactName(Cursor contactsCursor, String contactId) {
 		contactsCursor.moveToFirst();
-
 		do {
 			String cId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
 			if(cId.equals(contactId))
@@ -402,7 +398,7 @@ public class DatabaseHelper {
 	    		},
 	    		null, null, ContactsContract.Contacts._ID),
     	rawContactsCursor = getRawContactsCursor(cr, false),
-    	dataCursor = DatabaseHelper.getData(ctx);
+    	dataCursor = Db.getData(ctx);
 
 	    Cursor phonesCursor = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
         		new String[] {
@@ -535,7 +531,7 @@ public class DatabaseHelper {
 			|| !cId.equals(contactId))
 				continue;
 			String serverId = dataCursor.getString(dataCursor.getColumnIndex(SampleSyncAdapterColumns.DATA_PID));
-			Log.i(TAG, "getServerIdFromContactId returning serverId: "+serverId+" for contactId: "+contactId);
+			// Log.i(TAG, "getServerIdFromContactId returning serverId: "+serverId+" for contactId: "+contactId);
 			return serverId;
 		} while(dataCursor.moveToNext()); 
 
@@ -689,106 +685,5 @@ public class DatabaseHelper {
     	}
     	Log.i(TAG, "return groups: "+groupsString);
 		return groupsString;
-	}
-
-	/*public static void uploadFile(String filename) {
-		try {
-			DefaultHttpClient httpclient = new DefaultHttpClient();
-			File f = new File(filename);
-
-			HttpPost httpost = new HttpPost("http://myremotehost:8080/upload/upload");
-			MultipartEntity entity = new MultipartEntity();
-			entity.addPart("myIdentifier", new StringBody("somevalue"));
-			entity.addPart("myFile", new FileBody(f));
-			// entity.addPart("myFile", new FileBody();
-			httpost.setEntity(entity);
-
-			HttpResponse response;
-							
-			response = httpclient.execute(httpost);
-
-			Log.d("httpPost", "Login form get: " + response.getStatusLine());
-
-			if (entity != null) {
-				entity.consumeContent();
-			}
-			// success = true;
-		} catch (Exception ex) {
-			Log.d("FormReviewer", "Upload failed: " + ex.getMessage() + " Stacktrace: " + ex.getStackTrace());
-			// success = false;
-		} finally {
-			// mDebugHandler.post(mFinishUpload);
-		}
-		
-	}*/
-	
-	public static void upload() {
-		HttpURLConnection connection = null;
-		DataOutputStream outputStream = null;
-		DataInputStream inputStream = null;
-
-		String pathToOurFile = "/data/file_to_send.mp3";
-		String urlServer = "http://10.9.8.21:8080/phonebook/fileUploader/process";
-		String lineEnd = "\r\n";
-		String twoHyphens = "--";
-		String boundary =  "*****";
-
-		int bytesRead, bytesAvailable, bufferSize;
-		byte[] buffer;
-		int maxBufferSize = 1*1024*1024;
-
-		try
-		{
-		FileInputStream fileInputStream = new FileInputStream(new File(pathToOurFile) );
-
-		URL url = new URL(urlServer);
-		connection = (HttpURLConnection) url.openConnection();
-
-		// Allow Inputs & Outputs
-		connection.setDoInput(true);
-		connection.setDoOutput(true);
-		connection.setUseCaches(false);
-
-		// Enable POST method
-		connection.setRequestMethod("POST");
-
-		connection.setRequestProperty("Connection", "Keep-Alive");
-		connection.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);
-
-		outputStream = new DataOutputStream( connection.getOutputStream() );
-		outputStream.writeBytes(twoHyphens + boundary + lineEnd);
-		outputStream.writeBytes("Content-Disposition: form-data; name=\"upload\";filename=\"" + pathToOurFile +"\"" + lineEnd);
-		outputStream.writeBytes(lineEnd);
-
-		bytesAvailable = fileInputStream.available();
-		bufferSize = Math.min(bytesAvailable, maxBufferSize);
-		buffer = new byte[bufferSize];
-
-		// Read file
-		bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-
-		while (bytesRead > 0)
-		{
-		outputStream.write(buffer, 0, bufferSize);
-		bytesAvailable = fileInputStream.available();
-		bufferSize = Math.min(bytesAvailable, maxBufferSize);
-		bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-		}
-
-		outputStream.writeBytes(lineEnd);
-		outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
-
-		// Responses from the server (code and message)
-		int serverResponseCode = connection.getResponseCode();
-		String serverResponseMessage = connection.getResponseMessage();
-
-		fileInputStream.close();
-		outputStream.flush();
-		outputStream.close();
-		}
-		catch (Exception ex)
-		{
-		//Exception handling
-		}		
 	}
 }
