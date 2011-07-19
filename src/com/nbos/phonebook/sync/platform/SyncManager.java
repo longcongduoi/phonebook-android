@@ -137,7 +137,6 @@ public class SyncManager {
 			if(c.picId.equals(picId)) // no change in pic 
 			{
 				Log.i(TAG, "no change in pic: "+c.picId+", serverId: "+serverId);
-				updateContactPic(c); // remove this
 				return;
 			}
 			downloadPic(c);
