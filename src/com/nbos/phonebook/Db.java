@@ -1,12 +1,6 @@
 package com.nbos.phonebook;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -38,7 +32,6 @@ import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.SharingBook;
 import com.nbos.phonebook.sync.platform.BatchOperation;
-import com.nbos.phonebook.sync.platform.ContactOperations;
 import com.nbos.phonebook.sync.platform.SampleSyncAdapterColumns;
 import com.nbos.phonebook.util.SimpleImageInfo;
 
@@ -360,7 +353,6 @@ public class Db {
 	    			ContactsContract.Contacts.DISPLAY_NAME
 	    		},
 	    		null, null, ContactsContract.Contacts._ID),
-    	rawContactsCursor = getRawContactsCursor(cr, false),
     	dataCursor = Db.getData(ctx);
 
 	    Cursor phonesCursor = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
@@ -432,26 +424,13 @@ public class Db {
 		return null;
 	}
 
-	/*private static String getContactServerId(String contactId, Cursor rawContactsCursor) {
-		rawContactsCursor.moveToFirst();
-		do {
-			String cId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
-			if(cId.equals(contactId))
-				return rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
-			
-		} while(rawContactsCursor.moveToNext());
-		return null;
-	}*/
-
 	public static List<SharingBook> getSharingBooks(boolean newOnly, Context ctx) {
     	List<SharingBook> books = new ArrayList<SharingBook>();
     	String where = newOnly ? BookTable.DIRTY + " is null" : null;
     	ContentResolver cr = ctx.getContentResolver();
     	Cursor cursor = cr.query(
-    			Constants.SHARE_BOOK_URI,
-    			null, where, null, null);
-    	Cursor dataCursor = getData(ctx),
-    		rawContactsCursor = getRawContactsCursor(cr, false),
+    			Constants.SHARE_BOOK_URI, null, where, null, null),
+    		dataCursor = getData(ctx),
     		groupsCursor = getGroups(cr);
     	if(cursor != null)
     		Log.i(tag, "There are "+cursor.getCount()+" contacts sharing books");
