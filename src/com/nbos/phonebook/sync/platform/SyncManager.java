@@ -30,7 +30,7 @@ import com.nbos.phonebook.sync.client.NetworkUtilities;
 import com.nbos.phonebook.sync.client.PhoneContact;
 
 public class SyncManager {
-	static String TAG = "SyncManager";
+	static String tag = "SyncManager";
 	Context context;
     String account; 
     List<PhoneContact> allContacts; 
@@ -65,11 +65,11 @@ public class SyncManager {
         final ContentResolver resolver = context.getContentResolver();
         final BatchOperation batchOperation = new BatchOperation(context, resolver);
         
-        Log.i(TAG, "There are "+rawContactsCursor.getCount()+" raw contacts, num columns: "+rawContactsCursor.getColumnCount());
-        Log.i(TAG, "There are "+allContacts.size()+" phone contacts");
+        Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts, num columns: "+rawContactsCursor.getColumnCount());
+        Log.i(tag, "There are "+allContacts.size()+" phone contacts");
         // Log.i(TAG, "There are "+contactsCursor.getCount()+" phonebook contacts");
         // syncSharedBooks(context);
-        Log.d(TAG, "In SyncContacts");
+        Log.d(tag, "In SyncContacts");
         for (final Contact contact : contacts) {
         	if(syncedContacts.contains(contact.serverId)) continue;
         	syncedContacts.add(contact.serverId);
@@ -77,7 +77,7 @@ public class SyncManager {
             // Check to see if the contact needs to be inserted or updated
             rawContactId = lookupRawContact(contact);
             boolean dirty = ContactManager.isDirtyContact(rawContactId, rawContactsCursor); 
-            Log.d(TAG, "Raw contact id is: "+rawContactId+", dirty: "+dirty);
+            Log.d(tag, "Raw contact id is: "+rawContactId+", dirty: "+dirty);
             if(dirty) continue;
             if (rawContactId != 0) {
                 if (!contact.deleted) {
@@ -90,7 +90,7 @@ public class SyncManager {
                 }
             } else {
                 // add new contact
-                Log.d(TAG, "In addContact, user: "+contact.name);
+                Log.d(tag, "In addContact, user: "+contact.name);
                 if (!contact.deleted) {
                     ContactManager.addContact(context, account, contact, batchOperation);
                 }
@@ -101,7 +101,9 @@ public class SyncManager {
                 batchOperation.execute();
             }
         }
+        int num = batchOperation.size();
         batchOperation.execute();
+        if(num == 0) return;
         refreshCursors();
         syncPictures(contacts);
 	}
@@ -111,7 +113,7 @@ public class SyncManager {
 		picsCursor = context.getContentResolver().query(uri, null, null, null, null);
 		getDataPicsCursor();
 		for(Contact c : contacts) {
-			Log.i(TAG, "Contact: "+c.name+", picId: "+c.picId+", isNull: "+(c.picId == null)+", 'null': "+c.picId.equals("null"));
+			Log.i(tag, "Contact: "+c.name+", picId: "+c.picId+", isNull: "+(c.picId == null)+", 'null': "+c.picId.equals("null"));
 			if(c.picId == null || c.picId.equals("null")) continue;
 			syncPicture(c);
 		}
@@ -129,7 +131,7 @@ public class SyncManager {
 	    		},
 	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null",
 	    	    null, ContactsContract.Data.CONTACT_ID);
-    	Log.i(TAG, "Data pics cursor has "+dataPicsCursor.getCount()+" rows");
+    	Log.i(tag, "Data pics cursor has "+dataPicsCursor.getCount()+" rows");
 	}
 
 	private void syncPicture(Contact c) {
@@ -144,7 +146,7 @@ public class SyncManager {
 			if(!account.equals(accountName) || !c.serverId.equals(serverId)) continue;
 			if(c.picId.equals(picId)) // no change in pic 
 			{
-				Log.i(TAG, "no change in pic: "+c.picId+", serverId: "+serverId);
+				Log.i(tag, "no change in pic: "+c.picId+", serverId: "+serverId);
 				return;
 			}
 			updateContactPic(c);
@@ -152,33 +154,33 @@ public class SyncManager {
 			values.put(PicTable.PICID, c.picId);
 			int num = context.getContentResolver().update(uri, values, 
 				PicTable.SERVERID + " = ? and " + PicTable.ACCOUNT + " ? ", new String[] {serverId, account});
-			Log.i(TAG, "updated "+num+" entries pic id to: "+c.picId+" for serverId "+serverId+" and account: "+account);
+			Log.i(tag, "updated "+num+" entries pic id to: "+c.picId+" for serverId "+serverId+" and account: "+account);
 			// pic id has changed, download the pic
 			return;
 		} while(picsCursor.moveToNext());
 		// not in the database, insert the values
 		updateContactPic(c);
 		int num = context.getContentResolver().delete(uri, PicTable.SERVERID + " = ? and " + PicTable.ACCOUNT + " = ? ", new String[]{c.serverId, account});
-		Log.i(TAG, "deleted "+num+" pic values where serverId = "+c.serverId);
+		Log.i(tag, "deleted "+num+" pic values where serverId = "+c.serverId);
 		ContentValues values = new ContentValues();
 		values.put(PicTable.PICID, c.picId);
 		values.put(PicTable.SERVERID, c.serverId);
 		values.put(PicTable.ACCOUNT, account);
 		context.getContentResolver().insert(uri, values);
-		Log.i(TAG, "inserted picId: "+c.picId+", serverId: "+c.serverId);
+		Log.i(tag, "inserted picId: "+c.picId+", serverId: "+c.serverId);
 	}
 
 	private void updateContactPic(Contact c) {
 		byte[] image = downloadPic(c);
 		if(image == null) return;
         String contactId = getContactIdFromServerId(c.serverId);
-        Uri uri = ContactOperations.addCallerIsSyncAdapterParameter(Data.CONTENT_URI);
+        Uri uri = addCallerIsSyncAdapterParameter(Data.CONTENT_URI);
         dataPicsCursor.moveToFirst();
         if(dataPicsCursor.getCount() > 0)
 	    do {
 	    	String cId = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.CONTACT_ID));
 	    	if(!cId.equals(contactId)) continue;
-	    	Log.i(TAG, "Updating pic for serverId: "+c.serverId);
+	    	Log.i(tag, "Updating pic for serverId: "+c.serverId);
 	    	ContentValues values = new ContentValues();
 	    	values.put(ContactsContract.CommonDataKinds.Photo.PHOTO, image);
 	    	context.getContentResolver().update(uri, values, 
@@ -188,7 +190,7 @@ public class SyncManager {
 	    	return;
 	    } while(dataCursor.moveToNext());
         // insert the pic
-        Log.i(TAG, "inserting pic for serverId: "+c.serverId+", image is: "+image.length);
+        Log.i(tag, "inserting pic for serverId: "+c.serverId+", image is: "+image.length);
         ContentValues values = new ContentValues();
         values.put(ContactsContract.Data.RAW_CONTACT_ID, Db.getRawContactId(contactId, rawContactsCursor));
         values.put(ContactsContract.Data.IS_SUPER_PRIMARY, 1);
@@ -197,7 +199,7 @@ public class SyncManager {
         values.put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE);
         
         Uri result = context.getContentResolver().insert(uri, values);
-        Log.i(TAG, "pic uri is: "+result);
+        Log.i(tag, "pic uri is: "+result);
         // Uri uri = ContentUris.withAppendedId(ContactsContract.Data.CONTENT_URI, Long.parseLong(contactId));
         // cr.update(uri, values, ContactsContract.Contacts._ID + " = " + contactId, null);
 
@@ -218,7 +220,7 @@ public class SyncManager {
 	        while ((current = bis.read()) != -1) 
 	        	baf.append((byte) current);
 	        byte[] image = baf.toByteArray();
-	        Log.i(TAG, "Contact: "+c.serverId+", image size: "+image.length);
+	        Log.i(tag, "Contact: "+c.serverId+", image size: "+image.length);
 	        return image;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -227,7 +229,7 @@ public class SyncManager {
 	}
 
 	private void refreshCursors() {
-		Log.i(TAG, "refreshCursors");
+		Log.i(tag, "refreshCursors");
         allContacts = Db.getContacts(false, context);
         dataCursor.requery();
         rawContactsCursor.requery();
@@ -245,12 +247,12 @@ public class SyncManager {
 	    		ContactsContract.Groups.SOURCE_ID + " = "+id, null, null);
 	    if(cursor.getCount() == 0)
 	    {
-	    	Log.i(TAG, "New group: "+account);
+	    	Log.i(tag, "New group: "+account);
 	    	// create a group with the share book name
 	    	//DatabaseHelper.createAGroup(ctx, sharedBook.name, sharedBook.owner, accountName, id);
 	    	Db.createAGroup(context, g.name, isSharedBook ? g.owner : null , account, Integer.parseInt(id));
 	    	cursor.requery();
-	    	Log.i(TAG, "cursor has "+cursor.getCount()+" rows");
+	    	Log.i(tag, "cursor has "+cursor.getCount()+" rows");
 	    }
 	    cursor.moveToFirst();
 	    String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID)),
@@ -258,13 +260,12 @@ public class SyncManager {
 	    
 	    if(dirty.equals("1"))
 	    {
-	    	Log.i(TAG, "Group is dirty, skipping update");
+	    	Log.i(tag, "Group is dirty, skipping update");
 	    	return;
 	    }
 	    Cursor groupCursor = Db.getContactsInGroup(groupId, context.getContentResolver());	    
-    	Log.i(TAG, "Update group, id: "+groupId);
+    	Log.i(tag, "Update group: "+g.name+", id: "+groupId+", contacts: "+g.contacts+", group cursor size: "+groupCursor.getCount());
     	syncContacts(g.contacts);
-    	rawContactsCursor.requery();
     	Set<String> contactIds = new HashSet<String>();
     	for(Contact u : g.contacts)
     		contactIds.add(updateGroupContact(u, groupId));
@@ -273,21 +274,74 @@ public class SyncManager {
     	do {
     		String contactId = groupCursor.getString(groupCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID));
     		if(!contactIds.contains(contactId))
-    			Db.deleteContactFromGroup(contactId, groupId, context);
+    			deleteContactFromGroup(contactId, groupId);
     	} while(groupCursor.moveToNext());
     	
     	cursor.close();
+    	groupCursor.close();
+	}
+
+	void deleteContactFromGroup(String contactId, String groupId) {
+		Log.i(tag, "Deleting contact from group: "+groupId+", contactId: "+contactId);
+	    ContentValues values = new ContentValues();
+	    values.put(ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID,
+	            contactId);
+	    values.put(
+	            ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID,
+	            groupId);
+
+	    context.getContentResolver().delete(
+	    		addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI), 
+	            ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID
+	            + " = ? and "
+	            + ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID
+	            +" = ?",
+	            new String[] {groupId, contactId});	
+		
 	}
 
 	private String updateGroupContact(Contact u, String groupId) {
 		String contactId = getContactIdFromServerId(u.serverId),
 			rawContactId = Db.getRawContactId(contactId, rawContactsCursor);
-		Log.i(TAG, "ServerId: "+u.serverId+", contactId: "+contactId+", rawContactId: "+rawContactId);
-		// if(contactId != null)
-			Db.updateToGroup(groupId, contactId, rawContactId, context.getContentResolver());
+		Log.i(tag, "updateGroupContact() groupId: "+groupId+", serverId: "+u.serverId+", contactId: "+contactId+", rawContactId: "+rawContactId);
+		updateToGroup(groupId, contactId, rawContactId);
 		return contactId;
 	}
 
+	void updateToGroup(String groupId, String contactId, String rawContactId) {
+			if(groupId == null || contactId == null || rawContactId == null) return;
+			if(isContactInGroup(groupId, contactId)) return;
+		    ContentValues values = new ContentValues();
+		    values.put(ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID,
+		            rawContactId);
+		    values.put(ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID,
+		            groupId);
+		    values.put(ContactsContract.CommonDataKinds.GroupMembership.MIMETYPE,
+		    		ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE);
+
+		    Uri uri = context.getContentResolver().insert(
+		    	addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI), values);
+		    Log.i(tag, "insert uri is: "+uri);
+		    // DatabaseHelper.setGroupDirty(groupId, cr);		    
+	}
+	
+	boolean isContactInGroup(String groupId, String contactId) {
+	    Cursor c = context.getContentResolver()
+	    	.query(ContactsContract.Data.CONTENT_URI,
+	    		// null,
+	    	    new String[] {
+	    			ContactsContract.Contacts._ID, 
+	    			ContactsContract.Data.CONTACT_ID, 
+	    			ContactsContract.RawContacts._ID,
+	    			ContactsContract.Contacts.DISPLAY_NAME
+	    		},
+	    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+" = "+groupId
+	    	    +" and "+ContactsContract.Data.CONTACT_ID + " = "+contactId,
+	    	    null, ContactsContract.Data.CONTACT_ID);
+	    Log.i(tag, "isContactInGroup() groupId: "+groupId+", contactId: "+contactId+", num results: "+c.getCount());
+	    return c.getCount() > 0;
+	}
+	
 	private String getContactIdFromServerId(String serverId) {
 		if(dataCursor.getCount() == 0) return null;
 		dataCursor.moveToFirst();
@@ -298,7 +352,7 @@ public class SyncManager {
 			|| !sId.equals(serverId))
 				continue;
 			String contactId = dataCursor.getString(dataCursor.getColumnIndex(Data.CONTACT_ID));
-			Log.i(TAG, "getContactIdFromServerId("+serverId+") = "+contactId);
+			Log.i(tag, "getContactIdFromServerId("+serverId+") = "+contactId);
 			return contactId;
 		} while(dataCursor.moveToNext());
 		return null;
@@ -314,7 +368,7 @@ public class SyncManager {
 			|| !serverId.equals(contact.serverId))
 				continue;
 			long rawContactId = dataCursor.getLong(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
-			Log.i(TAG, "lookupRawContact returning rawContactId: "+rawContactId+", for serverId: "+serverId);
+			Log.i(tag, "lookupRawContact returning rawContactId: "+rawContactId+", for serverId: "+serverId);
 			return rawContactId;
 		} while(dataCursor.moveToNext()); 
 
@@ -324,7 +378,7 @@ public class SyncManager {
 				// check if the rest of the information is the same
 				if(u.name.equals(contact.name))
 				{
-					Log.i(TAG, "Existing contact; ph: "+u.number+", name: "+u.name+", serverId: "+contact.serverId+", contactId: "+u.contactId+", phone serverId: "+u.serverId+", rawContactId: "+u.rawContactId);
+					Log.i(tag, "Existing contact; ph: "+u.number+", name: "+u.name+", serverId: "+contact.serverId+", contactId: "+u.contactId+", phone serverId: "+u.serverId+", rawContactId: "+u.rawContactId);
 					// update the serverId of the contact
 					Db.updateContactServerId(u.contactId, contact.serverId, context, rawContactsCursor);
 					return Long.parseLong(u.rawContactId);
@@ -334,22 +388,10 @@ public class SyncManager {
 		return 0;
 	}
 
-	/*void updateServerIds(List<Contact> contacts) {
-		for(Contact contact : contacts)
-		{
-			for(PhoneContact u : allContacts) {
-				if(u.number.equals(contact.number)) {// maybe a contact
-					// check if the rest of the information is the same
-					if(u.name.equals(contact.name))
-					{
-						Log.i(TAG, "Existing contact; ph: "+u.number+", name: "+u.name+", serverId: "+contact.serverId+", contactId: "+u.contactId+", phone serverId: "+u.serverId+", rawContactId: "+u.rawContactId);
-						// update the serverId of the contact
-						DatabaseHelper.updateContactServerId(u.contactId, contact.serverId, context, rawContactsCursor);
-					}
-				}
-			}
-		}
-	}*/
+    private static Uri addCallerIsSyncAdapterParameter(Uri uri) {
+        return uri.buildUpon().appendQueryParameter(
+            ContactsContract.CALLER_IS_SYNCADAPTER, "true").build();
+    }
 	
 	public void close() {
     	if(dataCursor != null)

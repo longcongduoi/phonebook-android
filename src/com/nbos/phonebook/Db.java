@@ -127,28 +127,6 @@ public class Db {
 		    Db.setGroupDirty(groupId, cr);		    
 	}
 
-	public static void updateToGroup(String groupId, String contactId, String rawContactId, ContentResolver cr) {
-		   // this.removeFromGroup(personId, groupId);
-			Log.i(tag, "updating contact to group: "+groupId+", raw contactId: "+rawContactId);
-			if(rawContactId == null) return;
-			if(Db.isContactInGroup(groupId, contactId, cr)) return;
-		    ContentValues values = new ContentValues();
-		    values.put(ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID,
-		            rawContactId);
-		    values.put(
-		            ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID,
-		            groupId);
-		    values
-		            .put(
-		                    ContactsContract.CommonDataKinds.GroupMembership.MIMETYPE,
-		                    ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE);
-
-		    Uri uri = cr.insert(
-		    	ContactOperations.addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI), values);
-		    Log.i(tag, "insert uri is: "+uri);
-		    // DatabaseHelper.setGroupDirty(groupId, cr);		    
-	}
-
 	public static Cursor getContactsInGroup(String groupId,
 			ContentResolver cr) {
 	    return cr.query(ContactsContract.Data.CONTENT_URI,
@@ -165,24 +143,6 @@ public class Db {
 	    	    null, ContactsContract.Data.CONTACT_ID);
 	}
 	
-	public static boolean isContactInGroup(String groupId, String contactId,
-			ContentResolver cr) {
-		
-	    Cursor c = cr.query(ContactsContract.Data.CONTENT_URI,
-	    		// null,
-	    	    new String[] {
-	    			ContactsContract.Contacts._ID, 
-	    			ContactsContract.Data.CONTACT_ID, 
-	    			ContactsContract.RawContacts._ID,
-	    			ContactsContract.Contacts.DISPLAY_NAME
-	    		},
-	    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+" = "+groupId
-	    	    +" and "+ContactsContract.Data.CONTACT_ID + " = "+contactId,
-	    	    null, ContactsContract.Data.CONTACT_ID);
-	    Log.i(tag, "isContactInGroup() groupId: "+groupId+", contactId: "+contactId+", num results: "+c.getCount());
-	    return c.getCount() > 0;
-	}
-
 	public static String getAccountName(Context ctx) {
         Account[] accounts = AccountManager.get(ctx).getAccounts();
         Log.i(tag, "There are "+accounts.length+" accounts");
@@ -582,7 +542,7 @@ public class Db {
     }
 
 	public static String getRawContactId(String contactId, Cursor rawContactsCursor) {
-		Log.i(tag, "getRawContactId("+contactId+"), rawContactsCursor size: "+rawContactsCursor.getCount());
+		// Log.i(tag, "getRawContactId("+contactId+"), rawContactsCursor size: "+rawContactsCursor.getCount());
 		if(contactId == null || rawContactsCursor.getCount() == 0) return null;
 		rawContactsCursor.moveToFirst();
 		do {
@@ -591,32 +551,12 @@ public class Db {
 			// Log.i(TAG, "checking: contactID: "+cId+", rawContactId: "+rawContactId);
 			if(cId != null && cId.equals(contactId))
 			{
-				Log.i(tag, "returning: "+rawContactId);
+				// Log.i(tag, "returning: "+rawContactId);
 				return rawContactId;
 			}
 		} while(rawContactsCursor.moveToNext());
 		Log.i(tag, "returning null");
 		return null;
-	}
-
-	public static void deleteContactFromGroup(String contactId, String groupId,
-			Context ctx) {
-		Log.i(tag, "Deleting contact from group: "+groupId+", contactId: "+contactId);
-	    ContentValues values = new ContentValues();
-	    values.put(ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID,
-	            contactId);
-	    values.put(
-	            ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID,
-	            groupId);
-
-	    ctx.getContentResolver().delete(
-	            ContactsContract.Data.CONTENT_URI, 
-	            ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID
-	            + " = ? and "
-	            + ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID
-	            +" = ?",
-	            new String[] {groupId, contactId});	
-		
 	}
 
 	public static String getGroupNamesFromPhoneNumber(String phoneNumber, Context context) {

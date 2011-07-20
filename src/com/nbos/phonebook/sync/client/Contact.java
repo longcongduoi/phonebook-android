@@ -36,4 +36,9 @@ public class Contact {
         return null;
     }
 	
+	@Override
+	public String toString() {
+		return name;
+	}
+	
 }
