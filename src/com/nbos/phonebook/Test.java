@@ -91,7 +91,7 @@ public class Test {
     }
     
     public static void getContactPictures(Context ctx) {
-    	List<ContactPicture> pics = Db.getContactPictures(ctx.getContentResolver(), true);
+    	List<ContactPicture> pics = Db.getContactPictures(ctx, true);
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("upload", "avatar");
 		params.put("errorAction", "error");
@@ -184,6 +184,6 @@ public class Test {
 	}
 	
 	public static void getContactPics(Context ctx) {
-		Db.getContactPictures(ctx.getContentResolver(), false);
+		Db.getContactPictures(ctx, false);
 	}
 }

@@ -24,6 +24,13 @@
         android:icon="@drawable/icon"
         android:summaryColumn="data2"
         android:detailColumn="data3"
-        android:detailSocialSummary="true" />
+        android:detailSocialSummary="true"
+        android:editable="true" />
+
+    <ContactsDataKind
+        android:mimeType="vnd.com.example.voip.cursor.item/voip_profile"
+        android:icon="@drawable/icon"
+        android:summaryColumn="data2"
+        android:detailColumn="data3" />
 
 </ContactsSource>

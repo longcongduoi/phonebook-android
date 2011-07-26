@@ -101,6 +101,7 @@
 		<activity android:name="AddContactsActivity"></activity>
 		<activity android:name="SharingWithActivity"></activity>
 		<activity android:name="SelectContactsToShareWithActivity"></activity>
+		<activity android:name="EditContactActivity"></activity>
         <receiver android:name=".IncomingCallReceiver"
             android:enabled="true">
             <intent-filter>

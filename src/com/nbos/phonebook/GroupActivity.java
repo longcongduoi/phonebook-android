@@ -68,8 +68,7 @@ public class GroupActivity extends ListActivity {
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v,
 			ContextMenuInfo menuInfo) {
-		if (owner != null)
-			return;
+		// if (owner != null) return;
 		super.onCreateContextMenu(menu, v, menuInfo);
 		// Get the info on which item was selected
 		AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
@@ -78,7 +77,8 @@ public class GroupActivity extends ListActivity {
 				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 		menu.setHeaderTitle("Menu: " + contactName);
 		menu.add(0, v.getId(), 0, "Call");
-		menu.add(0, v.getId(), 1, "Remove from group");
+		menu.add(0, v.getId(), 1, "Edit");
+		menu.add(0, v.getId(), 2, "Remove from group");
 		// menu.add(0, v.getId(), 0, "Action 2");
 	}
 
@@ -105,10 +105,19 @@ public class GroupActivity extends ListActivity {
 		} else if (item.getTitle() == "Call") {
 			// call the guy
 			callFromGroup(contactId);
+		} else if (item.getTitle() == "Edit") {
+			showEdit(contactId);
 		} else {
 			return false;
 		}
 		return true;
+	}
+	int EDIT_CONTACT = 1;
+	private void showEdit(String contactId) {
+		// Intent i = new Intent(Intent.ACTION_EDIT);
+		Intent i = new Intent(GroupActivity.this, EditContactActivity.class);
+		i.setData(Uri.parse(ContactsContract.Contacts.CONTENT_URI + "/" + contactId));
+		startActivityForResult(i, EDIT_CONTACT);
 	}
 
 	private void callFromGroup(String contactId) {

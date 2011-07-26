@@ -71,7 +71,7 @@ import com.nbos.phonebook.sync.platform.ContactManager;
  * Provides utility methods for communicating with the server.
  */
 public class NetworkUtilities {
-    private static final String TAG = "NetworkUtilities";
+    private static final String tag = "NetworkUtilities";
     public static final String PARAM_USERNAME = "username";
     public static final String PARAM_PASSWORD = "password";
     public static final String PARAM_PHONE_NUMBER = "ph";
@@ -145,7 +145,7 @@ public class NetworkUtilities {
      */
     public static boolean authenticate(String username, String password, String ph,
         Handler handler, final Context context) {
-    	Log.i(TAG, "Authenticate");
+    	Log.i(tag, "Authenticate");
         final HttpResponse resp;
 
         final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
@@ -164,40 +164,40 @@ public class NetworkUtilities {
         post.addHeader(entity.getContentType());
         post.setEntity(entity);
         maybeCreateHttpClient();
-        Log.i(TAG, "Posting to: "+AUTH_URI);
+        Log.i(tag, "Posting to: "+AUTH_URI);
 
         try {
             resp = mHttpClient.execute(post);
             if (resp.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                    Log.i(TAG, "Successful authentication");
-                    Log.i(TAG, "data: "+EntityUtils.toString(resp.getEntity()));
+                    Log.i(tag, "Successful authentication");
+                    Log.i(tag, "data: "+EntityUtils.toString(resp.getEntity()));
                 //}
                 sendResult(true, handler, context);
                 return true;
             } else {
                 // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                    Log.v(TAG, "Error authenticating" + resp.getStatusLine());
+                    Log.v(tag, "Error authenticating" + resp.getStatusLine());
                 // }
                 sendResult(false, handler, context);
                 return false;
             }
         } catch (final IOException e) {
             // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                Log.v(TAG, "IOException when getting authtoken", e);
+                Log.v(tag, "IOException when getting authtoken", e);
             // }
             sendResult(false, handler, context);
             return false;
         } finally {
             // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                Log.v(TAG, "getAuthtoken completing");
+                Log.v(tag, "getAuthtoken completing");
             //}
         }
     }
 
     public static boolean register(String username, String password, String ph,
             Handler handler, final Context context) {
-        	Log.i(TAG, "Register");
+        	Log.i(tag, "Register");
             final HttpResponse resp;
 
             final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
@@ -216,40 +216,40 @@ public class NetworkUtilities {
             post.addHeader(entity.getContentType());
             post.setEntity(entity);
             maybeCreateHttpClient();
-            Log.i(TAG, "Posting to: "+REG_URL);
+            Log.i(tag, "Posting to: "+REG_URL);
 
             try {
                 resp = mHttpClient.execute(post);
                 if (resp.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                     // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                        Log.i(TAG, "Successful authentication");
-                        Log.i(TAG, "data: "+EntityUtils.toString(resp.getEntity()));
+                        Log.i(tag, "Successful authentication");
+                        Log.i(tag, "data: "+EntityUtils.toString(resp.getEntity()));
                     //}
                     sendResult(true, handler, context);
                     return true;
                 } else {
                     // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                        Log.v(TAG, "Error authenticating" + resp.getStatusLine());
+                        Log.v(tag, "Error authenticating" + resp.getStatusLine());
                     // }
                     sendResult(false, handler, context);
                     return false;
                 }
             } catch (final IOException e) {
                 // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                    Log.v(TAG, "IOException when getting authtoken", e);
+                    Log.v(tag, "IOException when getting authtoken", e);
                 // }
                 sendResult(false, handler, context);
                 return false;
             } finally {
                 // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                    Log.v(TAG, "getAuthtoken completing");
+                    Log.v(tag, "getAuthtoken completing");
                 //}
             }
         }
 
     public static boolean validate(String username, String password, String ph, String validationCode,
             Handler handler, final Context context) {
-        	Log.i(TAG, "Validate, ph: "+ph+", code: "+validationCode);
+        	Log.i(tag, "Validate, ph: "+ph+", code: "+validationCode);
             final HttpResponse resp;
 
             final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
@@ -269,14 +269,14 @@ public class NetworkUtilities {
             post.addHeader(entity.getContentType());
             post.setEntity(entity);
             maybeCreateHttpClient();
-            Log.i(TAG, "Posting to: "+VALIDATION_URI);
+            Log.i(tag, "Posting to: "+VALIDATION_URI);
 
             try {
                 resp = mHttpClient.execute(post);
                 if (resp.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 	String response = EntityUtils.toString(resp.getEntity());
-                	Log.i(TAG, "Successful authentication");
-                    Log.i(TAG, "data: "+response);
+                	Log.i(tag, "Successful authentication");
+                    Log.i(tag, "data: "+response);
                     JSONObject result = new JSONObject(response);
                     boolean validated = result.getBoolean("validated");
                     if(validated)
@@ -286,13 +286,13 @@ public class NetworkUtilities {
                     return true;
                 } else {
                     // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                        Log.v(TAG, "Error authenticating: " + resp.getStatusLine());
+                        Log.v(tag, "Error authenticating: " + resp.getStatusLine());
                     // }
                     sendValidationResult(false, "Error authenticating: " + resp.getStatusLine(), handler, context);
                     return false;
                 }
             } catch (final Exception e) {
-                Log.v(TAG, "IOException when getting authtoken", e);
+                Log.v(tag, "IOException when getting authtoken", e);
                 sendValidationResult(false, "Exception: "+e.getMessage(), handler, context);
                 return false;
             } 
@@ -301,7 +301,7 @@ public class NetworkUtilities {
     
     public static boolean newValidateCode(String username, String password, String ph,
             Handler handler, final Context context) {
-        	Log.i(TAG, "Validate, ph: "+ph);
+        	Log.i(tag, "Validate, ph: "+ph);
             final HttpResponse resp;
 
             final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
@@ -320,23 +320,23 @@ public class NetworkUtilities {
             post.addHeader(entity.getContentType());
             post.setEntity(entity);
             maybeCreateHttpClient();
-            Log.i(TAG, "Posting to: "+NEW_VALIDATION_CODE_URI);
+            Log.i(tag, "Posting to: "+NEW_VALIDATION_CODE_URI);
 
             try {
                 resp = mHttpClient.execute(post);
                 if (resp.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 	String response = EntityUtils.toString(resp.getEntity());
-                	Log.i(TAG, "Successful authentication");
-                    Log.i(TAG, "data: "+response);
+                	Log.i(tag, "Successful authentication");
+                    Log.i(tag, "data: "+response);
                     sendNewValidationCodeResult(true, "New validation code was sent to "+ph, handler, context);
                     return true;
                 } else {
-                    Log.v(TAG, "Error authenticating: " + resp.getStatusLine());
+                    Log.v(tag, "Error authenticating: " + resp.getStatusLine());
                     sendNewValidationCodeResult(false, "Error authenticating: " + resp.getStatusLine(), handler, context);
                     return false;
                 }
             } catch (final Exception e) {
-                Log.v(TAG, "Exception: ", e);
+                Log.v(tag, "Exception: ", e);
                 sendNewValidationCodeResult(false, "Exception: "+e.getMessage(), handler, context);
                 return false;
             } 
@@ -352,7 +352,7 @@ public class NetworkUtilities {
      */
     private static void sendResult(final Boolean result, final Handler handler,
         final Context context) {
-    	Log.i(TAG, "sendResult("+result+")");
+    	Log.i(tag, "sendResult("+result+")");
         if (handler == null || context == null) {
             return;
         }
@@ -365,7 +365,7 @@ public class NetworkUtilities {
 
     private static void sendValidationResult(final Boolean result, final String message, final Handler handler,
             final Context context) {
-        	Log.i(TAG, "sendValidationResult("+result+")");
+        	Log.i(tag, "sendValidationResult("+result+")");
             if (handler == null || context == null) {
                 return;
             }
@@ -378,7 +378,7 @@ public class NetworkUtilities {
 
     private static void sendNewValidationCodeResult(final Boolean result, final String message, final Handler handler,
             final Context context) {
-        	Log.i(TAG, "sendValidationResult("+result+")");
+        	Log.i(tag, "sendValidationResult("+result+")");
             if (handler == null || context == null) {
                 return;
             }
@@ -445,12 +445,12 @@ public class NetworkUtilities {
             params.add(new BasicNameValuePair(PARAM_UPDATED, formatter
                 .format(lastUpdated)));
         }
-        Log.i(TAG, params.toString());
+        Log.i(tag, params.toString());
 
         HttpEntity entity = null;
         entity = new UrlEncodedFormEntity(params);
         final HttpPost post = new HttpPost(FETCH_FRIEND_UPDATES_URI);
-        Log.i(TAG, "Fetching friends from: "+FETCH_FRIEND_UPDATES_URI);
+        Log.i(tag, "Fetching friends from: "+FETCH_FRIEND_UPDATES_URI);
         post.addHeader(entity.getContentType());
         post.setEntity(entity);
         maybeCreateHttpClient();
@@ -466,7 +466,7 @@ public class NetworkUtilities {
             	friends = update.getJSONArray(0),
             	groups = update.getJSONArray(1),
             	sharedBooks = update.getJSONArray(2);
-            Log.d(TAG, response);
+            Log.d(tag, response);
             for (int i = 0; i < friends.length(); i++) {
                 friendList.add(Contact.valueOf(friends.getJSONObject(i)));
             }
@@ -475,20 +475,20 @@ public class NetworkUtilities {
                 groupsList.add(Group.valueOf(groups.getJSONObject(i)));
             }
             
-            Log.i(TAG, "There are "+sharedBooks.length()+" shared books");
+            Log.i(tag, "There are "+sharedBooks.length()+" shared books");
             for (int i = 0; i < sharedBooks.length(); i++) { 
                 books.add(Group.valueOf(sharedBooks.getJSONObject(i)));
             }
 
         } else {
             if (resp.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-                Log.e(TAG,
+                Log.e(tag,
                     "Authentication exception in fetching remote contacts");
                 throw new AuthenticationException();
             } else {
-                Log.e(TAG, "Server error in fetching remote contacts: "
+                Log.e(tag, "Server error in fetching remote contacts: "
                     + resp.getStatusLine());
-                Log.e(TAG, response);
+                Log.e(tag, response);
                 throw new IOException();
             }
         }
@@ -533,11 +533,11 @@ public class NetworkUtilities {
             }
         } else {
             if (resp.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-                Log.e(TAG,
+                Log.e(tag,
                     "Authentication exception in fetching friend status list");
                 throw new AuthenticationException();
             } else {
-                Log.e(TAG, "Server error in fetching friend status list");
+                Log.e(tag, "Server error in fetching friend status list");
                 throw new IOException();
             }
         }
@@ -623,7 +623,7 @@ public class NetworkUtilities {
 	}
 
 	private static void sendContactPictureUpdates(boolean newOnly) {
-    	List<ContactPicture> pics = Db.getContactPictures(mContext.getContentResolver(), newOnly);
+    	List<ContactPicture> pics = Db.getContactPictures(mContext, newOnly);
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("upload", "avatar");
 		params.put("errorAction", "error");
@@ -634,7 +634,7 @@ public class NetworkUtilities {
     	for(ContactPicture pic : pics)
     	{
     		String contentType = pic.mimeType.split("/")[1];
-    		Log.i(TAG, "uploading "+contentType);
+    		Log.i(tag, "uploading "+contentType);
     		params.remove("id");
     		params.put("id", pic.serverId);
     		NetworkUtilities.upload(NetworkUtilities.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
@@ -674,13 +674,13 @@ public class NetworkUtilities {
 	public static String post(String url, List<NameValuePair> params) throws ClientProtocolException, IOException, JSONException {
         HttpEntity entity = new UrlEncodedFormEntity(params);
         final HttpPost post = new HttpPost(url);
-        Log.i(TAG, "Sending to: "+url);
+        Log.i(tag, "Sending to: "+url);
         post.addHeader(entity.getContentType());
         post.setEntity(entity);
         maybeCreateHttpClient();
         final HttpResponse resp = mHttpClient.execute(post);
         final String response = EntityUtils.toString(resp.getEntity());
-        Log.i(TAG, "Response is: "+response);
+        Log.i(tag, "Response is: "+response);
         return response;
 	}
 
@@ -737,13 +737,14 @@ public class NetworkUtilities {
 		
 		//connection.setInstanceFollowRedirects(true);
 		// HttpURLConnection.setFollowRedirects(true);
-		Log.i(TAG, "Follow redirects: "+connection.getInstanceFollowRedirects());
+		Log.i(tag, "Follow redirects: "+connection.getInstanceFollowRedirects());
 
 		outputStream = new DataOutputStream( connection.getOutputStream() );
 		for (Map.Entry<String, String> entry : params.entrySet()) {
 		    String name = entry.getKey();
 		    String value = entry.getValue();
-		    Log.i(TAG, "param: "+name+", value: "+value);
+		    Log.i(tag, "param: "+name+", value: "+value);
+		    if(value == null) continue;
 		    outputStream.writeBytes(twoHyphens + boundary + lineEnd);
 		    outputStream.writeBytes("Content-Disposition: form-data; name=\""+name+"\"" + lineEnd);
 		    outputStream.writeBytes(lineEnd);
@@ -765,7 +766,7 @@ public class NetworkUtilities {
 		int serverResponseCode = connection.getResponseCode();
 		String serverResponseMessage = connection.getResponseMessage();
 		String location = connection.getHeaderField("Location");
-		Log.i(TAG, "response code: "+serverResponseCode+", message: "+serverResponseMessage+", location: "+location);
+		Log.i(tag, "response code: "+serverResponseCode+", message: "+serverResponseMessage+", location: "+location);
 		if(serverResponseCode == 302)
 		{
 			url = new URL(location);
@@ -775,7 +776,7 @@ public class NetworkUtilities {
 		}
 		
 		InputStream in = new BufferedInputStream(connection.getInputStream());
-		Log.i(TAG, "Response: "+convertStreamToString(in));
+		Log.i(tag, "Response: "+convertStreamToString(in));
 
 		outputStream.flush();
 		outputStream.close();
@@ -784,7 +785,7 @@ public class NetworkUtilities {
 		{
 			ex.printStackTrace();
 		}		
-		System.out.println("uploaded");
+		Log.i(tag, "uploaded");
 	}
 	
     public static String convertStreamToString(InputStream is)

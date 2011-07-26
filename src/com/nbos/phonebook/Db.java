@@ -232,10 +232,11 @@ public class Db {
 	    return users;
 	}
 	
-	public static List<ContactPicture> getContactPictures(ContentResolver cr, boolean newOnly) {
+	public static List<ContactPicture> getContactPictures(Context ctx, boolean newOnly) {
 		List<ContactPicture> pics = new ArrayList<ContactPicture>();
-	    Cursor rawContactsCursor = getRawContactsCursor(cr, newOnly),
-	    	dataCursor = cr.query(ContactsContract.Data.CONTENT_URI,
+	    Cursor rawContactsCursor = getRawContactsCursor(ctx.getContentResolver(), newOnly),
+	    	dataCursor = getData(ctx),
+	    	photosDataCursor = ctx.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
 	    		// null,
 	    	    new String[] {
 	    			ContactsContract.Contacts._ID, 
@@ -250,18 +251,18 @@ public class Db {
 	    	    null, ContactsContract.Data.CONTACT_ID);
 	    
 	    Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries for newOnly: "+newOnly);
-	    Log.i(tag, "There are "+dataCursor.getCount()+" data entries");
+	    Log.i(tag, "There are "+photosDataCursor.getCount()+" data entries");
 	    
 	    if(rawContactsCursor.getCount() == 0) return pics;
 	    
-	    dataCursor.moveToFirst();
+	    photosDataCursor.moveToFirst();
 	    rawContactsCursor.moveToFirst();
 	    do {
 	    	String contactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID)),
 	    		serverId = getServerIdFromContactId(dataCursor, contactId);
 	    	ContactPicture pic = null;
 			try {
-				pic = getContactPicture(dataCursor, contactId, serverId);
+				pic = getContactPicture(photosDataCursor, contactId, serverId);
 				if(pic != null) pics.add(pic);
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -270,7 +271,7 @@ public class Db {
 	    } while(rawContactsCursor.moveToNext());
 		
 	    rawContactsCursor.close();
-	    dataCursor.close();
+	    photosDataCursor.close();
 		return pics;
 	}
 	
