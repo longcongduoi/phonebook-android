@@ -45,7 +45,7 @@ import com.nbos.phonebook.Widget.AppService;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.Group;
-import com.nbos.phonebook.sync.client.NetworkUtilities;
+import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.User.Status;
 import com.nbos.phonebook.sync.platform.SyncManager;
@@ -85,7 +85,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 mAccountManager.blockingGetAuthToken(account,
                     Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
              // fetch updates from the sample service over the cloud
-             boolean valid = NetworkUtilities.checkValidAccount(account, authtoken, 
+             boolean valid = Net.checkValidAccount(account, authtoken, 
             		 mAccountManager.getUserData(account, Constants.PHONE_NUMBER_KEY));
              // start the confirmation activity if not valid
              
@@ -94,9 +94,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
              {
                  final Intent intent = new Intent(mContext, ValidationActivity.class);
                  intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                 intent.putExtra(NetworkUtilities.PARAM_USERNAME, account.name);
-                 intent.putExtra(NetworkUtilities.PARAM_PASSWORD, authtoken);
-                 intent.putExtra(NetworkUtilities.PARAM_PHONE_NUMBER, phoneNumber);
+                 intent.putExtra(Net.PARAM_USERNAME, account.name);
+                 intent.putExtra(Net.PARAM_PASSWORD, authtoken);
+                 intent.putExtra(Net.PARAM_PHONE_NUMBER, phoneNumber);
                  mContext.startActivity(intent);
                  
                  // intent.putExtra(AuthenticatorActivity.PARAM_AUTHTOKEN_TYPE, authTokenType);
@@ -104,10 +104,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                  return;
 
              }
-             Object[] update = NetworkUtilities.fetchFriendUpdates(account, authtoken, mLastUpdated);
+             Object[] update = Net.fetchFriendUpdates(account, authtoken, mLastUpdated);
              syncManager = new SyncManager(mContext, account.name, update);
              
-             NetworkUtilities.sendFriendUpdates(account, authtoken, mLastUpdated, true, mContext);
+             Net.sendFriendUpdates(account, authtoken, mLastUpdated, true, mContext);
              mLastUpdated = new Date();                     
              Widget.AppService.message = "Phonebook last updated: "+DateFormat.getInstance().format(mLastUpdated);
              mContext.startService(new Intent(mContext, AppService.class));

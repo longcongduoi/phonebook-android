@@ -26,7 +26,7 @@ import android.os.Bundle;
 
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.R;
-import com.nbos.phonebook.sync.client.NetworkUtilities;
+import com.nbos.phonebook.sync.client.Net;
 
 /**
  * This class is an implementation of AbstractAccountAuthenticator for
@@ -159,7 +159,7 @@ class Authenticator extends AbstractAccountAuthenticator {
      * Validates user's password on the server
      */
     private boolean onlineConfirmPassword(String username, String password) {
-        return NetworkUtilities.authenticate(username, password, "0",
+        return Net.authenticate(username, password, "0",
             null/* Handler */, null/* Context */);
     }
 

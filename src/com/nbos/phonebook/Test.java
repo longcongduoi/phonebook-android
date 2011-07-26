@@ -18,7 +18,7 @@ import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.database.tables.PicTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.ContactPicture;
-import com.nbos.phonebook.sync.client.NetworkUtilities;
+import com.nbos.phonebook.sync.client.Net;
 
 public class Test {
 	static String tag = "Test";
@@ -106,7 +106,7 @@ public class Test {
     		params.remove("id");
     		params.put("id", pic.serverId);
 
-    		NetworkUtilities.upload(NetworkUtilities.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
+    		Net.upload(Net.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
     	}
     }
     

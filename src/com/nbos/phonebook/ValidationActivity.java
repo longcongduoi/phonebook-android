@@ -15,7 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
-import com.nbos.phonebook.sync.client.NetworkUtilities;
+import com.nbos.phonebook.sync.client.Net;
 
 public class ValidationActivity extends Activity {
 
@@ -34,9 +34,9 @@ public class ValidationActivity extends Activity {
         newValidationCodeMessage = (TextView) findViewById(R.id.new_validation_message);
         validationCodeEdit = (EditText) findViewById(R.id.valid_code_edit);
         final Intent intent = getIntent();
-        userName = intent.getStringExtra(NetworkUtilities.PARAM_USERNAME);
-        password = intent.getStringExtra(NetworkUtilities.PARAM_PASSWORD);
-        phoneNumber = intent.getStringExtra(NetworkUtilities.PARAM_PHONE_NUMBER);
+        userName = intent.getStringExtra(Net.PARAM_USERNAME);
+        password = intent.getStringExtra(Net.PARAM_PASSWORD);
+        phoneNumber = intent.getStringExtra(Net.PARAM_PHONE_NUMBER);
         Log.i(TAG, "user: "+userName+", password: "+password+", phoneNumber: "+phoneNumber);
 	}
 
@@ -51,7 +51,7 @@ public class ValidationActivity extends Activity {
         showProgress();
         // Start authenticating...
         mValidThread =
-            NetworkUtilities.attemptValidate(userName, password, phoneNumber, validationCode, mHandler,
+            Net.attemptValidate(userName, password, phoneNumber, validationCode, mHandler,
                 ValidationActivity.this);
         
 	}
@@ -80,7 +80,7 @@ public class ValidationActivity extends Activity {
         showProgress();
         // Start authenticating...
         mValidThread =
-            NetworkUtilities.attemptNewValidateCode(userName, password, phoneNumber, mHandler,
+            Net.attemptNewValidateCode(userName, password, phoneNumber, mHandler,
                 ValidationActivity.this);
 		
 	}

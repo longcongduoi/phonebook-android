@@ -70,7 +70,7 @@ import com.nbos.phonebook.sync.platform.ContactManager;
 /**
  * Provides utility methods for communicating with the server.
  */
-public class NetworkUtilities {
+public class Net {
     private static final String tag = "NetworkUtilities";
     public static final String PARAM_USERNAME = "username";
     public static final String PARAM_PASSWORD = "password";
@@ -406,7 +406,7 @@ public class NetworkUtilities {
             }
         };
         // run on background thread.
-        return NetworkUtilities.performOnBackgroundThread(runnable);
+        return Net.performOnBackgroundThread(runnable);
     }
 
     public static Thread attemptRegister(final String username,
@@ -417,7 +417,7 @@ public class NetworkUtilities {
                 }
             };
             // run on background thread.
-            return NetworkUtilities.performOnBackgroundThread(runnable);
+            return Net.performOnBackgroundThread(runnable);
         }
     
     /**
@@ -637,7 +637,7 @@ public class NetworkUtilities {
     		Log.i(tag, "uploading "+contentType);
     		params.remove("id");
     		params.put("id", pic.serverId);
-    		NetworkUtilities.upload(NetworkUtilities.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
+    		Net.upload(Net.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
     	}
 	}
 
@@ -692,7 +692,7 @@ public class NetworkUtilities {
             }
         };
         // run on background thread.
-        return NetworkUtilities.performOnBackgroundThread(runnable);
+        return Net.performOnBackgroundThread(runnable);
 	}
 
 	public static Thread attemptNewValidateCode(final String userName,
@@ -704,7 +704,7 @@ public class NetworkUtilities {
             }
         };
         // run on background thread.
-        return NetworkUtilities.performOnBackgroundThread(runnable);
+        return Net.performOnBackgroundThread(runnable);
 	}
 
 	public static void upload(String uploadUrl, byte[] data, String contentType, Map<String, String> params) {

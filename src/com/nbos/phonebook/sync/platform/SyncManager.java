@@ -26,7 +26,7 @@ import com.nbos.phonebook.database.tables.PicTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.Group;
-import com.nbos.phonebook.sync.client.NetworkUtilities;
+import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.client.PhoneContact;
 
 public class SyncManager {
@@ -208,7 +208,7 @@ public class SyncManager {
 	private byte[] downloadPic(Contact c) {
 		URL url;
 		try {
-			url = new URL(NetworkUtilities.DOWNLOAD_CONTACT_PIC_URI + c.picId);
+			url = new URL(Net.DOWNLOAD_CONTACT_PIC_URI + c.picId);
 			URLConnection ucon = url.openConnection();
 	        InputStream is = ucon.getInputStream();
 	        BufferedInputStream bis = new BufferedInputStream(is, 8192);

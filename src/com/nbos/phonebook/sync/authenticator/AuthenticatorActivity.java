@@ -39,7 +39,7 @@ import android.widget.TextView.BufferType;
 import com.nbos.phonebook.Db;
 import com.nbos.phonebook.R;
 import com.nbos.phonebook.sync.Constants;
-import com.nbos.phonebook.sync.client.NetworkUtilities;
+import com.nbos.phonebook.sync.client.Net;
 
 /**
  * Activity which displays login screen to the user.
@@ -151,7 +151,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             showProgress();
             // Start authenticating...
             mAuthThread =
-                NetworkUtilities.attemptAuth(mUsername, mPassword, mPhone, mHandler,
+                Net.attemptAuth(mUsername, mPassword, mPhone, mHandler,
                     AuthenticatorActivity.this);
         }
     }
@@ -172,7 +172,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             // Start authenticating...
             Log.i(TAG, "attempting register");
             mAuthThread =
-                NetworkUtilities.attemptRegister(mUsername, mPassword, mPhone, mHandler,
+                Net.attemptRegister(mUsername, mPassword, mPhone, mHandler,
                     AuthenticatorActivity.this);
         }
     }
@@ -256,7 +256,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             try {
             	Log.i(TAG, "Sending all contacts");
             	Db.refreshAccount(getApplicationContext(), mUsername);
-				NetworkUtilities.sendAllContacts(mUsername, this.mAuthtoken, getApplicationContext());
+				Net.sendAllContacts(mUsername, this.mAuthtoken, getApplicationContext());
 			} catch (Exception e) {
 				e.printStackTrace();
 			} 
