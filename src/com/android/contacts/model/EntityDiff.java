@@ -18,9 +18,9 @@ package com.android.contacts.model;
 
 import android.content.ContentProviderOperation;
 import android.content.ContentValues;
-import android.content.Entity;
+import nbos.android.content.Entity;
 import android.content.ContentProviderOperation.Builder;
-import android.content.Entity.NamedContentValues;
+import nbos.android.content.Entity.NamedContentValues;
 import android.net.Uri;
 import android.provider.BaseColumns;
 

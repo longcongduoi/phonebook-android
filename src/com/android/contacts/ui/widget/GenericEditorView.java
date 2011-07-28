@@ -31,7 +31,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Entity;
+import nbos.android.content.Entity;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.telephony.PhoneNumberFormattingTextWatcher;

@@ -27,7 +27,7 @@ import com.android.contacts.model.EntityDelta.ValuesDelta;
 import com.android.contacts.ui.ViewIdGenerator;
 
 import android.content.Context;
-import android.content.Entity;
+import nbos.android.content.Entity;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Parcel;

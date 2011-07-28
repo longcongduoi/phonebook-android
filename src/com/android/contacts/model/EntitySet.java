@@ -18,8 +18,9 @@ package com.android.contacts.model;
 
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
-import android.content.Entity;
-import android.content.EntityIterator;
+import nbos.android.content.Entity;
+import nbos.android.content.EntityIterator;
+import nbos.android.content.RawContact;
 import android.content.ContentProviderOperation.Builder;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -62,7 +63,8 @@ public class EntitySet extends ArrayList<EntityDelta> implements Parcelable {
      */
     public static EntitySet fromQuery(ContentResolver resolver, String selection,
             String[] selectionArgs, String sortOrder) {
-        EntityIterator iterator = RawContacts.newEntityIterator(resolver.query(
+        // EntityIterator iterator = RawContacts.newEntityIterator(resolver.query(
+        EntityIterator iterator = RawContact.newEntityIterator(resolver.query(        		
                 RawContactsEntity.CONTENT_URI, null, selection, selectionArgs,
                 sortOrder));
         try {

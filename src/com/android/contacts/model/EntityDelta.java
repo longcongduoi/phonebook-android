@@ -16,31 +16,29 @@
 
 package com.android.contacts.model;
 
-import com.google.android.collect.Lists;
-import com.google.android.collect.Maps;
-import com.google.android.collect.Sets;
-
-import android.content.ContentProviderOperation;
-import android.content.ContentValues;
-import android.content.Entity;
-import android.content.ContentProviderOperation.Builder;
-import android.content.Entity.NamedContentValues;
-import android.net.Uri;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.provider.BaseColumns;
-import android.provider.ContactsContract;
-import android.provider.ContactsContract.Data;
-import android.provider.ContactsContract.RawContacts;
-import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
-import android.util.Log;
-import android.view.View;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import nbos.android.content.Entity;
+import nbos.android.content.Entity.NamedContentValues;
+import android.content.ContentProviderOperation;
+import android.content.ContentProviderOperation.Builder;
+import android.content.ContentValues;
+import android.net.Uri;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.provider.BaseColumns;
+import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
+import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.RawContacts;
+import android.util.Log;
+
+import com.google.android.collect.Lists;
+import com.google.android.collect.Maps;
+import com.google.android.collect.Sets;
 
 /**
  * Contains an {@link Entity} and records any modifications separately so the

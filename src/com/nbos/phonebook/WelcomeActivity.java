@@ -66,11 +66,11 @@ public class WelcomeActivity extends ListActivity {
     	Log.i(tag, "phone number: "+phoneNumber);
     	// Test.getContacts(this.getApplicationContext());
     	// Test.getRawContactsTable(this.getApplicationContext());
-    	Test.getDataPicsTable(this.getApplicationContext());
+    	// Test.getDataPicsTable(this.getApplicationContext());
     	// Test.updateServerId(this.getApplicationContext());
     	// Test.deletePicTable(this.getApplicationContext());
     	// Test.getPicTable(this.getApplicationContext());
-    	Test.getContactPics(this.getApplicationContext());
+    	// Test.getContactPics(this.getApplicationContext());
     	
     }
 
