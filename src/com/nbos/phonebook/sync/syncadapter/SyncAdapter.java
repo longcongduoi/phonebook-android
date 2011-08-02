@@ -19,7 +19,6 @@ package com.nbos.phonebook.sync.syncadapter;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
-import java.util.List;
 
 import org.apache.http.ParseException;
 import org.apache.http.auth.AuthenticationException;
@@ -34,20 +33,15 @@ import android.content.ContentProviderClient;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SyncResult;
-import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.nbos.phonebook.Db;
 import com.nbos.phonebook.ValidationActivity;
 import com.nbos.phonebook.Widget;
 import com.nbos.phonebook.Widget.AppService;
 import com.nbos.phonebook.sync.Constants;
-import com.nbos.phonebook.sync.client.Contact;
-import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.Net;
-import com.nbos.phonebook.sync.client.PhoneContact;
-import com.nbos.phonebook.sync.client.User.Status;
+import com.nbos.phonebook.sync.platform.Cloud;
 import com.nbos.phonebook.sync.platform.SyncManager;
 
 /**
@@ -73,6 +67,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         ContentProviderClient provider, SyncResult syncResult) {
         String authtoken = null;
         SyncManager syncManager = null;
+        Cloud cloud = null;
         // ContactManager.setDirtyContacts(mContext); // for testing
         // Cursor dataCursor = null,
         	// rawContactsCursor = null;
@@ -104,10 +99,12 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                  return;
 
              }
-             Object[] update = Net.fetchFriendUpdates(account, authtoken, mLastUpdated);
-             syncManager = new SyncManager(mContext, account.name, update);
-             
-             Net.sendFriendUpdates(account, authtoken, mLastUpdated, true, mContext);
+             // Object[] update = Net.fetchFriendUpdates(account, authtoken, mLastUpdated);
+             // syncManager = new SyncManager(mContext, account.name, update);
+             cloud = new Cloud(mContext, account, authtoken);
+             // cloud.sendFriendUpdates(false, mLastUpdated);
+             // cloud.sendFriendUpdates(true, mLastUpdated);
+             // Net.sendFriendUpdates(account, authtoken, mLastUpdated, true, mContext);
              mLastUpdated = new Date();                     
              Widget.AppService.message = "Phonebook last updated: "+DateFormat.getInstance().format(mLastUpdated);
              mContext.startService(new Intent(mContext, AppService.class));
@@ -126,18 +123,21 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         } catch (final IOException e) {
             Log.e(TAG, "IOException", e);
             syncResult.stats.numIoExceptions++;
-        } catch (final AuthenticationException e) {
+        /*} catch (final AuthenticationException e) {
             mAccountManager.invalidateAuthToken(Constants.ACCOUNT_TYPE,
                 authtoken);
             syncResult.stats.numAuthExceptions++;
-            Log.e(TAG, "AuthenticationException", e);
+            Log.e(TAG, "AuthenticationException", e);*/
         } catch (final ParseException e) {
             syncResult.stats.numParseExceptions++;
             Log.e(TAG, "ParseException", e);
         } catch (final JSONException e) {
             syncResult.stats.numParseExceptions++;
             Log.e(TAG, "JSONException", e);
-        }
+        } catch (AuthenticationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         finally {
         	if(syncManager != null)
         		syncManager.close();

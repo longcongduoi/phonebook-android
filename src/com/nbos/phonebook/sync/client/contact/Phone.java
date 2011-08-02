@@ -1,9 +1,13 @@
 package com.nbos.phonebook.sync.client.contact;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -40,4 +44,17 @@ public class Phone {
 		if(type != null)
 			params.add(new BasicNameValuePair("phType_"+index+"_"+i, type));
 	}
+	public static List<Phone> valueOf(JSONArray jsonArray) throws JSONException {
+		List<Phone> phones = new ArrayList<Phone>();
+		for(int i=0; i< jsonArray.length(); i++)
+		{
+			JSONObject e = jsonArray.getJSONObject(i);
+			Phone ph = new Phone();
+			ph.number = e.getString("num");
+			ph.type = e.getString("t");
+			phones.add(ph);
+		}
+		return phones;
+	}
+	
 }

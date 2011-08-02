@@ -5,11 +5,20 @@ import java.util.List;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.database.Cursor;
 import android.provider.ContactsContract.CommonDataKinds;
+import android.util.Log;
 
-import com.nbos.phonebook.sync.client.contact.*;
+import com.nbos.phonebook.sync.client.contact.Address;
+import com.nbos.phonebook.sync.client.contact.Email;
+import com.nbos.phonebook.sync.client.contact.Im;
+import com.nbos.phonebook.sync.client.contact.Name;
+import com.nbos.phonebook.sync.client.contact.Organization;
+import com.nbos.phonebook.sync.client.contact.Phone;
 import com.nbos.phonebook.sync.platform.SampleSyncAdapterColumns;
 
 public class Contact {
@@ -151,7 +160,42 @@ public class Contact {
 		String serverId = c.getString(c.getColumnIndex(SampleSyncAdapterColumns.DATA_PID));
 		contact.serverId = serverId;
 	}
-	
+
+	public static Contact valueOf(JSONObject user) {
+        try {
+        	Contact c = new Contact();
+        	c.serverId = new Integer(user.getInt("id")).toString();
+        	c.picId = user.has("pic") ? user.getString("pic") : null;
+        	if(user.has("name"))
+        	c.name = Name.valueOf(user.getJSONObject("name"));
+        	if(user.has("phones") )
+        		c.phones = Phone.valueOf(user.getJSONArray("phones"));
+        	if(user.has("emails"))
+        		c.emails = Email.valueOf(user.getJSONArray("emails"));
+        	if(user.has("ims"))
+        		c.ims = Im.valueOf(user.getJSONArray("ims"));
+        	if(user.has("addresses"))
+        		c.addresses = Address.valueOf(user.getJSONArray("addresses"));
+        	if(user.has("orgs"))
+        		c.orgs = Organization.valueOf(user.getJSONArray("orgs"));
+        	if(user.has("notes"))
+        		c.notes = valueOfStrings(user.getJSONArray("notes"));
+        	if(user.has("nicks"))
+        		c.nicknames = valueOfStrings(user.getJSONArray("nicks"));
+        	if(user.has("ws") )
+        		c.websites = valueOfStrings(user.getJSONArray("ws"));
+        	
+            /*String name = user.has("name") ? user.getString("name") : null,
+            	number = user.has("number") ? user.getString("number") : null,
+            	serverId = new Integer(user.getInt("id")).toString(),
+            	picId = user.getString("pic");
+            Log.i(tag, "name: "+name+", picId is: "+picId);*/
+            return c; // new Contact(name, number, serverId, picId); 
+        } catch (final Exception ex) {
+            Log.i(tag, "Error parsing JSON user object" + ex.toString());
+        }
+        return null;
+    }	
 	/*public Contact(String name, String number, String serverId, String picId) {
 		this(name, number, serverId);
 		this.picId = picId;
@@ -163,20 +207,15 @@ public class Contact {
 		this.name = name;
 	}
 
-	public static Contact valueOf(JSONObject user) {
-        try {
-            String name = user.has("name") ? user.getString("name") : null,
-            	number = user.has("number") ? user.getString("number") : null,
-            	serverId = new Integer(user.getInt("id")).toString(),
-            	picId = user.getString("pic");
-            Log.i(tag, "name: "+name+", picId is: "+picId);
-            return new Contact(name, number, serverId, picId); 
-        } catch (final Exception ex) {
-            Log.i(tag, "Error parsing JSON user object" + ex.toString());
+*/
 
-        }
-        return null;
-    }*/
+	private static List<String> valueOfStrings(JSONArray jsonArray) throws JSONException {
+		List<String> strings = new ArrayList<String>();
+		for(int i=0; i< jsonArray.length(); i++)
+			strings.add(jsonArray.getString(i));
+		return strings;
+		
+	}
 	
 	/*@Override
 	public String toString() {

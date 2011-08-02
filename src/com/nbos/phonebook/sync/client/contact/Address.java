@@ -1,9 +1,13 @@
 package com.nbos.phonebook.sync.client.contact;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -68,4 +72,22 @@ public class Address {
 		if(type != null)
 			params.add(new BasicNameValuePair("ad_type_"+index+"_"+i, type));
 	}
+	public static List<Address> valueOf(JSONArray jsonArray) throws JSONException {
+		List<Address> ims = new ArrayList<Address>();
+		for(int i=0; i< jsonArray.length(); i++)
+		{
+			JSONObject e = jsonArray.getJSONObject(i);
+			Address address = new Address();
+			address.street = e.has("str") ? e.getString("str") : null;
+			address.poBox = e.has("pb") ? e.getString("pb") : null;
+			address.neighborhood = e.has("nh") ? e.getString("nh") : null;
+			address.city = e.has("ct") ? e.getString("ct") : null;
+			address.state = e.has("st") ? e.getString("st") : null;
+			address.postalCode = e.has("pc") ? e.getString("pc") : null;
+			address.country = e.has("cnt") ? e.getString("cnt") : null;
+			address.type = e.has("t") ? e.getString("t") : null;
+		}
+		return ims;
+	}
+	
 }

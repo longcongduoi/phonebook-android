@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.database.Cursor;
 import android.provider.ContactsContract.CommonDataKinds;
@@ -50,5 +52,16 @@ public class Name {
 			params.add(new BasicNameValuePair("name_f_"+index, family));
 		if(suffix != null)
 			params.add(new BasicNameValuePair("name_s_"+index, suffix));
+	}
+
+
+	public static Name valueOf(JSONObject json) throws JSONException {
+		Name n = new Name();
+		n.prefix = json.has("p") ? json.getString("p") : null;
+		n.given = json.has("g") ? json.getString("g") : null;
+		n.middle = json.has("m") ? json.getString("m") : null;
+		n.family = json.has("f") ? json.getString("f") : null;
+		n.suffix = json.has("s") ? json.getString("s") : null;
+		return n;
 	}
 }

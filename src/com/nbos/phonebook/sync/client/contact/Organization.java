@@ -1,9 +1,13 @@
 package com.nbos.phonebook.sync.client.contact;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -42,4 +46,18 @@ public class Organization {
 		if(type != null)
 			params.add(new BasicNameValuePair("org_type_"+index+"_"+i, type));
 	}
+	public static List<Organization> valueOf(JSONArray jsonArray) throws JSONException {
+		List<Organization> orgs = new ArrayList<Organization>();
+		for(int i=0; i< jsonArray.length(); i++)
+		{
+			JSONObject e = jsonArray.getJSONObject(i);
+			Organization org = new Organization();
+			org.company = e.has("com") ? e.getString("com") : null;
+			org.title = e.has("title") ? e.getString("title") : null;
+			org.type = e.has("t") ? e.getString("t") : null;
+			orgs.add(org);
+		}
+		return orgs;
+	}
+	
 }

@@ -466,7 +466,7 @@ public class Net {
             	friends = update.getJSONArray(0),
             	groups = update.getJSONArray(1),
             	sharedBooks = update.getJSONArray(2);
-            Log.d(tag, response);
+            Log.d(tag, "response: "+response);
             for (int i = 0; i < friends.length(); i++) {
                 // friendList.add(Contact.valueOf(friends.getJSONObject(i)));
             }

@@ -1,9 +1,13 @@
 package com.nbos.phonebook.sync.client.contact;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -37,5 +41,16 @@ public class Im {
 			params.add(new BasicNameValuePair("im_"+index+"_"+i, name));
 		if(protocol != null)
 			params.add(new BasicNameValuePair("imType_"+index+"_"+i, protocol));
+	}
+	public static List<Im> valueOf(JSONArray jsonArray) throws JSONException {
+		List<Im> ims = new ArrayList<Im>();
+		for(int i=0; i< jsonArray.length(); i++)
+		{
+			JSONObject e = jsonArray.getJSONObject(i);
+			Im im = new Im();
+			im.name = e.getString("im");
+			im.protocol = e.getString("t");
+		}
+		return ims;
 	}
 }

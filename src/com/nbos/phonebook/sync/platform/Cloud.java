@@ -1,15 +1,20 @@
 package com.nbos.phonebook.sync.platform;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
+import org.apache.http.auth.AuthenticationException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -64,17 +69,43 @@ public class Cloud {
     	UPLOAD_CONTACT_PIC_URI = BASE_URL + "/fileUploader/process",
     	DOWNLOAD_CONTACT_PIC_URI = BASE_URL + "/download/index/";
 
-	public Cloud(Context context, Account account, String authtoken) {
+	public Cloud(Context context, Account account, String authtoken) throws AuthenticationException, ParseException, JSONException, IOException {
 		this.context = context;
 		accountName = account.name;
 		authToken = authtoken;
+        Object[] update = fetchFriendUpdates();
+        // syncManager = new SyncManager(mContext, account.name, update);
+        // sendFriendUpdates(true, mLastUpdated);
+		
 	}
-	
+
+    Object[] fetchFriendUpdates() throws JSONException, ParseException, IOException, AuthenticationException 
+    {
+    	final List<Contact> friendList = new ArrayList<Contact>();
+        final List<Group> groupsList = new ArrayList<Group>();
+        final List<Group> books = new ArrayList<Group>();
+        List<NameValuePair> params = getAuthParams();
+        final JSONArray update = new JSONArray(post(FETCH_FRIEND_UPDATES_URI, params)),
+        	friends = update.getJSONArray(0),
+        	groups = update.getJSONArray(1),
+        	sharedBooks = update.getJSONArray(2);
+        for (int i = 0; i < friends.length(); i++) 
+            friendList.add(Contact.valueOf(friends.getJSONObject(i)));
+        Log.i(tag, "Contacts: "+friendList);
+        for (int i = 0; i < groups.length(); i++) 
+            groupsList.add(Group.valueOf(groups.getJSONObject(i)));
+        for (int i = 0; i < sharedBooks.length(); i++)  
+            books.add(Group.valueOf(sharedBooks.getJSONObject(i)));
+        
+        return new Object[] {friendList, groupsList, books}; 
+    }
+
 	public void sendFriendUpdates(boolean newOnly, Date lastUpdated) throws ClientProtocolException, IOException, JSONException {
 		Cursor rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), false);
 		sendContactUpdates(Db.getContacts(newOnly, context), newOnly, rawContactsCursor);
         sendGroupUpdates(Db.getGroups(newOnly, context));
         sendSharedBookUpdates(Db.getSharingBooks(true, context));
+        rawContactsCursor.close();
 	}
 
 	private void sendContactUpdates(List<PhoneContact> contacts, boolean newOnly, Cursor rawContactsCursor) throws ClientProtocolException, IOException, JSONException {
