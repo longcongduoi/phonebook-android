@@ -468,7 +468,7 @@ public class Net {
             	sharedBooks = update.getJSONArray(2);
             Log.d(tag, response);
             for (int i = 0; i < friends.length(); i++) {
-                friendList.add(Contact.valueOf(friends.getJSONObject(i)));
+                // friendList.add(Contact.valueOf(friends.getJSONObject(i)));
             }
 
             for (int i = 0; i < groups.length(); i++) {
@@ -608,10 +608,7 @@ public class Net {
         {
         	String index = new Integer(i).toString();
         	PhoneContact contact =  contacts.get(i);
-        	params.add(new BasicNameValuePair("name_"+index, contact.name));
-        	params.add(new BasicNameValuePair("number_"+index, contact.number));
-        	params.add(new BasicNameValuePair("id_"+index, contact.serverId));
-        	params.add(new BasicNameValuePair("contactId_"+index, contact.contactId));
+        	contact.addParams(params, index);
         }
 		
         JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));

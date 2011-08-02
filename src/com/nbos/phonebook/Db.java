@@ -15,9 +15,11 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.CursorJoiner;
+import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.RawContacts;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
@@ -55,33 +57,6 @@ public class Db {
 				// ContactsContract.Contacts.DISPLAY_NAME);
 	}
 
-	/*public static String getContactIdFromSourceId(ContentResolver cr, String id) {
-		Cursor cursor = cr.query(ContactsContract.RawContacts.CONTENT_URI, null, 
-				Constants.CONTACT_SERVER_ID + " = " + id, 
-				null, null);
-		String rawContactId = "0";
-		Log.i(TAG, "getContact: "+cursor.getCount()+" contacts for sourceId: "+id);
-		while(cursor.moveToNext())
-		{
-			rawContactId = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
-			Log.i(TAG, "rawContactId: "+rawContactId);
-			if(rawContactId != null)
-				return rawContactId;
-		}
-		return rawContactId;
-				// ContactsContract.Contacts.DISPLAY_NAME);
-	}
-
-	public static String getContactIdFromServerId(ContentResolver cr, String serverId, Cursor rawContactsCursor) {
-		rawContactsCursor.moveToFirst();
-		do {
-			String sId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
-			if(sId != null && sId.equals(serverId))
-				return rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
-		} while(rawContactsCursor.moveToNext());
-		return null;
-	}*/
-	
 	public static Cursor getBook(Activity activity, String id) {
     	return activity.getContentResolver().query(
     			Uri.parse("content://"+Provider.AUTHORITY+"/"+Provider.BookContent.CONTENT_PATH),
@@ -187,7 +162,11 @@ public class Db {
 		batchOperation.execute();
 	}
     
-	public static List<PhoneContact> getContacts(boolean newOnly, Context ctx) {
+    public static List<PhoneContact> getContacts(boolean newOnly, Context ctx) {
+    	return PhoneContact.getContacts(newOnly, ctx);
+    }
+    
+	public static List<PhoneContact> getContacts1(boolean newOnly, Context ctx) {
 	    ContentResolver cr = ctx.getContentResolver();
 	    
         final String[] CONTACTS_PROJECTION =
@@ -223,7 +202,7 @@ public class Db {
 	        String phoneNumber = getContactNumber(phonesCursor, contactId); 
 	        Log.i(tag, "id: "+contactId+", rawContactId: "+rawContactId+", serverId: "+serverId+", name is: "+name+", number is: "+phoneNumber+", dirty: "+dirty);//+", accountName: "+accountName+", accountType: "+accountType);
 	        if(name == null || phoneNumber == null) continue;
-	        users.add(new PhoneContact(name, phoneNumber, serverId, contactId, rawContactId));
+	        // users.add(new PhoneContact(name, phoneNumber, serverId, contactId, rawContactId));
 	    } while(rawContactsCursor.moveToNext());
 	    rawContactsCursor.close();
 	    contactsCursor.close();
@@ -307,6 +286,7 @@ public class Db {
         		ContactsContract.RawContacts.DIRTY
         };
 	    
+        
 		return cr.query(ContactsContract.RawContacts.CONTENT_URI, PROJECTION, where, null, ContactsContract.RawContacts._ID);	
 	}
 
@@ -392,12 +372,12 @@ public class Db {
 	        	switch (joinerResult) {
 	        		case BOTH: // handle case where a row with the same key is in both cursors
 	        			String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID)),
-	        				serverId = getServerIdFromContactId(dataCursor, contactId), 
-	        				contactName = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)),
-	        				contactNumber = getContactPhoneNumber(contactId, phonesCursor);
-	        			if(contactNumber == null) break;
-	        			contacts.add(new Contact(contactName, contactNumber, serverId));
-	        			Log.i(tag, "added contact: "+contactId+", serverId: "+serverId+", "+contactNumber+", "+contactName);
+	        				serverId = getServerIdFromContactId(dataCursor, contactId); 
+	        				// contactName = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)),
+	        				// contactNumber = getContactPhoneNumber(contactId, phonesCursor);
+	        			// if(contactNumber == null) break;
+	        			contacts.add(new Contact(serverId));
+	        			Log.i(tag, "added contact: "+contactId+", serverId: "+serverId);//+", "+contactNumber+", "+contactName);
 	        		break;
 	        	}
 	        }	    

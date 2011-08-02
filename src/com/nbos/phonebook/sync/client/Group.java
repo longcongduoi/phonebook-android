@@ -37,7 +37,7 @@ public class Group {
 				number = c.getString("number"),
 				picId = c.getString("pic");
 			Log.i(tag, "serverId: "+serverId+", name: "+cName+", picId: "+picId);
-			contacts.add(new Contact(cName, number, new Integer(serverId).toString(), picId));
+			// contacts.add(new Contact(cName, number, new Integer(serverId).toString(), picId));
 		}
 		Log.i(tag, "There are "+contacts.size()+" contacts in group "+name);
 		return new Group(new Integer(id).toString(), null, name, owner, contacts);

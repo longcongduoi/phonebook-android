@@ -7,7 +7,9 @@ import java.util.Map;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.res.Resources;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteException;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Data;
@@ -34,8 +36,65 @@ public class Test {
 	}
 
     public static void getContacts(Context ctx) {
-    	Db.getContacts(false, ctx);
+    	Log.i(tag, "Contacts: "+Db.getContacts(false, ctx).toString());
 	}
+
+    public static void getStringId() {
+    	// int id = ContactsContract.CommonDataKinds.Email.getTypeLabelResource(3);
+    	
+    	int id = ContactsContract.CommonDataKinds.Im.getProtocolLabelResource(0);
+    	String str = Resources.getSystem().getString(id);
+    	Log.i(tag, "String is: "+str);
+    }
+    /*public static void getRawContactsEntity(Context ctx) {
+        String[] DATA_KEYS = new String[]{
+            Data.DATA1,
+            Data.DATA2,
+            Data.DATA3,
+            Data.DATA4,
+            Data.DATA5,
+            Data.DATA6,
+            Data.DATA7,
+            Data.DATA8,
+            Data.DATA9,
+            Data.DATA10,
+            Data.DATA11,
+            Data.DATA12,
+            Data.DATA13,
+            Data.DATA14,
+            Data.DATA15,
+            Data.SYNC1,
+            Data.SYNC2,
+            Data.SYNC3,
+            Data.SYNC4};
+    	
+    	Cursor cursor = Db.getRawContactsEntityCursor(ctx.getContentResolver(), true);
+    	Log.i(tag, "There are "+cursor.getCount()+" entries, "+cursor.getColumnCount()+" columns.");
+    	for(String col : cursor.getColumnNames())
+    		Log.i(tag, "col: "+col);
+    	cursor.moveToFirst();
+    	do {
+    		String contactId = cursor.getString(cursor.getColumnIndex(RawContacts.CONTACT_ID)),
+    			dirty = cursor.getString(cursor.getColumnIndex(RawContacts.DIRTY)),
+    			mimeType = cursor.getString(cursor.getColumnIndex(Data.MIMETYPE));
+    		Log.i(tag, "contactId: "+contactId+", dirty: "+dirty+", mimetype: "+mimeType);
+            for (String key : DATA_KEYS) {
+                final int columnIndex = cursor.getColumnIndexOrThrow(key);
+                if (cursor.isNull(columnIndex)) {
+                    // don't put anything
+                } else {
+                    try {
+                    	Log.i(tag, key+": "+cursor.getString(columnIndex));
+                        // cv.put(key, cursor.getString(columnIndex));
+                    } catch (SQLiteException e) {
+                    	Log.i(tag, key+": isBlob");
+                        // cv.put(key, cursor.getBlob(columnIndex));
+                    }
+                }
+            	
+            }
+    	} while(cursor.moveToNext());
+	}*/
 
     public static void getRawContacts(Context ctx) {
     	Cursor c = Db.getRawContactsCursor(ctx.getContentResolver(), false);
