@@ -101,7 +101,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
              }
              // Object[] update = Net.fetchFriendUpdates(account, authtoken, mLastUpdated);
              // syncManager = new SyncManager(mContext, account.name, update);
-             cloud = new Cloud(mContext, account, authtoken);
+             new Cloud(mContext, account.name, authtoken).sync();
              // cloud.sendFriendUpdates(false, mLastUpdated);
              // cloud.sendFriendUpdates(true, mLastUpdated);
              // Net.sendFriendUpdates(account, authtoken, mLastUpdated, true, mContext);

@@ -208,7 +208,7 @@ public class Db {
 	    dataCursor.close();
 	    return users;
 	}
-	
+
 	public static List<ContactPicture> getContactPictures(Context ctx, boolean newOnly) {
 		List<ContactPicture> pics = new ArrayList<ContactPicture>();
 	    Cursor rawContactsCursor = getRawContactsCursor(ctx.getContentResolver(), newOnly),
@@ -467,7 +467,7 @@ public class Db {
 
 	public static void updateContactServerId(String contactId, String serverId, Context context, Cursor rawContactsCursor) {
 		String rawContactId = getRawContactId(contactId, rawContactsCursor);
-		Log.i(tag, "Raw contact id is: "+rawContactId);
+		Log.i(tag, "Raw contact id is: "+rawContactId+", serverId: "+serverId);
 		Uri uri = Data.CONTENT_URI;
 		Cursor c = context.getContentResolver().query(uri, null,
 				Data.CONTACT_ID + " = " + contactId + " and " +

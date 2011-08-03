@@ -31,6 +31,8 @@ import org.json.JSONException;
 import android.accounts.Account;
 import android.content.Context;
 import android.database.Cursor;
+import android.provider.ContactsContract;
+import android.provider.ContactsContract.Data;
 import android.util.Log;
 
 import com.nbos.phonebook.Db;
@@ -47,7 +49,7 @@ public class Cloud {
     Context context;
     String accountName, authToken;
     HttpClient httpClient;
-    public static final int REGISTRATION_TIMEOUT = 30 * 1000; // ms
+    public static final int REGISTRATION_TIMEOUT = 90 * 1000; // ms
 
     public static final String 
     	PARAM_USERNAME = "username",
@@ -69,16 +71,22 @@ public class Cloud {
     	UPLOAD_CONTACT_PIC_URI = BASE_URL + "/fileUploader/process",
     	DOWNLOAD_CONTACT_PIC_URI = BASE_URL + "/download/index/";
 
-	public Cloud(Context context, Account account, String authtoken) throws AuthenticationException, ParseException, JSONException, IOException {
+	public Cloud(Context context, String name, String authtoken) {
 		this.context = context;
-		accountName = account.name;
+		accountName = name;
 		authToken = authtoken;
+	}
+	
+	public void sync() throws AuthenticationException, ParseException, JSONException, IOException {
         Object[] update = fetchFriendUpdates();
-        new SyncManager(context, account.name, update);
+        new SyncManager(context, accountName, update);
         sendFriendUpdates(true);
-		
 	}
 
+	public void sendAllContacts() throws ClientProtocolException, IOException, JSONException {
+		sendFriendUpdates(false);
+	}
+	
     Object[] fetchFriendUpdates() throws JSONException, ParseException, IOException, AuthenticationException 
     {
     	final List<Contact> friendList = new ArrayList<Contact>();
@@ -122,10 +130,82 @@ public class Cloud {
         for (int i = 0; i < contactUpdates.length(); i++)
         	ContactManager.updateContact(contactUpdates.getJSONObject(i), context, rawContactsCursor);
         // send the profile pictures here
-        sendContactPictureUpdates(newOnly);
+        uploadContactPictures(newOnly);
         ContactManager.resetDirtyContacts(context);
 	}
 	
+
+	void uploadContactPictures(boolean newOnly) {
+		Map<String, String> params = new HashMap<String, String>();
+		params.put("upload", "avatar");
+		params.put("errorAction", "error");
+		params.put("errorController", "file");
+		params.put("successAction", "success");
+		params.put("successController", "file");
+
+
+	    Cursor rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), newOnly),
+	    	dataCursor = Db.getData(context),
+	    	photosDataCursor = context.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
+	    		// null,
+	    	    new String[] {
+	    			ContactsContract.Contacts._ID, 
+	    			ContactsContract.Data.CONTACT_ID,
+	    			ContactsContract.Data.RAW_CONTACT_ID,
+	    			ContactsContract.RawContacts._ID,
+	    			ContactsContract.Contacts.DISPLAY_NAME,
+	    			ContactsContract.CommonDataKinds.Photo.PHOTO,
+	    			Data.MIMETYPE, Data.DATA1,
+	    		},
+	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null",
+	    	    null, ContactsContract.Data.CONTACT_ID);
+	    
+	    Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries for newOnly: "+newOnly);
+	    Log.i(tag, "There are "+photosDataCursor.getCount()+" data entries");
+	    
+	    if(rawContactsCursor.getCount() == 0) return;
+	    
+	    photosDataCursor.moveToFirst();
+	    rawContactsCursor.moveToFirst();
+	    do {
+	    	String contactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID)),
+	    		serverId = Db.getServerIdFromContactId(dataCursor, contactId);
+	    	ContactPicture pic = null;
+			try {
+				pic = getContactPicture(photosDataCursor, contactId, serverId);
+				if(pic == null) continue;
+	    		String contentType = pic.mimeType.split("/")[1];
+	    		Log.i(tag, "uploading "+contentType);
+	    		params.remove("id");
+	    		params.put("id", pic.serverId);
+	    		Net.upload(Net.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+	    	
+	    } while(rawContactsCursor.moveToNext());
+		
+	    rawContactsCursor.close();
+	    photosDataCursor.close();
+	}
+
+	private static ContactPicture getContactPicture(Cursor dataCursor,
+			String contactId, String serverId) throws IOException {
+		if(dataCursor.getCount() == 0) return null;
+		dataCursor.moveToFirst();
+	    do {
+	    	String cId = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID));
+	    	if(!cId.equals(contactId)) continue;
+	    	String name = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+	    	byte[] pic = dataCursor.getBlob(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
+	    	String contentType = Db.findMimeTypeForImage(pic); 
+	    		// dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.MIMETYPE));
+	    	// String serverId
+	    	Log.i(tag, "Contact["+contactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
+	    	return new ContactPicture(pic, serverId, contentType);
+	    } while(dataCursor.moveToNext());
+	    return null;
+	}
 	
 	private void sendContactPictureUpdates(boolean newOnly) {
     	List<ContactPicture> pics = Db.getContactPictures(context, newOnly);
@@ -229,5 +309,4 @@ public class Cloud {
         
         return params;
 	}
-	
 }

@@ -76,7 +76,7 @@ public class PhoneContact extends Contact {
                     }
                 }
             }
-            
+    		if(contactId == null) continue; // TODO: SIM contacts have null contactId
             if(!prevId.equals(contactId))
             {
             	if(contact != null)

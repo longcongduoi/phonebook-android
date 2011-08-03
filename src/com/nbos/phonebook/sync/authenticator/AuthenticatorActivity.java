@@ -34,12 +34,12 @@ import android.view.View;
 import android.view.Window;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.TextView.BufferType;
 
 import com.nbos.phonebook.Db;
 import com.nbos.phonebook.R;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Net;
+import com.nbos.phonebook.sync.platform.Cloud;
 
 /**
  * Activity which displays login screen to the user.
@@ -256,7 +256,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             try {
             	Log.i(TAG, "Sending all contacts");
             	Db.refreshAccount(getApplicationContext(), mUsername);
-				Net.sendAllContacts(mUsername, this.mAuthtoken, getApplicationContext());
+				// Net.sendAllContacts(mUsername, this.mAuthtoken, getApplicationContext());
+				new Cloud(getApplicationContext(), mUsername, mAuthtoken).sendAllContacts();
 			} catch (Exception e) {
 				e.printStackTrace();
 			} 
