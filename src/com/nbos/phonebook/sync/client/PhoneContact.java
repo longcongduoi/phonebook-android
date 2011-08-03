@@ -54,6 +54,7 @@ public class PhoneContact extends Contact {
     		// Log.i(tag, "col: "+col);
     	String prevId = "";
     	PhoneContact contact = null;
+    	if(cursor.getCount() == 0) return contacts;
     	cursor.moveToFirst();
     	do {
     		String contactId = cursor.getString(cursor.getColumnIndex(RawContacts.CONTACT_ID)),

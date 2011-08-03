@@ -50,16 +50,8 @@ public class SyncManager {
         syncContacts(contacts);
         syncGroups(groups, false);
         syncGroups(sharedBooks, true);
-		// getContactsCursor();
 	}
 
-	/*private void getContactsCursor() {
-		if(contactsCursor != null)
-			contactsCursor.close();
-		// contactsCursor = context.getContentResolver().query(Constants.CONTACT_URI, null, null, null, null);
-		// Log.i(TAG, "There are "+contactsCursor.getCount()+" phonebook contacts");
-	}*/
-	
 	void syncContacts(List<Contact> contacts) {
         long rawContactId = 0;
         final ContentResolver resolver = context.getContentResolver();
@@ -113,8 +105,7 @@ public class SyncManager {
 		picsCursor = context.getContentResolver().query(uri, null, null, null, null);
 		getDataPicsCursor();
 		for(Contact c : contacts) {
-			Log.i(tag, "Contact: "+c.name+", picId: "+c.picId+", isNull: "+(c.picId == null)+", 'null': "+c.picId.equals("null"));
-			if(c.picId == null || c.picId.equals("null")) continue;
+			if(c.picId == null) continue;
 			syncPicture(c);
 		}
 		picsCursor.close();
@@ -373,7 +364,7 @@ public class SyncManager {
 		} while(dataCursor.moveToNext()); 
 
 		// could not find the contact, do a phone number search		
-		for(PhoneContact u : allContacts) {
+		/*for(PhoneContact u : allContacts) {
 			if(u.number.equals(contact.number)) {// maybe a contact
 				// check if the rest of the information is the same
 				if(u.name.equals(contact.name))
@@ -384,7 +375,7 @@ public class SyncManager {
 					return Long.parseLong(u.rawContactId);
 				}
 			}
-		}
+		}*/
 		return 0;
 	}
 

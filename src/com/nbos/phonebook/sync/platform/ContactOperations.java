@@ -30,6 +30,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.nbos.phonebook.sync.Constants;
+import com.nbos.phonebook.sync.client.contact.Name;
 import com.nbos.phonebook.R;
 
 /**
@@ -110,15 +111,30 @@ public class ContactOperations {
      * @param nameType type of name: family name, given name, etc.
      * @return instance of ContactOperations
      */
-    public ContactOperations addName(String firstName, String lastName) {
+    public ContactOperations addName(Name name) {
         mValues.clear();
-        if (!TextUtils.isEmpty(firstName)) {
-            mValues.put(StructuredName.GIVEN_NAME, firstName);
+        if (!TextUtils.isEmpty(name.prefix)) {
+            mValues.put(StructuredName.PREFIX, name.prefix);
             mValues.put(StructuredName.MIMETYPE,
                 StructuredName.CONTENT_ITEM_TYPE);
         }
-        if (!TextUtils.isEmpty(lastName)) {
-            mValues.put(StructuredName.FAMILY_NAME, lastName);
+        if (!TextUtils.isEmpty(name.given)) {
+            mValues.put(StructuredName.GIVEN_NAME, name.given);
+            mValues.put(StructuredName.MIMETYPE,
+                StructuredName.CONTENT_ITEM_TYPE);
+        }
+        if (!TextUtils.isEmpty(name.middle)) {
+            mValues.put(StructuredName.MIDDLE_NAME, name.middle);
+            mValues.put(StructuredName.MIMETYPE,
+                StructuredName.CONTENT_ITEM_TYPE);
+        }
+        if (!TextUtils.isEmpty(name.family)) {
+            mValues.put(StructuredName.FAMILY_NAME, name.family);
+            mValues.put(StructuredName.MIMETYPE,
+                StructuredName.CONTENT_ITEM_TYPE);
+        }
+        if (!TextUtils.isEmpty(name.suffix)) {
+            mValues.put(StructuredName.SUFFIX, name.suffix);
             mValues.put(StructuredName.MIMETYPE,
                 StructuredName.CONTENT_ITEM_TYPE);
         }
@@ -134,11 +150,14 @@ public class ContactOperations {
      * @param new email for user
      * @return instance of ContactOperations
      */
-    public ContactOperations addEmail(String email) {
+    public ContactOperations addEmail(com.nbos.phonebook.sync.client.contact.Email email) {
         mValues.clear();
-        if (!TextUtils.isEmpty(email)) {
-            mValues.put(Email.DATA, email);
-            mValues.put(Email.TYPE, Email.TYPE_OTHER);
+        if (!TextUtils.isEmpty(email.address)) {
+            mValues.put(Email.DATA, email.address);
+            int type = email.getIntType();
+            mValues.put(Email.TYPE, type);
+            if(type == Email.TYPE_CUSTOM)
+            	mValues.put(Email.DATA3, email.type);
             mValues.put(Email.MIMETYPE, Email.CONTENT_ITEM_TYPE);
             addInsertOp();
         }
@@ -152,11 +171,14 @@ public class ContactOperations {
      * @param phoneType the type: cell, home, etc.
      * @return instance of ContactOperations
      */
-    public ContactOperations addPhone(String phone, int phoneType) {
+    public ContactOperations addPhone(com.nbos.phonebook.sync.client.contact.Phone phone) {
         mValues.clear();
-        if (!TextUtils.isEmpty(phone)) {
-            mValues.put(Phone.NUMBER, phone);
-            mValues.put(Phone.TYPE, phoneType);
+        if (!TextUtils.isEmpty(phone.number)) {
+            mValues.put(Phone.NUMBER, phone.number);
+            int type = phone.getIntType();
+            mValues.put(Phone.TYPE, type);
+            if(type == Phone.TYPE_CUSTOM)
+            	mValues.put(Phone.DATA3, phone.type);
             mValues.put(Phone.MIMETYPE, Phone.CONTENT_ITEM_TYPE);
             addInsertOp();
         }
@@ -209,20 +231,21 @@ public class ContactOperations {
      * @param uri Uri for the existing raw contact to be updated
      * @return instance of ContactOperations
      */
-    public ContactOperations updateName(Uri uri, String existingFirstName,
-        String existingLastName, String firstName, String lastName) {
-        Log.i("ContactOperations", " ef=" + existingFirstName + ", el="
-            + existingLastName + ", f=" + firstName + ", l=" + lastName);
+    public ContactOperations updateName(Uri uri, Name dataName, Name updateName) {
+        Log.i("ContactOperations", dataName +" vs "+updateName);
         mValues.clear();
-        if (!TextUtils.equals(existingFirstName, firstName)) {
-            mValues.put(StructuredName.GIVEN_NAME, firstName);
-        }
-        if (!TextUtils.equals(existingLastName, lastName)) {	
-            mValues.put(StructuredName.FAMILY_NAME, lastName);
-        }
-        if (mValues.size() > 0) {
+        if (!TextUtils.equals(dataName.prefix, updateName.prefix)) 
+            mValues.put(StructuredName.PREFIX, updateName.prefix);
+        if (!TextUtils.equals(dataName.given, updateName.given)) 
+            mValues.put(StructuredName.GIVEN_NAME, updateName.given);
+        if (!TextUtils.equals(dataName.middle, updateName.middle)) 
+            mValues.put(StructuredName.MIDDLE_NAME, updateName.middle);
+        if (!TextUtils.equals(dataName.family, updateName.family)) 	
+            mValues.put(StructuredName.FAMILY_NAME, updateName.family);
+        if (!TextUtils.equals(dataName.suffix, updateName.suffix)) 	
+            mValues.put(StructuredName.SUFFIX, updateName.suffix);
+        if (mValues.size() > 0) 
             addUpdateOp(uri);
-        }
         return this;
     }
 

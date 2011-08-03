@@ -74,8 +74,8 @@ public class Cloud {
 		accountName = account.name;
 		authToken = authtoken;
         Object[] update = fetchFriendUpdates();
-        // syncManager = new SyncManager(mContext, account.name, update);
-        // sendFriendUpdates(true, mLastUpdated);
+        new SyncManager(context, account.name, update);
+        sendFriendUpdates(true);
 		
 	}
 
@@ -100,7 +100,7 @@ public class Cloud {
         return new Object[] {friendList, groupsList, books}; 
     }
 
-	public void sendFriendUpdates(boolean newOnly, Date lastUpdated) throws ClientProtocolException, IOException, JSONException {
+	public void sendFriendUpdates(boolean newOnly) throws ClientProtocolException, IOException, JSONException {
 		Cursor rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), false);
 		sendContactUpdates(Db.getContacts(newOnly, context), newOnly, rawContactsCursor);
         sendGroupUpdates(Db.getGroups(newOnly, context));

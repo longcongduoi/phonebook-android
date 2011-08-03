@@ -56,5 +56,20 @@ public class Email {
 		}
 		return emails;
 	}
+	
+	int [] types = {
+			CommonDataKinds.Email.TYPE_HOME,
+			CommonDataKinds.Email.TYPE_WORK,
+			CommonDataKinds.Email.TYPE_OTHER,
+			CommonDataKinds.Email.TYPE_MOBILE,
+	};
+	
+	public int getIntType() {
+		for(int intType : types)
+			if(type.equals(getType(intType)))
+				return intType;
+		return CommonDataKinds.Phone.TYPE_CUSTOM;
+	}
+    
 
 }

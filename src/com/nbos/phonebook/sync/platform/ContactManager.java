@@ -44,6 +44,7 @@ import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.User;
+import com.nbos.phonebook.sync.client.contact.Name;
 
 /**
  * Class for managing contacts sync related mOperations
@@ -210,11 +211,17 @@ public class ContactManager {
         final ContactOperations contactOp =
             ContactOperations.createNewContact(context, Integer.parseInt(contact.serverId),
                 accountName, batchOperation);
-        contactOp.addName(contact.name, "")//user.getLastName())
-        .addEmail(
+        contactOp.addName(contact.name);
+        for(com.nbos.phonebook.sync.client.contact.Phone p : contact.phones)
+        	contactOp.addPhone(p);
+        for(com.nbos.phonebook.sync.client.contact.Email e : contact.emails)
+        	contactOp.addEmail(e);
+        contactOp.addProfileAction(Integer.parseInt(contact.serverId));
+        //user.getLastName())
+        /*.addEmail(
             contact.email).addPhone(contact.number, Phone.TYPE_MOBILE)
             .addPhone(contact.number, Phone.TYPE_OTHER).addProfileAction(
-                Integer.parseInt(contact.serverId));
+                Integer.parseInt(contact.serverId));*/
     }
 
     /**
@@ -255,53 +262,55 @@ public class ContactManager {
                 final long id = dataCursor.getLong(DataQuery.COLUMN_ID);
                 final String mimeType = dataCursor.getString(DataQuery.COLUMN_MIMETYPE);
                 uri = ContentUris.withAppendedId(Data.CONTENT_URI, id);
-
+                Contact dataContact = new Contact();
+                
                 if (mimeType.equals(StructuredName.CONTENT_ITEM_TYPE)) {
-                    final String lastName =
+                	Name.add(dataContact, dataCursor);
+                    /*final String lastName =
                         dataCursor.getString(DataQuery.COLUMN_FAMILY_NAME);
                     final String firstName =
-                        dataCursor.getString(DataQuery.COLUMN_GIVEN_NAME);
-                    contactOp.updateName(uri, firstName, lastName, contact.name, "");
+                        dataCursor.getString(DataQuery.COLUMN_GIVEN_NAME);*/
+                    contactOp.updateName(uri, dataContact.name, contact.name);
                         // .getFirstName(), contact.getLastName());
                 }
 
                 else if (mimeType.equals(Phone.CONTENT_ITEM_TYPE)) {
-                    final int type = dataCursor.getInt(DataQuery.COLUMN_PHONE_TYPE);
+                	com.nbos.phonebook.sync.client.contact.Phone.add(dataContact, dataCursor);
+                    /*final int type = dataCursor.getInt(DataQuery.COLUMN_PHONE_TYPE);
 
                     if (type == Phone.TYPE_MOBILE) {
                         cellPhone = dataCursor.getString(DataQuery.COLUMN_PHONE_NUMBER);
-                        contactOp.updatePhone(cellPhone, contact.number,
+                        contactOp.updatePhone(cellPhone, "",//contact.number,
                             uri);
                     } else if (type == Phone.TYPE_OTHER) {
                         otherPhone = dataCursor.getString(DataQuery.COLUMN_PHONE_NUMBER);
-                        contactOp.updatePhone(otherPhone, contact.number,
+                        contactOp.updatePhone(otherPhone, "",//contact.number,
                             uri);
-                    }
+                    }*/
                 }
-
                 else if (Data.MIMETYPE.equals(Email.CONTENT_ITEM_TYPE)) {
                     email = dataCursor.getString(DataQuery.COLUMN_EMAIL_ADDRESS);
-                    contactOp.updateEmail(contact.email, email, uri);
-
+                    contactOp.updateEmail(""/*contact.email*/, email, uri);
                 }
             } while (dataCursor.moveToNext());// while
         } finally {
             // c.close();
         }
 
+        
         // Add the cell phone, if present and not updated above
         if (cellPhone == null) {
-            contactOp.addPhone(contact.number, Phone.TYPE_MOBILE);
+            // contactOp.addPhone(contact.number, Phone.TYPE_MOBILE);
         }
 
         // Add the other phone, if present and not updated above
         if (otherPhone == null) {
-            contactOp.addPhone(contact.number, Phone.TYPE_OTHER);
+            // contactOp.addPhone(contact.number, Phone.TYPE_OTHER);
         }
 
         // Add the email address, if present and not updated above
         if (email == null) {
-            contactOp.addEmail(contact.email);
+            // contactOp.addEmail(contact.email);
         }
 
     }

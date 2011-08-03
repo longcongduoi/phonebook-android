@@ -56,5 +56,35 @@ public class Phone {
 		}
 		return phones;
 	}
+
+	int [] types = {
+			CommonDataKinds.Phone.TYPE_HOME,
+			CommonDataKinds.Phone.TYPE_MOBILE,
+			CommonDataKinds.Phone.TYPE_WORK,
+			CommonDataKinds.Phone.TYPE_FAX_WORK,
+			CommonDataKinds.Phone.TYPE_FAX_HOME,
+			CommonDataKinds.Phone.TYPE_PAGER,
+			CommonDataKinds.Phone.TYPE_OTHER,
+			CommonDataKinds.Phone.TYPE_CALLBACK,
+			CommonDataKinds.Phone.TYPE_CAR,
+			CommonDataKinds.Phone.TYPE_COMPANY_MAIN,
+			CommonDataKinds.Phone.TYPE_ISDN,
+			CommonDataKinds.Phone.TYPE_MAIN,
+			CommonDataKinds.Phone.TYPE_OTHER_FAX,
+			CommonDataKinds.Phone.TYPE_RADIO,
+			CommonDataKinds.Phone.TYPE_TELEX,
+			CommonDataKinds.Phone.TYPE_TTY_TDD,
+			CommonDataKinds.Phone.TYPE_WORK_MOBILE,
+			CommonDataKinds.Phone.TYPE_WORK_PAGER,
+			CommonDataKinds.Phone.TYPE_ASSISTANT,
+			CommonDataKinds.Phone.TYPE_MMS
+	};
+
+	public int getIntType() {
+		for(int intType : types)
+			if(type.equals(getType(intType)))
+				return intType;
+		return CommonDataKinds.Phone.TYPE_CUSTOM;
+	}
 	
 }
