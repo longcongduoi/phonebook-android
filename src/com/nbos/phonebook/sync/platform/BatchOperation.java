@@ -36,8 +36,8 @@ public class BatchOperation {
     // List for storing the batch mOperations
     ArrayList<ContentProviderOperation> mOperations;
 
-    public BatchOperation(Context context, ContentResolver resolver) {
-        mResolver = resolver;
+    public BatchOperation(Context context) {
+        mResolver = context.getContentResolver();
         mOperations = new ArrayList<ContentProviderOperation>();
     }
 

@@ -55,7 +55,7 @@ public class SyncManager {
 	void syncContacts(List<Contact> contacts) {
         long rawContactId = 0;
         final ContentResolver resolver = context.getContentResolver();
-        final BatchOperation batchOperation = new BatchOperation(context, resolver);
+        final BatchOperation batchOperation = new BatchOperation(context);
         
         Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts, num columns: "+rawContactsCursor.getColumnCount());
         Log.i(tag, "There are "+allContacts.size()+" phone contacts");
@@ -74,7 +74,7 @@ public class SyncManager {
             if (rawContactId != 0) {
                 if (!contact.deleted) {
                     // update contact
-                    ContactManager.updateContact(context, resolver, account, contact,
+                    ContactManager.updateContact(context, account, contact,
                         rawContactId, batchOperation, dataCursor);
                 } else {
                     // delete contact

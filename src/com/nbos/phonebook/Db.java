@@ -137,9 +137,7 @@ public class Db {
 
     public static void createAGroup(Context context, String groupName, String owner, String accountName, int id) {
     	// if(owner == null) owner = accountName;
-        final ContentResolver resolver = context.getContentResolver();
-        final BatchOperation batchOperation =
-            new BatchOperation(context, resolver);
+        final BatchOperation batchOperation = new BatchOperation(context);
     	
 		Log.i(tag, "Creating group: "+groupName);
 		Uri mEntityUri = ContactsContract.Groups.CONTENT_URI.buildUpon()
@@ -496,7 +494,8 @@ public class Db {
     public static Cursor getData(Context ctx) {
         final String[] PROJECTION =
             new String[] {Data._ID, Data.MIMETYPE, Data.DATA1, Data.DATA2,
-                Data.DATA3, Data.RAW_CONTACT_ID, Data.CONTACT_ID};
+                Data.DATA3, Data.DATA4, Data.DATA5, Data.DATA6, Data.DATA7, Data.DATA8, Data.DATA8, Data.DATA10, 
+                Data.RAW_CONTACT_ID, Data.CONTACT_ID};
 
     	return ctx.getContentResolver().query(Data.CONTENT_URI, PROJECTION, null, null, null);
     }

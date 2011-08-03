@@ -165,7 +165,7 @@ public class ContactManager {
         final ContentValues values = new ContentValues();
         final ContentResolver resolver = context.getContentResolver();
         final BatchOperation batchOperation =
-            new BatchOperation(context, resolver);
+            new BatchOperation(context);
         for (final User.Status status : list) {
             // Look up the user's sample SyncAdapter data row
             final long userId = status.getUserId();
@@ -235,8 +235,7 @@ public class ContactManager {
      *        provider
      * @param dataCursor 
      */
-    public static void updateContact(Context context,
-        ContentResolver resolver, String accountName, Contact contact,
+    public static void updateContact(Context context, String accountName, Contact contact,
         long rawContactId, BatchOperation batchOperation, Cursor dataCursor) {
     	Log.i(TAG, "Update contact: "+contact.name+", rawContactId: "+rawContactId);
     	if(dataCursor.getCount() == 0) return;
