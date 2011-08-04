@@ -390,8 +390,8 @@ public class ContactManager {
         public final static int COLUMN_ID = 0;
 
         public static final String SELECTION =
-            Data.MIMETYPE + "='" + SampleSyncAdapterColumns.MIME_PROFILE
-                + "' AND " + SampleSyncAdapterColumns.DATA_PID + "=?";
+            Data.MIMETYPE + "='" + PhonebookSyncAdapterColumns.MIME_PROFILE
+                + "' AND " + PhonebookSyncAdapterColumns.DATA_PID + "=?";
     }
     /**
      * Constants for a query to find a contact given a sample SyncAdapter user

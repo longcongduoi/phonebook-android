@@ -12,7 +12,7 @@ import com.nbos.phonebook.sync.client.contact.Im;
 import com.nbos.phonebook.sync.client.contact.Name;
 import com.nbos.phonebook.sync.client.contact.Organization;
 import com.nbos.phonebook.sync.client.contact.Phone;
-import com.nbos.phonebook.sync.platform.SampleSyncAdapterColumns;
+import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
 
 import android.content.ContentResolver;
 import android.content.Context;

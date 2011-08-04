@@ -149,27 +149,6 @@ public class Test {
     
     }
     
-    public static void getContactPictures(Context ctx) {
-    	List<ContactPicture> pics = Db.getContactPictures(ctx, true);
-		Map<String, String> params = new HashMap<String, String>();
-		params.put("upload", "avatar");
-		params.put("errorAction", "error");
-		params.put("errorController", "file");
-		params.put("successAction", "success");
-		params.put("successController", "file");
-
-    	for(ContactPicture pic : pics)
-    	{
-    		String contentType = pic.mimeType.split("/")[1];
-    		Log.i(tag, "uploading "+contentType);
-    		params.remove("id");
-    		params.put("id", pic.serverId);
-
-    		Net.upload(Net.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
-    	}
-    }
-    
-
 	public static void getRawContactsTable(Context ctx) {
 		Cursor c = Db.getRawContactsCursor(ctx.getContentResolver(), false);
 		c.moveToFirst();
@@ -226,22 +205,6 @@ public class Test {
 		getDataTable(applicationContext);
 	}
 
-	public static void getPicTable(Context ctx) {
-    	final Cursor c = ctx.getContentResolver().query(Constants.PIC_URI, null, null, null, null);
-    	Log.i(tag, "There are "+c.getCount()+" pics");
-    	c.moveToFirst();
-    	do {
-    		String serverId = c.getString(c.getColumnIndex(PicTable.SERVERID));
-    		String picId = c.getString(c.getColumnIndex(PicTable.PICID));
-    		Log.i(tag, "serverId: "+serverId+", picId: "+picId);
-    	} while(c.moveToNext());
-    }
-	
-	public static void deletePicTable(Context ctx) {
-    	int num = ctx.getContentResolver().delete(Constants.PIC_URI, null, null);
-    	Log.i(tag, "Deleted "+num+" pic entries");
-	}
-	
 	public static void getContactPics(Context ctx) {
 		Db.getContactPictures(ctx, false);
 	}

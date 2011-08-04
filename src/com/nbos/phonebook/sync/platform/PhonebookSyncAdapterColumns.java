@@ -20,15 +20,21 @@ import android.provider.ContactsContract.Data;
 /*
  * The standard columns representing contact's info from social apps.
  */
-public interface SampleSyncAdapterColumns {
+public interface PhonebookSyncAdapterColumns {
     /**
      * MIME-type used when storing a profile {@link Data} entry.
      */
     public static final String MIME_PROFILE =
-        "vnd.android.cursor.item/vnd.samplesyncadapter.profile";
+        "vnd.android.cursor.item/vnd.phonebook.profile";
 
-    public static final String DATA_PID = Data.DATA1;
-    public static final String DATA_SUMMARY = Data.DATA2;
-    public static final String DATA_DETAIL = Data.DATA3;
+    public static final String 
+    	DATA_PID = Data.DATA1,
+    	DATA_SUMMARY = Data.DATA2,
+    	DATA_DETAIL = Data.DATA3,
+    	PIC_ID = Data.DATA4,
+    	PIC_SIZE = Data.DATA5,
+    	PIC_HASH = Data.DATA6;
+    	
+    	
 
 }

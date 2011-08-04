@@ -37,8 +37,8 @@ public class Constants {
 		// CONTACT_SERVER_ID = ContactsContract.RawContacts.SYNC1,
 		PHONE_NUMBER_KEY = "ph";
 	public static final Uri 
-		SHARE_BOOK_URI = Uri.parse(PHONEBOOK_PROVIDER_URI + "book"),
-		PIC_URI = Uri.parse(PHONEBOOK_PROVIDER_URI + "pic");
+		SHARE_BOOK_URI = Uri.parse(PHONEBOOK_PROVIDER_URI + "book");
+		// PIC_URI = Uri.parse(PHONEBOOK_PROVIDER_URI + "pic");
 
 
 }

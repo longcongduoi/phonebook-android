@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,7 +35,7 @@ public class SyncManager {
 	Context context;
     String account; 
     List<PhoneContact> allContacts; 
-    Cursor dataCursor, rawContactsCursor, picsCursor, dataPicsCursor;
+    Cursor dataCursor, rawContactsCursor, dataPicsCursor;
     Set<String> syncedContacts = new HashSet<String>();
 	public SyncManager(Context context, String account, Object[] update) {
 		super();
@@ -95,20 +96,17 @@ public class SyncManager {
         }
         int num = batchOperation.size();
         batchOperation.execute();
-        if(num == 0) return;
+        // if(num == 0) return;
         refreshCursors();
         syncPictures(contacts);
 	}
 
 	private void syncPictures(List<Contact> contacts) {
-		Uri uri = Constants.PIC_URI;
-		picsCursor = context.getContentResolver().query(uri, null, null, null, null);
 		getDataPicsCursor();
 		for(Contact c : contacts) {
 			if(c.picId == null) continue;
 			syncPicture(c);
 		}
-		picsCursor.close();
 		dataPicsCursor.close();
 	}
 
@@ -127,43 +125,32 @@ public class SyncManager {
 
 	private void syncPicture(Contact c) {
 		// check if the pic is the same in the server
-		Uri uri = Constants.PIC_URI;
-		picsCursor.moveToFirst();
-		if(picsCursor.getCount() > 0)
+		dataCursor.moveToFirst();
+		if(dataCursor.getCount() > 0)
 		do {
-			String serverId = picsCursor.getString(picsCursor.getColumnIndex(PicTable.SERVERID));
-			String picId = picsCursor.getString(picsCursor.getColumnIndex(PicTable.PICID));
-			String accountName = picsCursor.getString(picsCursor.getColumnIndex(PicTable.ACCOUNT));
-			if(!account.equals(accountName) || !c.serverId.equals(serverId)) continue;
+			String mimetype = dataCursor.getString(dataCursor.getColumnIndex(Data.MIMETYPE));
+			if(!mimetype.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)) continue;
+			String serverId = dataCursor.getString(dataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
+			if(serverId == null || !c.serverId.equals(serverId)) continue;
+			
+			String picId = dataCursor.getString(dataCursor.getColumnIndex(PhonebookSyncAdapterColumns.PIC_ID));
 			if(c.picId.equals(picId)) // no change in pic 
 			{
 				Log.i(tag, "no change in pic: "+c.picId+", serverId: "+serverId);
 				return;
 			}
 			updateContactPic(c);
-			ContentValues values = new ContentValues();
-			values.put(PicTable.PICID, c.picId);
-			int num = context.getContentResolver().update(uri, values, 
-				PicTable.SERVERID + " = ? and " + PicTable.ACCOUNT + " ? ", new String[] {serverId, account});
-			Log.i(tag, "updated "+num+" entries pic id to: "+c.picId+" for serverId "+serverId+" and account: "+account);
 			// pic id has changed, download the pic
 			return;
-		} while(picsCursor.moveToNext());
+		} while(dataCursor.moveToNext());
 		// not in the database, insert the values
 		updateContactPic(c);
-		int num = context.getContentResolver().delete(uri, PicTable.SERVERID + " = ? and " + PicTable.ACCOUNT + " = ? ", new String[]{c.serverId, account});
-		Log.i(tag, "deleted "+num+" pic values where serverId = "+c.serverId);
-		ContentValues values = new ContentValues();
-		values.put(PicTable.PICID, c.picId);
-		values.put(PicTable.SERVERID, c.serverId);
-		values.put(PicTable.ACCOUNT, account);
-		context.getContentResolver().insert(uri, values);
-		Log.i(tag, "inserted picId: "+c.picId+", serverId: "+c.serverId);
 	}
 
 	private void updateContactPic(Contact c) {
 		byte[] image = downloadPic(c);
 		if(image == null) return;
+		boolean newPic = true;
         String contactId = getContactIdFromServerId(c.serverId);
         Uri uri = addCallerIsSyncAdapterParameter(Data.CONTENT_URI);
         dataPicsCursor.moveToFirst();
@@ -178,19 +165,30 @@ public class SyncManager {
 	    			Data.CONTACT_ID + " = ? and " +
 	    			Data.MIMETYPE + " = ? ", 
 	    			new String[] {contactId, CommonDataKinds.Photo.CONTENT_ITEM_TYPE});
-	    	return;
+	    	newPic = false;
+	    	break;
 	    } while(dataCursor.moveToNext());
-        // insert the pic
-        Log.i(tag, "inserting pic for serverId: "+c.serverId+", image is: "+image.length);
-        ContentValues values = new ContentValues();
-        values.put(ContactsContract.Data.RAW_CONTACT_ID, Db.getRawContactId(contactId, rawContactsCursor));
-        values.put(ContactsContract.Data.IS_SUPER_PRIMARY, 1);
-        // values.put(ContactsContract.CALLER_IS_SYNCADAPTER, "true");
-        values.put(ContactsContract.CommonDataKinds.Photo.PHOTO, image);
-        values.put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE);
-        
-        Uri result = context.getContentResolver().insert(uri, values);
-        Log.i(tag, "pic uri is: "+result);
+        if(newPic)
+        {
+	        // insert the pic
+	        Log.i(tag, "inserting pic for serverId: "+c.serverId+", image is: "+image.length);
+	        ContentValues values = new ContentValues();
+	        values.put(ContactsContract.Data.RAW_CONTACT_ID, Db.getRawContactId(contactId, rawContactsCursor));
+	        values.put(ContactsContract.Data.IS_SUPER_PRIMARY, 1);
+	        // values.put(ContactsContract.CALLER_IS_SYNCADAPTER, "true");
+	        values.put(ContactsContract.CommonDataKinds.Photo.PHOTO, image);
+	        values.put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE);
+	        Uri result = context.getContentResolver().insert(uri, values);
+	        Log.i(tag, "pic uri is: "+result);
+        }
+		ContentValues values = new ContentValues();
+		values.put(PhonebookSyncAdapterColumns.PIC_ID, c.picId);
+		values.put(PhonebookSyncAdapterColumns.PIC_SIZE, image.length);
+		values.put(PhonebookSyncAdapterColumns.PIC_HASH, Cloud.hash(image));
+		int num = context.getContentResolver().update(uri, values, 
+				PhonebookSyncAdapterColumns.DATA_PID + " = ? and " + Data.MIMETYPE + " = ? ", 
+				new String[] {c.serverId, PhonebookSyncAdapterColumns.MIME_PROFILE});
+		Log.i(tag, "updated "+num+" entries pic id to: "+c.picId+" for serverId "+c.serverId);
         // Uri uri = ContentUris.withAppendedId(ContactsContract.Data.CONTENT_URI, Long.parseLong(contactId));
         // cr.update(uri, values, ContactsContract.Contacts._ID + " = " + contactId, null);
 
@@ -338,8 +336,8 @@ public class SyncManager {
 		dataCursor.moveToFirst();
 		do {
 			String mimeType = dataCursor.getString(dataCursor.getColumnIndex(Data.MIMETYPE));
-			String sId = dataCursor.getString(dataCursor.getColumnIndex(SampleSyncAdapterColumns.DATA_PID));
-			if(!mimeType.equals(SampleSyncAdapterColumns.MIME_PROFILE)
+			String sId = dataCursor.getString(dataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
+			if(!mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)
 			|| !sId.equals(serverId))
 				continue;
 			String contactId = dataCursor.getString(dataCursor.getColumnIndex(Data.CONTACT_ID));
@@ -354,8 +352,8 @@ public class SyncManager {
 		if(dataCursor.getCount() > 0)
 		do {
 			String mimeType = dataCursor.getString(dataCursor.getColumnIndex(Data.MIMETYPE));
-			String serverId = dataCursor.getString(dataCursor.getColumnIndex(SampleSyncAdapterColumns.DATA_PID));
-			if(!mimeType.equals(SampleSyncAdapterColumns.MIME_PROFILE)
+			String serverId = dataCursor.getString(dataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
+			if(!mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)
 			|| !serverId.equals(contact.serverId))
 				continue;
 			long rawContactId = dataCursor.getLong(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));

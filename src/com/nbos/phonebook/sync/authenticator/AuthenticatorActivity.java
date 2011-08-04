@@ -16,6 +16,11 @@
 
 package com.nbos.phonebook.sync.authenticator;
 
+import java.io.IOException;
+
+import org.apache.http.client.ClientProtocolException;
+import org.json.JSONException;
+
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
@@ -257,7 +262,16 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             	Log.i(TAG, "Sending all contacts");
             	Db.refreshAccount(getApplicationContext(), mUsername);
 				// Net.sendAllContacts(mUsername, this.mAuthtoken, getApplicationContext());
-				new Cloud(getApplicationContext(), mUsername, mAuthtoken).sendAllContacts();
+                final Runnable runnable = new Runnable() {
+                    public void run() {
+                    	try {
+							new Cloud(getApplicationContext(), mUsername, mAuthtoken).sendAllContacts();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+                    }
+                };
+                Net.performOnBackgroundThread(runnable);				
 			} catch (Exception e) {
 				e.printStackTrace();
 			} 

@@ -16,24 +16,12 @@
 
 package com.nbos.phonebook.sync.client;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.io.Writer;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.http.HttpEntity;
@@ -58,11 +46,9 @@ import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.content.Context;
-import android.database.Cursor;
 import android.os.Handler;
 import android.util.Log;
 
-import com.nbos.phonebook.Db;
 import com.nbos.phonebook.ValidationActivity;
 import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
 import com.nbos.phonebook.sync.platform.ContactManager;
@@ -91,7 +77,6 @@ public class Net {
         SEND_CONTACT_UPDATES_URI = BASE_URL + "/mobile/updateContacts",
         SEND_GROUP_UPDATES_URI = BASE_URL + "/mobile/updateGroups",
     	SEND_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/updateSharedBooks",
-    	UPLOAD_CONTACT_PIC_URI = BASE_URL + "/fileUploader/process",
     	DOWNLOAD_CONTACT_PIC_URI = BASE_URL + "/download/index/";
     // String urlServer = "http://10.9.8.29:8080/phonebook/fileUploader/process";
     public static final String FETCH_STATUS_URI = BASE_URL + "/fetch_status";
@@ -546,17 +531,6 @@ public class Net {
 
     static Context mContext;
     static String accountName, authToken;
-	public static void sendFriendUpdates(Account account, String authtoken,
-			Date lastUpdated, boolean newOnly, Context context) throws ClientProtocolException, IOException, JSONException {
-		mContext = context;
-		accountName = account.name;
-		authToken = authtoken;
-		Cursor rawContactsCursor = Db.getRawContactsCursor(mContext.getContentResolver(), false);
-		sendContactUpdates(Db.getContacts(newOnly, mContext), newOnly, rawContactsCursor);
-        sendGroupUpdates(Db.getGroups(newOnly, mContext));
-        sendSharedBookUpdates(Db.getSharingBooks(true, mContext));
-	}
-
 	
 	private static void sendSharedBookUpdates(List<SharingBook> books) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
@@ -601,43 +575,6 @@ public class Net {
 
 	}
 
-	private static void sendContactUpdates(List<PhoneContact> contacts, boolean newOnly, Cursor rawContactsCursor) throws ClientProtocolException, IOException, JSONException {
-        List<NameValuePair> params = getAuthParams();
-        params.add(new BasicNameValuePair("numContacts", new Integer(contacts.size()).toString()));
-        for(int i=0; i< contacts.size(); i++)
-        {
-        	String index = new Integer(i).toString();
-        	PhoneContact contact =  contacts.get(i);
-        	contact.addParams(params, index);
-        }
-		
-        JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
-        for (int i = 0; i < contactUpdates.length(); i++)
-        	ContactManager.updateContact(contactUpdates.getJSONObject(i), mContext, rawContactsCursor);
-        // send the profile pictures here
-        sendContactPictureUpdates(newOnly);
-        ContactManager.resetDirtyContacts(mContext);
-	}
-
-	private static void sendContactPictureUpdates(boolean newOnly) {
-    	List<ContactPicture> pics = Db.getContactPictures(mContext, newOnly);
-		Map<String, String> params = new HashMap<String, String>();
-		params.put("upload", "avatar");
-		params.put("errorAction", "error");
-		params.put("errorController", "file");
-		params.put("successAction", "success");
-		params.put("successController", "file");
-
-    	for(ContactPicture pic : pics)
-    	{
-    		String contentType = pic.mimeType.split("/")[1];
-    		Log.i(tag, "uploading "+contentType);
-    		params.remove("id");
-    		params.put("id", pic.serverId);
-    		Net.upload(Net.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
-    	}
-	}
-
 	public static boolean checkValidAccount(Account account, String authtoken, String phone) throws ClientProtocolException, JSONException, IOException {
         List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair(PARAM_USERNAME, account.name));
@@ -663,11 +600,6 @@ public class Net {
         return params;
 	}
 
-	public static void sendAllContacts(String username, String authtoken, Context ctx) throws ClientProtocolException, IOException, JSONException {
-        sendFriendUpdates(Db.getAccount(ctx, username), authtoken, null, false, ctx);
-
-	}
-	
 	public static String post(String url, List<NameValuePair> params) throws ClientProtocolException, IOException, JSONException {
         HttpEntity entity = new UrlEncodedFormEntity(params);
         final HttpPost post = new HttpPost(url);
@@ -703,115 +635,4 @@ public class Net {
         // run on background thread.
         return Net.performOnBackgroundThread(runnable);
 	}
-
-	public static void upload(String uploadUrl, byte[] data, String contentType, Map<String, String> params) {
-		System.out.println("Uploading to "+uploadUrl);
-		HttpURLConnection connection = null;
-		DataOutputStream outputStream = null;
-
-		// String pathToOurFile = "/tmp/avatar/1310118336631/card_errors.gif";
-		// String uploadUrl = "http://10.9.8.29:8080/phonebook/fileUploader/process";
-		String lineEnd = "\r\n";
-		String twoHyphens = "--";
-		String boundary =  "*****";
-
-		try
-		{
-
-		URL url = new URL(uploadUrl);
-		connection = (HttpURLConnection) url.openConnection();
-
-		// Allow Inputs & Outputs
-		// connection.setDoInput(true);
-		connection.setDoOutput(true);
-		// connection.setUseCaches(false);
-
-		// Enable POST method
-		connection.setRequestMethod("POST");
-
-		connection.setRequestProperty("Connection", "Keep-Alive");
-		connection.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);
-		
-		//connection.setInstanceFollowRedirects(true);
-		// HttpURLConnection.setFollowRedirects(true);
-		Log.i(tag, "Follow redirects: "+connection.getInstanceFollowRedirects());
-
-		outputStream = new DataOutputStream( connection.getOutputStream() );
-		for (Map.Entry<String, String> entry : params.entrySet()) {
-		    String name = entry.getKey();
-		    String value = entry.getValue();
-		    Log.i(tag, "param: "+name+", value: "+value);
-		    if(value == null) continue;
-		    outputStream.writeBytes(twoHyphens + boundary + lineEnd);
-		    outputStream.writeBytes("Content-Disposition: form-data; name=\""+name+"\"" + lineEnd);
-		    outputStream.writeBytes(lineEnd);
-		    outputStream.writeBytes(value);
-		    outputStream.writeBytes(lineEnd);
-		}
-
-		outputStream.writeBytes(twoHyphens + boundary + lineEnd);
-		// outputStream.writeBytes("Content-Disposition: form-data; name=\"file\";filename=\"" + pathToOurFile +"\"" + lineEnd);
-		outputStream.writeBytes("Content-Disposition: form-data; name=\"file\";filename=\"" + "image."+contentType +"\"" + lineEnd);
-		outputStream.writeBytes(lineEnd);
-
-		outputStream.write(data, 0, data.length);
-
-		outputStream.writeBytes(lineEnd);
-		outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
-
-		// Responses from the server (code and message)
-		int serverResponseCode = connection.getResponseCode();
-		String serverResponseMessage = connection.getResponseMessage();
-		String location = connection.getHeaderField("Location");
-		Log.i(tag, "response code: "+serverResponseCode+", message: "+serverResponseMessage+", location: "+location);
-		if(serverResponseCode == 302)
-		{
-			url = new URL(location);
-			connection = (HttpURLConnection) url.openConnection();
-			connection.setRequestMethod("GET");
-			connection.connect();
-		}
-		
-		InputStream in = new BufferedInputStream(connection.getInputStream());
-		Log.i(tag, "Response: "+convertStreamToString(in));
-
-		outputStream.flush();
-		outputStream.close();
-		}
-		catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}		
-		Log.i(tag, "uploaded");
-	}
-	
-    public static String convertStreamToString(InputStream is)
-    throws IOException {
-	/*
-	 * To convert the InputStream to String we use the
-	 * Reader.read(char[] buffer) method. We iterate until the
-	 * Reader return -1 which means there's no more data to
-	 * read. We use the StringWriter class to produce the string.
-	 */
-		if (is != null) {
-		    Writer writer = new StringWriter();
-		
-		    char[] buffer = new char[1024];
-		    try {
-		        Reader reader = new BufferedReader(
-		                new InputStreamReader(is, "UTF-8"));
-		        int n;
-		        while ((n = reader.read(buffer)) != -1) {
-		            writer.write(buffer, 0, n);
-		        }
-		    } finally {
-		        is.close();
-		    }
-		    return writer.toString();
-		} else {        
-		    return "";
-		}
-    }
-	
-
 }

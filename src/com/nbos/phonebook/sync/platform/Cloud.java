@@ -1,17 +1,25 @@
 package com.nbos.phonebook.sync.platform;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
 import org.apache.http.auth.AuthenticationException;
@@ -27,10 +35,12 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
-import android.accounts.Account;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.Data;
 import android.util.Log;
@@ -39,8 +49,8 @@ import com.nbos.phonebook.Db;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.Group;
-import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.client.PhoneContact;
+import com.nbos.phonebook.sync.client.ServerData;
 import com.nbos.phonebook.sync.client.SharingBook;
 
 public class Cloud {
@@ -168,29 +178,71 @@ public class Cloud {
 	    photosDataCursor.moveToFirst();
 	    rawContactsCursor.moveToFirst();
 	    do {
-	    	String contactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID)),
-	    		serverId = Db.getServerIdFromContactId(dataCursor, contactId);
+	    	
+	    	String contactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
+	    	ServerData data = Db.getServerDataFromContactId(dataCursor, contactId);
+	    	String serverId = data.serverId,
+	    		picId = data.picId, 
+	    		picSize = data.picSize,
+	    		picHash = data.picHash;
+	    	
 	    	ContactPicture pic = null;
 			try {
 				pic = getContactPicture(photosDataCursor, contactId, serverId);
 				if(pic == null) continue;
+				if(picId != null) {
+						int pSize = Integer.parseInt(picSize);
+						String hash = hash(pic.pic);
+						if(pSize == pic.pic.length && picHash != null && hash.equals(picHash))
+						{
+							Log.i(tag, "Same image not uploading");
+							continue;
+						}
+				}
 	    		String contentType = pic.mimeType.split("/")[1];
 	    		Log.i(tag, "uploading "+contentType);
 	    		params.remove("id");
 	    		params.put("id", pic.serverId);
-	    		Net.upload(Net.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
+	    		JSONObject response = upload(UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
+	    		if(response != null)
+	    		{
+	    			try {
+						int status = response.getInt("ok");
+						if(status == 1)
+						{
+							
+							String pId = response.getString("id"),
+								pSize = response.getString("size"),
+								hash = response.getString("hash");
+							updateContactPicData(contactId, serverId, pId, pSize, hash);
+						}
+					} catch (JSONException e) {
+						e.printStackTrace();
+					}
+	    		}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-	    	
 	    } while(rawContactsCursor.moveToNext());
 		
 	    rawContactsCursor.close();
 	    photosDataCursor.close();
 	}
 
-	private static ContactPicture getContactPicture(Cursor dataCursor,
-			String contactId, String serverId) throws IOException {
+	private void updateContactPicData(String contactId, String serverId, String picId, String picSize, String hash) {
+		Uri uri = Data.CONTENT_URI;
+		ContentValues values = new ContentValues();
+		values.put(PhonebookSyncAdapterColumns.PIC_ID, picId);
+		values.put(PhonebookSyncAdapterColumns.PIC_SIZE, picSize);
+		values.put(PhonebookSyncAdapterColumns.PIC_HASH, hash);
+		context.getContentResolver().update(uri, values, 
+				Data.CONTACT_ID + " = " + contactId + " and " +
+				PhonebookSyncAdapterColumns.DATA_PID + " = " + serverId + " and " +
+				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
+
+	}
+
+	private static ContactPicture getContactPicture(Cursor dataCursor, String contactId, String serverId) throws IOException {
 		if(dataCursor.getCount() == 0) return null;
 		dataCursor.moveToFirst();
 	    do {
@@ -207,25 +259,6 @@ public class Cloud {
 	    return null;
 	}
 	
-	private void sendContactPictureUpdates(boolean newOnly) {
-    	List<ContactPicture> pics = Db.getContactPictures(context, newOnly);
-		Map<String, String> params = new HashMap<String, String>();
-		params.put("upload", "avatar");
-		params.put("errorAction", "error");
-		params.put("errorController", "file");
-		params.put("successAction", "success");
-		params.put("successController", "file");
-
-    	for(ContactPicture pic : pics)
-    	{
-    		String contentType = pic.mimeType.split("/")[1];
-    		Log.i(tag, "uploading "+contentType);
-    		params.remove("id");
-    		params.put("id", pic.serverId);
-    		Net.upload(Net.UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
-    	}
-	}
-
 	private void sendGroupUpdates(List<Group> groups) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
         params.add(new BasicNameValuePair("numBooks", new Integer(groups.size()).toString()));
@@ -309,4 +342,140 @@ public class Cloud {
         
         return params;
 	}
+	
+	public static JSONObject upload(String uploadUrl, byte[] data, String contentType, Map<String, String> params) {
+		System.out.println("Uploading to "+uploadUrl);
+		HttpURLConnection connection = null;
+		DataOutputStream outputStream = null;
+
+		// String pathToOurFile = "/tmp/avatar/1310118336631/card_errors.gif";
+		// String uploadUrl = "http://10.9.8.29:8080/phonebook/fileUploader/process";
+		String lineEnd = "\r\n";
+		String twoHyphens = "--";
+		String boundary =  "*****";
+
+		try
+		{
+		URL url = new URL(uploadUrl);
+		connection = (HttpURLConnection) url.openConnection();
+
+		// Allow Inputs & Outputs
+		// connection.setDoInput(true);
+		connection.setDoOutput(true);
+		// connection.setUseCaches(false);
+
+		// Enable POST method
+		connection.setRequestMethod("POST");
+
+		connection.setRequestProperty("Connection", "Keep-Alive");
+		connection.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);
+		
+		//connection.setInstanceFollowRedirects(true);
+		// HttpURLConnection.setFollowRedirects(true);
+		Log.i(tag, "Follow redirects: "+connection.getInstanceFollowRedirects());
+
+		outputStream = new DataOutputStream( connection.getOutputStream() );
+		for (Map.Entry<String, String> entry : params.entrySet()) {
+		    String name = entry.getKey();
+		    String value = entry.getValue();
+		    Log.i(tag, "param: "+name+", value: "+value);
+		    if(value == null) continue;
+		    outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+		    outputStream.writeBytes("Content-Disposition: form-data; name=\""+name+"\"" + lineEnd);
+		    outputStream.writeBytes(lineEnd);
+		    outputStream.writeBytes(value);
+		    outputStream.writeBytes(lineEnd);
+		}
+
+		outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+		// outputStream.writeBytes("Content-Disposition: form-data; name=\"file\";filename=\"" + pathToOurFile +"\"" + lineEnd);
+		outputStream.writeBytes("Content-Disposition: form-data; name=\"file\";filename=\"" + "image."+contentType +"\"" + lineEnd);
+		outputStream.writeBytes(lineEnd);
+
+		outputStream.write(data, 0, data.length);
+
+		outputStream.writeBytes(lineEnd);
+		outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+		// Responses from the server (code and message)
+		int serverResponseCode = connection.getResponseCode();
+		String serverResponseMessage = connection.getResponseMessage();
+		String location = connection.getHeaderField("Location");
+		Log.i(tag, "response code: "+serverResponseCode+", message: "+serverResponseMessage+", location: "+location);
+		if(serverResponseCode == 302)
+		{
+			url = new URL(location);
+			connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("GET");
+			connection.connect();
+		}
+		
+		InputStream in = new BufferedInputStream(connection.getInputStream());
+		String response = convertStreamToString(in);
+		Log.i(tag, "Response: "+response);
+		outputStream.flush();
+		outputStream.close();
+		return new JSONObject(response);
+		}
+		catch (Exception ex)
+		{
+			ex.printStackTrace();
+		}		
+		return null;
+	}
+	
+    public static String convertStreamToString(InputStream is)
+    throws IOException {
+	/*
+	 * To convert the InputStream to String we use the
+	 * Reader.read(char[] buffer) method. We iterate until the
+	 * Reader return -1 which means there's no more data to
+	 * read. We use the StringWriter class to produce the string.
+	 */
+		if (is != null) {
+		    Writer writer = new StringWriter();
+		
+		    char[] buffer = new char[1024];
+		    try {
+		        Reader reader = new BufferedReader(
+		                new InputStreamReader(is, "UTF-8"));
+		        int n;
+		        while ((n = reader.read(buffer)) != -1) {
+		            writer.write(buffer, 0, n);
+		        }
+		    } finally {
+		        is.close();
+		    }
+		    return writer.toString();
+		} else {        
+		    return "";
+		}
+    }
+
+    public static String hash(byte[] data)  {
+        MessageDigest md = null;
+		try {
+			md = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+        md.update(data);
+        byte byteData[] = md.digest();
+        //convert the byte to hex format method 1
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < byteData.length; i++) {
+        	sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
+        }
+ 
+        System.out.println("Digest(in hex format):: " + sb.toString());
+        return sb.toString();
+        //convert the byte to hex format method 2
+        /*StringBuffer hexString = new StringBuffer();
+    	for (int i=0;i<byteData.length;i++) {
+    		String hex=Integer.toHexString(0xff & byteData[i]);
+   	     	if(hex.length()==1) hexString.append('0');
+   	     	hexString.append(hex);
+    	}
+    	System.out.println("Digest(in hex format):: " + hexString.toString());*/
+    }
 }

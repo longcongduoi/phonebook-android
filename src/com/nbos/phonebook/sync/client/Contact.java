@@ -19,7 +19,7 @@ import com.nbos.phonebook.sync.client.contact.Im;
 import com.nbos.phonebook.sync.client.contact.Name;
 import com.nbos.phonebook.sync.client.contact.Organization;
 import com.nbos.phonebook.sync.client.contact.Phone;
-import com.nbos.phonebook.sync.platform.SampleSyncAdapterColumns;
+import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
 
 public class Contact {
 	static String tag = "Contact";
@@ -152,12 +152,12 @@ public class Contact {
         	Contact.addNickname(contact, cursor);
         if(mimeType.equals(CommonDataKinds.Website.CONTENT_ITEM_TYPE))
         	Contact.addWebsite(contact, cursor);
-        if(mimeType.equals(SampleSyncAdapterColumns.MIME_PROFILE)) // the server id
+        if(mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)) // the server id
         	addServerId(contact, cursor);
 	}
 
 	static void addServerId(Contact contact, Cursor c) {
-		String serverId = c.getString(c.getColumnIndex(SampleSyncAdapterColumns.DATA_PID));
+		String serverId = c.getString(c.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
 		contact.serverId = serverId;
 	}
 

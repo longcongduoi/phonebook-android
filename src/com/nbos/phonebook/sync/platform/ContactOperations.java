@@ -194,12 +194,12 @@ public class ContactOperations {
     public ContactOperations addProfileAction(long userId) {
         mValues.clear();
         if (userId != 0) {
-            mValues.put(SampleSyncAdapterColumns.DATA_PID, userId);
-            mValues.put(SampleSyncAdapterColumns.DATA_SUMMARY, mContext
+            mValues.put(PhonebookSyncAdapterColumns.DATA_PID, userId);
+            mValues.put(PhonebookSyncAdapterColumns.DATA_SUMMARY, mContext
                 .getString(R.string.profile_action));
-            mValues.put(SampleSyncAdapterColumns.DATA_DETAIL, mContext
+            mValues.put(PhonebookSyncAdapterColumns.DATA_DETAIL, mContext
                 .getString(R.string.view_profile));
-            mValues.put(Data.MIMETYPE, SampleSyncAdapterColumns.MIME_PROFILE);
+            mValues.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
             addInsertOp();
         }
         return this;
@@ -276,7 +276,7 @@ public class ContactOperations {
      */
     public ContactOperations updateProfileAction(Integer userId, Uri uri) {
         mValues.clear();
-        mValues.put(SampleSyncAdapterColumns.DATA_PID, userId);
+        mValues.put(PhonebookSyncAdapterColumns.DATA_PID, userId);
         addUpdateOp(uri);
         return this;
     }
