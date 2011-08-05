@@ -264,7 +264,7 @@ public class Db {
 	    		// dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.MIMETYPE));
 	    	// String serverId
 	    	Log.i(tag, "Contact["+contactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
-	    	return new ContactPicture(pic, serverId, contentType);
+	    	return new ContactPicture(pic, contentType);
 	    } while(dataCursor.moveToNext());
 	    return null;
 	}

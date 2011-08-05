@@ -42,15 +42,15 @@ public class Name {
 
 
 	public void addParams(List<NameValuePair> params, String index) {
-		if(prefix != null)
+		if(prefix != null && prefix.trim().length() > 0)
 			params.add(new BasicNameValuePair("name_p_"+index, prefix));
-		if(given != null)
+		if(given != null && given.trim().length() > 0)
 			params.add(new BasicNameValuePair("name_g_"+index, given));
-		if(middle != null)
+		if(middle != null && middle.trim().length() > 0)
 			params.add(new BasicNameValuePair("name_m_"+index, middle));
-		if(family != null)
+		if(family != null && family.trim().length() > 0)
 			params.add(new BasicNameValuePair("name_f_"+index, family));
-		if(suffix != null)
+		if(suffix != null && suffix.trim().length() > 0)
 			params.add(new BasicNameValuePair("name_s_"+index, suffix));
 	}
 

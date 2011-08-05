@@ -88,6 +88,7 @@ public class Cloud {
 	}
 	
 	public void sync() throws AuthenticationException, ParseException, JSONException, IOException {
+		// sendAllContacts();
         Object[] update = fetchFriendUpdates();
         new SyncManager(context, accountName, update);
         sendFriendUpdates(true);
@@ -171,7 +172,7 @@ public class Cloud {
 	    	    null, ContactsContract.Data.CONTACT_ID);
 	    
 	    Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries for newOnly: "+newOnly);
-	    Log.i(tag, "There are "+photosDataCursor.getCount()+" data entries");
+	    Log.i(tag, "There are "+photosDataCursor.getCount()+" photo data entries");
 	    
 	    if(rawContactsCursor.getCount() == 0) return;
 	    
@@ -181,6 +182,10 @@ public class Cloud {
 	    	
 	    	String contactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
 	    	ServerData data = Db.getServerDataFromContactId(dataCursor, contactId);
+	    	if(data == null) {
+	    		Log.i(tag, "Server data is null for contactId: "+contactId);
+	    		continue;
+	    	}
 	    	String serverId = data.serverId,
 	    		picId = data.picId, 
 	    		picSize = data.picSize,
@@ -188,11 +193,11 @@ public class Cloud {
 	    	
 	    	ContactPicture pic = null;
 			try {
-				pic = getContactPicture(photosDataCursor, contactId, serverId);
+				pic = getContactPicture(photosDataCursor, contactId);
 				if(pic == null) continue;
+				String hash = hash(pic.pic);
 				if(picId != null) {
 						int pSize = Integer.parseInt(picSize);
-						String hash = hash(pic.pic);
 						if(pSize == pic.pic.length && picHash != null && hash.equals(picHash))
 						{
 							Log.i(tag, "Same image not uploading");
@@ -202,7 +207,7 @@ public class Cloud {
 	    		String contentType = pic.mimeType.split("/")[1];
 	    		Log.i(tag, "uploading "+contentType);
 	    		params.remove("id");
-	    		params.put("id", pic.serverId);
+	    		params.put("id", serverId);
 	    		JSONObject response = upload(UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
 	    		if(response != null)
 	    		{
@@ -210,11 +215,10 @@ public class Cloud {
 						int status = response.getInt("ok");
 						if(status == 1)
 						{
-							
-							String pId = response.getString("id"),
-								pSize = response.getString("size"),
-								hash = response.getString("hash");
-							updateContactPicData(contactId, serverId, pId, pSize, hash);
+							String pId = response.getString("id");
+								// pSize = response.getString("size"),
+								// hash = response.getString("hash");
+							updateContactPicData(contactId, serverId, pId, new Long(pic.pic.length).toString(), hash);
 						}
 					} catch (JSONException e) {
 						e.printStackTrace();
@@ -242,7 +246,7 @@ public class Cloud {
 
 	}
 
-	private static ContactPicture getContactPicture(Cursor dataCursor, String contactId, String serverId) throws IOException {
+	private static ContactPicture getContactPicture(Cursor dataCursor, String contactId) throws IOException {
 		if(dataCursor.getCount() == 0) return null;
 		dataCursor.moveToFirst();
 	    do {
@@ -254,7 +258,7 @@ public class Cloud {
 	    		// dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.MIMETYPE));
 	    	// String serverId
 	    	Log.i(tag, "Contact["+contactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
-	    	return new ContactPicture(pic, serverId, contentType);
+	    	return new ContactPicture(pic, contentType);
 	    } while(dataCursor.moveToNext());
 	    return null;
 	}

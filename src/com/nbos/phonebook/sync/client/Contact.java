@@ -93,8 +93,8 @@ public class Contact {
 		i = 0;
 		for(String w : websites)
 			params.add(new BasicNameValuePair("website_"+index+"_"+i++, w));
-		
-    	params.add(new BasicNameValuePair("id_"+index, serverId));
+		if(serverId != null && serverId.trim().length() > 0)
+			params.add(new BasicNameValuePair("id_"+index, serverId));
 	}
 	
 	public String toString() {
