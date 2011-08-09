@@ -492,53 +492,6 @@ public class ContactManager {
         Log.i(TAG, rows + " rows updated");
 	}
 
-	/*public static void syncSharedBooks(Context mContext, String accountName,
-			List<Group> sharedBooks, List<User> contacts, Cursor dataCursor, Cursor rawContactsCursor) {
-		for(Group b : sharedBooks)
-			ContactManager.updateSharedBook(mContext, accountName, b, contacts, dataCursor, rawContactsCursor);
-	}
-
-	private static void updateSharedBook(Context ctx, String accountName, Group sharedBook, List<User> contacts, Cursor dataCursor, Cursor rawContactsCursor) {
-	    // Uri uri = Uri.parse(Constants.SHARE_BOOK_PROVIDER);
-	    int id = Integer.parseInt(sharedBook.groupId);
-	    ContentResolver cr = ctx.getContentResolver();
-	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_URI, null,  
-	    		ContactsContract.Groups.SOURCE_ID + " = "+id, null, null);
-	    if(cursor.getCount() == 0)
-	    {
-	    	Log.i(TAG, "New share book: "+accountName);
-	    	// create a group with the share book name
-	    	DatabaseHelper.createAGroup(ctx, sharedBook.name, sharedBook.owner, accountName, id);
-	    	cursor.requery();
-	    	Log.i(TAG, "cursor has "+cursor.getCount()+" rows");
-	    }
-	    cursor.moveToFirst();
-	    String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID));
-	    // get the group cursor to remove deleted contacts
-	    Cursor groupCursor = DatabaseHelper.getContactsInGroup(groupId, ctx.getContentResolver());
-    	
-	    Log.i(TAG, "Update share book, id: "+groupId);
-    	List<User> users = new ArrayList<User>();
-    	for(Contact c : sharedBook.contacts)
-    		users.add(new User(c.getName(), c.getNumber(), c.getId()));
-    	Log.i(TAG, "There are "+users.size()+" users");
-    	syncContacts(ctx, accountName, users, contacts, dataCursor);
-    	rawContactsCursor.requery();
-    	Set<String> contactIds = new HashSet<String>();
-    	for(User u : users)
-    		contactIds.add(updateGroupContact(u, groupId, ctx, rawContactsCursor));
-    	
-    	Log.i(TAG, "Contact ids in sharebook: "+contactIds);
-    	groupCursor.moveToFirst();
-    	if(groupCursor.getCount() > 0)
-    	do {
-    		String contactId = groupCursor.getString(groupCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID));
-    		if(!contactIds.contains(contactId))
-    			DatabaseHelper.deleteContactFromGroup(contactId, groupId, ctx);
-    	} while(groupCursor.moveToNext());
-	    // dele
-	}*/
-
 	public static void updateGroup(JSONObject group, Context context) throws JSONException {
         int sourceId = group.getInt("sourceId"),
 			groupId = group.getInt("groupId");
@@ -550,56 +503,4 @@ public class ContactManager {
 	    int rows = cr.update(uri, values, ContactsContract.Groups._ID + " = " + groupId, null);
 	    Log.i(TAG, "updated "+ rows + " rows to sourceId: "+sourceId);
 	}
-
-	/*public static void syncGroups(Context mContext, String name, 
-			List<Group> groups, List<User> contacts, Cursor dataCursor, Cursor rawContactsCursor) 
-	{
-		for(Group g : groups)
-			ContactManager.updateGroup(mContext, name, g, contacts, dataCursor, rawContactsCursor);
-	}
-
-	private static void updateGroup(Context ctx, String name, Group g, List<User> allContacts, Cursor dataCursor, Cursor rawContactsCursor) {
-	    String id = g.groupId;
-	    ContentResolver cr = ctx.getContentResolver();
-	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_URI, null,  
-	    		ContactsContract.Groups.SOURCE_ID + " = "+id, null, null);
-	    if(cursor.getCount() == 0)
-	    {
-	    	Log.i(TAG, "New group: "+name);
-	    	// create a group with the share book name
-	    	DatabaseHelper.createAGroup(ctx, g.name, null, name, Integer.parseInt(id));
-	    	cursor.requery();
-	    	Log.i(TAG, "cursor has "+cursor.getCount()+" rows");
-	    }
-	    cursor.moveToFirst();
-	    String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID)),
-	    	dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DIRTY));
-	    if(dirty.equals("1"))
-	    {
-	    	Log.i(TAG, "Group is dirty, skipping update");
-	    	return;
-	    }
-	    
-    	Log.i(TAG, "Update group, id: "+groupId);
-    	List<User> users = new ArrayList<User>();
-    	for(Contact c : g.contacts)
-    		users.add(new User(c.getName(), c.getNumber(), c.getId()));
-    	Log.i(TAG, "There are "+users.size()+" users in group "+g.name);
-    	syncContacts(ctx, name, users, allContacts, dataCursor);
-    	rawContactsCursor.requery();
-    	for(User u : users)
-    		updateGroupContact(u, groupId, ctx, rawContactsCursor);
-    	cursor.close();
-	    
-	}
-
-	private static String updateGroupContact(User u, String groupId, Context ctx, Cursor rawContactsCursor) {
-		
-		String contactId = DatabaseHelper.getContactIdFromServerId(ctx.getContentResolver(), u.getUserId(), rawContactsCursor),
-			rawContactId = DatabaseHelper.getRawContactId(contactId, rawContactsCursor);
-		Log.i(TAG, "ServerId: "+u.getUserId()+", contactId: "+contactId+", rawContactId: "+rawContactId);
-		// if(contactId != null)
-			DatabaseHelper.updateToGroup(groupId, contactId, rawContactId, ctx.getContentResolver());
-		return contactId;
-	}*/
 }

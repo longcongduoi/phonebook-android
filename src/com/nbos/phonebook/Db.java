@@ -24,7 +24,6 @@ import android.util.Log;
 import com.nbos.phonebook.contentprovider.Provider;
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
-import com.nbos.phonebook.database.tables.PicTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.ContactPicture;
@@ -279,8 +278,9 @@ public class Db {
         final String[] PROJECTION =
             new String[] {
         		ContactsContract.RawContacts._ID,
-        		ContactsContract.RawContacts.CONTACT_ID, 
-        		ContactsContract.RawContacts.DIRTY
+        		ContactsContract.RawContacts.CONTACT_ID,
+        		ContactsContract.RawContacts.DIRTY,
+        		ContactsContract.RawContacts.ACCOUNT_TYPE
         };
 	    
         
@@ -505,7 +505,19 @@ public class Db {
 		c.close();
 		// update 
 		Log.i(tag, "updating");
+		c.moveToFirst();
+		String phoneServerId = c.getString(c.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
+		
 		values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
+		if(phoneServerId != null && !phoneServerId.equals(serverId)) // server id has changed
+		{
+			Log.i(tag, "Server id has changed. deleting pic data");
+			values.put(PhonebookSyncAdapterColumns.PIC_ID, (String)null);
+			values.put(PhonebookSyncAdapterColumns.PIC_SIZE, (String)null);
+			values.put(PhonebookSyncAdapterColumns.PIC_HASH, (String)null);
+		}
+		// 
+		
 		context.getContentResolver().update(uri, values, 
 				Data.CONTACT_ID + " = " + contactId + " and " +
 				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);

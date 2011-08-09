@@ -221,4 +221,8 @@ public class Test {
 	public static void getContactPics(Context ctx) {
 		Db.getContactPictures(ctx, false);
 	}
+
+	public static void getShareBooks(Context ctx) {
+		Db.getSharingBooks(false, ctx);
+	}
 }

@@ -40,24 +40,17 @@ public class Provider extends ContentProvider {
 	public static final Uri BOOK_CONTENT_URI = Uri.withAppendedPath(
 			Provider.AUTHORITY_URI, BookContent.CONTENT_PATH);
 
-	public static final Uri PIC_CONTENT_URI = Uri.withAppendedPath(
-			Provider.AUTHORITY_URI, PicContent.CONTENT_PATH);
-
 	private static final UriMatcher URI_MATCHER;
 
 	private Database db = null;
 
 	private static final int BOOK_DIR = 0;
 	private static final int BOOK_ID = 1;
-	private static final int PIC_DIR = 2;
-	private static final int PIC_ID = 3;
 
 	static {
 		URI_MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
 		URI_MATCHER.addURI(AUTHORITY, BookContent.CONTENT_PATH, BOOK_DIR);
 		URI_MATCHER.addURI(AUTHORITY, BookContent.CONTENT_PATH + "/#", BOOK_ID);
-		URI_MATCHER.addURI(AUTHORITY, PicContent.CONTENT_PATH, PIC_DIR);
-		URI_MATCHER.addURI(AUTHORITY, PicContent.CONTENT_PATH + "/#", PIC_ID);
 	}
 
 	/**
@@ -88,33 +81,6 @@ public class Provider extends ContentProvider {
 	}
 
 	/**
-	 * Provides the content information of the PicTable.
-	 * 
-	 * CONTENT_PATH: pic (String)
-	 * CONTENT_TYPE: vnd.android.cursor.dir/vnd.mdsdacp.pic (String)
-	 * CONTENT_ITEM_TYPE: vnd.android.cursor.item/vnd.mdsdacp.pic (String)
-	 * ALL_COLUMNS: Provides the same information as PicTable.ALL_COLUMNS (String[])
-	 */
-	public static final class PicContent implements BaseColumns {
-		/**
-		 * Specifies the content path of the PicTable for the required uri
-		 * Exact URI: content://de.mdsdacp.provider.defaultname/pic
-		 */
-		public static final String CONTENT_PATH = "pic";
-
-		/**
-		 * Specifies the type for the folder and the single item of the PicTable  
-		 */
-		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.mdsdacp.pic";
-		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.mdsdacp.pic";
-
-		/**
-		 * Contains all columns of the PicTable
-		 */
-		public static final String[] ALL_COLUMNS = PicTable.ALL_COLUMNS;
-	}
-
-	/**
 	 * Instantiate the database, when the content provider is created
 	 */
 	@Override
@@ -138,10 +104,6 @@ public class Provider extends ContentProvider {
 				return BookContent.CONTENT_TYPE;
 			case BOOK_ID :
 				return BookContent.CONTENT_ITEM_TYPE;
-			case PIC_DIR :
-				return PicContent.CONTENT_TYPE;
-			case PIC_ID :
-				return PicContent.CONTENT_ITEM_TYPE;
 			default :
 				throw new IllegalArgumentException("Unsupported URI:" + uri);
 		}
@@ -172,16 +134,6 @@ public class Provider extends ContentProvider {
 							null);
 					dbConnection.setTransactionSuccessful();
 					return newBook;
-				case PIC_DIR :
-				case PIC_ID :
-					final long picid = dbConnection.insertOrThrow(
-							PicTable.TABLE_NAME, null, values);
-					final Uri newPic = ContentUris.withAppendedId(
-							PIC_CONTENT_URI, picid);
-					getContext().getContentResolver()
-							.notifyChange(newPic, null);
-					dbConnection.setTransactionSuccessful();
-					return newPic;
 				default :
 					throw new IllegalArgumentException("Unsupported URI:" + uri);
 			}
@@ -226,22 +178,6 @@ public class Provider extends ContentProvider {
 								+ (TextUtils.isEmpty(selection) ? "" : " AND ("
 										+ selection + ")"), selectionArgs);
 				break;
-
-			case PIC_DIR :
-				count = dbConnection.update(PicTable.TABLE_NAME, values,
-						selection, selectionArgs);
-				break;
-			case PIC_ID :
-				Long picId = ContentUris.parseId(uri);
-				count = dbConnection.update(
-						PicTable.TABLE_NAME,
-						values,
-						PicTable.ID
-								+ "="
-								+ picId
-								+ (TextUtils.isEmpty(selection) ? "" : " AND ("
-										+ selection + ")"), selectionArgs);
-				break;
 			default :
 				throw new IllegalArgumentException("Unsupported URI:" + uri);
 		}
@@ -276,15 +212,6 @@ public class Provider extends ContentProvider {
 				case BOOK_ID :
 					deleteCount = dbConnection.delete(BookTable.TABLE_NAME,
 							BookTable.WHERE_ID_EQUALS, new String[]{uri
-									.getPathSegments().get(1)});
-					break;
-				case PIC_DIR :
-					deleteCount = dbConnection.delete(PicTable.TABLE_NAME,
-							selection, selectionArgs);
-					break;
-				case PIC_ID :
-					deleteCount = dbConnection.delete(PicTable.TABLE_NAME,
-							PicTable.WHERE_ID_EQUALS, new String[]{uri
 									.getPathSegments().get(1)});
 					break;
 
@@ -328,12 +255,6 @@ public class Provider extends ContentProvider {
 						+ uri.getPathSegments().get(1));
 			case BOOK_DIR :
 				queryBuilder.setTables(BookTable.TABLE_NAME);
-				break;
-			case PIC_ID :
-				queryBuilder.appendWhere(PicTable.ID + "="
-						+ uri.getPathSegments().get(1));
-			case PIC_DIR :
-				queryBuilder.setTables(PicTable.TABLE_NAME);
 				break;
 			default :
 				throw new IllegalArgumentException("Unsupported URI:" + uri);
