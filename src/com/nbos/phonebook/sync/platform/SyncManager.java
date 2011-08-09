@@ -34,14 +34,14 @@ public class SyncManager {
 	static String tag = "SyncManager";
 	Context context;
     String account; 
-    List<PhoneContact> allContacts; 
+    // List<PhoneContact> allContacts; 
     Cursor dataCursor, rawContactsCursor, dataPicsCursor;
     Set<String> syncedContacts = new HashSet<String>();
 	public SyncManager(Context context, String account, Object[] update) {
 		super();
 		this.context = context;
 		this.account = account;
-		this.allContacts = Db.getContacts(false, context);
+		// this.allContacts = Db.getContacts(false, context);
 		this.dataCursor = Db.getData(context);
 		rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), false);
 		
@@ -55,15 +55,10 @@ public class SyncManager {
 
 	void syncContacts(List<Contact> contacts) {
         long rawContactId = 0;
-        final ContentResolver resolver = context.getContentResolver();
         final BatchOperation batchOperation = new BatchOperation(context);
-        
-        Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts, num columns: "+rawContactsCursor.getColumnCount());
-        Log.i(tag, "There are "+allContacts.size()+" phone contacts");
-        // Log.i(TAG, "There are "+contactsCursor.getCount()+" phonebook contacts");
-        // syncSharedBooks(context);
-        Log.d(tag, "In SyncContacts");
-        for (final Contact contact : contacts) {
+        Log.i(tag, "In SyncContacts: There are "+rawContactsCursor.getCount()+" raw contacts, num columns: "+rawContactsCursor.getColumnCount());
+        for (final Contact contact : contacts) 
+        {
         	if(syncedContacts.contains(contact.serverId)) continue;
         	syncedContacts.add(contact.serverId);
             // userId = Integer.parseInt(user.getUserId());
@@ -219,7 +214,6 @@ public class SyncManager {
 
 	private void refreshCursors() {
 		Log.i(tag, "refreshCursors");
-        allContacts = Db.getContacts(false, context);
         dataCursor.requery();
         rawContactsCursor.requery();
 	}
