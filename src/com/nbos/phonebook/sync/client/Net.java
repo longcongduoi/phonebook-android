@@ -51,6 +51,7 @@ import android.util.Log;
 
 import com.nbos.phonebook.ValidationActivity;
 import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
+import com.nbos.phonebook.sync.platform.Cloud;
 import com.nbos.phonebook.sync.platform.ContactManager;
 
 /**
@@ -65,8 +66,7 @@ public class Net {
     public static final String PARAM_UPDATED = "timestamp";
     public static final String USER_AGENT = "AuthenticationService/1.0";
     public static final int REGISTRATION_TIMEOUT = 30 * 1000; // ms
-    public static final String BASE_URL =
-        "http://10.9.8.29:8080/phonebook";
+    public static final String BASE_URL = Cloud.BASE_URL;
     public static final String AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
