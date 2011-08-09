@@ -128,7 +128,7 @@ public class Cloud {
 		Cursor rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), false);
 		sendContactUpdates(Db.getContacts(newOnly, context), newOnly, rawContactsCursor);
         sendGroupUpdates(Db.getGroups(newOnly, context));
-        String timestamp = sendSharedBookUpdates(Db.getSharingBooks(true, context));
+        String timestamp = sendSharedBookUpdates(Db.getSharingBooks(newOnly, context));
         rawContactsCursor.close();
         return timestamp;
 	}
