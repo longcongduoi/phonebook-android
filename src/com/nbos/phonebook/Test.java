@@ -1,26 +1,21 @@
 package com.nbos.phonebook;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteException;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
+import android.telephony.PhoneNumberUtils;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.nbos.phonebook.database.tables.BookTable;
-import com.nbos.phonebook.database.tables.PicTable;
 import com.nbos.phonebook.sync.Constants;
-import com.nbos.phonebook.sync.client.ContactPicture;
-import com.nbos.phonebook.sync.client.Net;
 
 public class Test {
 	static String tag = "Test";
@@ -45,6 +40,24 @@ public class Test {
     	int id = ContactsContract.CommonDataKinds.Im.getProtocolLabelResource(0);
     	String str = Resources.getSystem().getString(id);
     	Log.i(tag, "String is: "+str);
+    }
+    
+    public static void telephony(Activity a) {
+    	String s1 = "+91-984-435-2341", 
+    		s2 = "9844352341";
+    	Log.i(tag, "Compare ("+s1+", "+s2+") = "+PhoneNumberUtils.compare(s1, s2));
+        TelephonyManager tel = (TelephonyManager) a.getSystemService(Context.TELEPHONY_SERVICE);
+        String networkOperator = tel.getNetworkOperator();
+        int mcc, mnc;
+        if (networkOperator != null) {
+        	
+            mcc = Integer.parseInt(networkOperator.substring(0, 3));
+            mnc = Integer.parseInt(networkOperator.substring(3));
+            Log.i(tag, "MCC: "+mcc+", mnc: "+mnc);
+        }
+        else
+        	Log.i(tag, "networkOperator is null");
+    	TelephonyManager t;
     }
     /*public static void getRawContactsEntity(Context ctx) {
         String[] DATA_KEYS = new String[]{

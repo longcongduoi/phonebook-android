@@ -42,7 +42,6 @@ import com.nbos.phonebook.Widget.AppService;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.platform.Cloud;
-import com.nbos.phonebook.sync.platform.SyncManager;
 
 /**
  * SyncAdapter implementation for syncing sample SyncAdapter contacts to the
@@ -66,19 +65,12 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     public void onPerformSync(Account account, Bundle extras, String authority,
         ContentProviderClient provider, SyncResult syncResult) {
         String authtoken = null;
-        SyncManager syncManager = null;
-        Cloud cloud = null;
-        // ContactManager.setDirtyContacts(mContext); // for testing
-        // Cursor dataCursor = null,
-        	// rawContactsCursor = null;
-        
         try {
              // use the account manager to request the credentials
         	String phoneNumber = mAccountManager.getUserData(account, Constants.PHONE_NUMBER_KEY);
         	Log.i(TAG, "phone number is: "+phoneNumber);
              authtoken =
-                mAccountManager.blockingGetAuthToken(account,
-                    Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
+                mAccountManager.blockingGetAuthToken(account, Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
              // fetch updates from the sample service over the cloud
              boolean valid = Net.checkValidAccount(account, authtoken, 
             		 mAccountManager.getUserData(account, Constants.PHONE_NUMBER_KEY));
@@ -99,22 +91,14 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                  return;
 
              }
-             // Object[] update = Net.fetchFriendUpdates(account, authtoken, mLastUpdated);
-             // syncManager = new SyncManager(mContext, account.name, update);
-             new Cloud(mContext, account.name, authtoken).sync();
-             // cloud.sendFriendUpdates(false, mLastUpdated);
-             // cloud.sendFriendUpdates(true, mLastUpdated);
-             // Net.sendFriendUpdates(account, authtoken, mLastUpdated, true, mContext);
+             String lastUpdated = mAccountManager.getUserData(account, Constants.ACCOUNT_LAST_UPDATED);
+             Log.i(TAG, "Last updated is: "+lastUpdated);
+             String timestamp = new Cloud(mContext, account.name, authtoken).sync(lastUpdated);
+             Log.i(TAG, "Timestamp is: "+timestamp);
+             mAccountManager.setUserData(account, Constants.ACCOUNT_LAST_UPDATED, timestamp);
              mLastUpdated = new Date();                     
              Widget.AppService.message = "Phonebook last updated: "+DateFormat.getInstance().format(mLastUpdated);
              mContext.startService(new Intent(mContext, AppService.class));
-            // update the last synced date.
-            
-            // update platform contacts.
-            // fetch and update status messages for all the synced users.
-            // statuses = NetworkUtilities.fetchFriendStatuses(account, authtoken);
-            // ContactManager.insertStatuses(mContext, account.name, statuses);
-
         } catch (final AuthenticatorException e) {
             syncResult.stats.numParseExceptions++;
             Log.e(TAG, "AuthenticatorException", e);
@@ -123,11 +107,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         } catch (final IOException e) {
             Log.e(TAG, "IOException", e);
             syncResult.stats.numIoExceptions++;
-        /*} catch (final AuthenticationException e) {
-            mAccountManager.invalidateAuthToken(Constants.ACCOUNT_TYPE,
-                authtoken);
-            syncResult.stats.numAuthExceptions++;
-            Log.e(TAG, "AuthenticationException", e);*/
         } catch (final ParseException e) {
             syncResult.stats.numParseExceptions++;
             Log.e(TAG, "ParseException", e);
@@ -138,9 +117,5 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        finally {
-        	if(syncManager != null)
-        		syncManager.close();
-        }
     }
 }

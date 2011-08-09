@@ -46,6 +46,7 @@ import android.provider.ContactsContract.Data;
 import android.util.Log;
 
 import com.nbos.phonebook.Db;
+import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.Group;
@@ -57,7 +58,7 @@ public class Cloud {
 	static String tag = "Cloud";
 	
     Context context;
-    String accountName, authToken;
+    String accountName, authToken, lastUpdated;
     HttpClient httpClient;
     public static final int REGISTRATION_TIMEOUT = 90 * 1000; // ms
 
@@ -77,6 +78,7 @@ public class Cloud {
     	FETCH_FRIEND_UPDATES_URI = BASE_URL + "/mobile/contacts",
         SEND_CONTACT_UPDATES_URI = BASE_URL + "/mobile/updateContacts",
         SEND_GROUP_UPDATES_URI = BASE_URL + "/mobile/updateGroups",
+        TIMESTAMP_URI = BASE_URL + "/mobile/timestamp",
     	SEND_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/updateSharedBooks",
     	UPLOAD_CONTACT_PIC_URI = BASE_URL + "/fileUploader/process",
     	DOWNLOAD_CONTACT_PIC_URI = BASE_URL + "/download/index/";
@@ -87,11 +89,12 @@ public class Cloud {
 		authToken = authtoken;
 	}
 	
-	public void sync() throws AuthenticationException, ParseException, JSONException, IOException {
+	public String sync(String lastUpdated) throws AuthenticationException, ParseException, JSONException, IOException {
 		// sendAllContacts();
+		this.lastUpdated = lastUpdated;		
         Object[] update = fetchFriendUpdates();
         new SyncManager(context, accountName, update);
-        sendFriendUpdates(true);
+        return sendFriendUpdates(true);
 	}
 
 	public void sendAllContacts() throws ClientProtocolException, IOException, JSONException {
@@ -104,6 +107,8 @@ public class Cloud {
         final List<Group> groupsList = new ArrayList<Group>();
         final List<Group> books = new ArrayList<Group>();
         List<NameValuePair> params = getAuthParams();
+        if(lastUpdated != null)
+        	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
         final JSONArray update = new JSONArray(post(FETCH_FRIEND_UPDATES_URI, params)),
         	friends = update.getJSONArray(0),
         	groups = update.getJSONArray(1),
@@ -119,12 +124,13 @@ public class Cloud {
         return new Object[] {friendList, groupsList, books}; 
     }
 
-	public void sendFriendUpdates(boolean newOnly) throws ClientProtocolException, IOException, JSONException {
+	public String sendFriendUpdates(boolean newOnly) throws ClientProtocolException, IOException, JSONException {
 		Cursor rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), false);
 		sendContactUpdates(Db.getContacts(newOnly, context), newOnly, rawContactsCursor);
         sendGroupUpdates(Db.getGroups(newOnly, context));
-        sendSharedBookUpdates(Db.getSharingBooks(true, context));
+        String timestamp = sendSharedBookUpdates(Db.getSharingBooks(true, context));
         rawContactsCursor.close();
+        return timestamp;
 	}
 
 	private void sendContactUpdates(List<PhoneContact> contacts, boolean newOnly, Cursor rawContactsCursor) throws ClientProtocolException, IOException, JSONException {
@@ -289,7 +295,7 @@ public class Cloud {
 
 	}
 	
-	private void sendSharedBookUpdates(List<SharingBook> books) throws ClientProtocolException, IOException, JSONException {
+	private String sendSharedBookUpdates(List<SharingBook> books) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
         params.add(new BasicNameValuePair("numShareBooks", new Integer(books.size()).toString()));
         for(int i=0; i< books.size(); i++)
@@ -299,10 +305,13 @@ public class Cloud {
         	params.add(new BasicNameValuePair("shareBookId_"+index, book.groupId));
         	params.add(new BasicNameValuePair("shareContactId_"+index, book.contactId));
         }
-        JSONArray  bookUpdates = new JSONArray(post(SEND_SHARED_BOOK_UPDATES_URI, params));
+        JSONArray response = new JSONArray(post(SEND_SHARED_BOOK_UPDATES_URI, params));
+        JSONArray  bookUpdates = response.getJSONArray(0);
+        Long timestamp = response.getLong(1);
         for (int i = 0; i < bookUpdates.length(); i++)
         	ContactManager.updateBook(bookUpdates.getJSONObject(i), context);
         ContactManager.resetDirtySharedBooks(context);
+        return timestamp.toString();
 	}
 	
 	public String post(String url, List<NameValuePair> params) throws ClientProtocolException, IOException, JSONException {
