@@ -60,7 +60,9 @@ public class PhoneContact extends Contact {
     		String contactId = cursor.getString(cursor.getColumnIndex(RawContacts.CONTACT_ID)),
     			dirty = cursor.getString(cursor.getColumnIndex(RawContacts.DIRTY)),
     			mimeType = cursor.getString(cursor.getColumnIndex(Data.MIMETYPE));
-    		/*Log.i(tag, "contactId: "+contactId+", dirty: "+dirty+", mimetype: "+mimeType);
+    		
+    		
+    		String str = "";
             for (String key : DATA_KEYS) 
             {
                 final int columnIndex = cursor.getColumnIndexOrThrow(key);
@@ -68,14 +70,17 @@ public class PhoneContact extends Contact {
                     // don't put anything
                 } else {
                     try {
-                    	Log.i(tag, key+": "+cursor.getString(columnIndex));
+                    	str += key+": "+cursor.getString(columnIndex)+", ";
+                    	// Log.i(tag, key+": "+cursor.getString(columnIndex));
                         // cv.put(key, cursor.getString(columnIndex));
                     } catch (SQLiteException e) {
-                    	Log.i(tag, key+": isBlob");
+                    	str += key+": isBlob, ";
+                    	// Log.i(tag, key+": isBlob");
                         // cv.put(key, cursor.getBlob(columnIndex));
                     }
                 }
-            }*/
+            }
+            // Log.i(tag, "contactId: "+contactId+", dirty: "+dirty+", mimetype: "+mimeType+"data: "+str);
     		if(contactId == null) continue; // TODO: SIM contacts have null contactId
             if(!prevId.equals(contactId))
             {

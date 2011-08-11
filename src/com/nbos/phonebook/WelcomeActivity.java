@@ -64,8 +64,8 @@ public class WelcomeActivity extends ListActivity {
         getListView().setTextFilterEnabled(true);
     	String phoneNumber = getPhoneNumber();
     	Log.i(tag, "phone number: "+phoneNumber);
-    	Test.getShareBooks(this.getApplicationContext());
-    	
+    	// Test.getShareBooks(this.getApplicationContext());
+    	// Test.getContacts(this.getApplicationContext());
     	Test.telephony(this);
     }
 

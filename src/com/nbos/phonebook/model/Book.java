@@ -10,8 +10,8 @@ package com.nbos.phonebook.model;
  */
 public class Book {
 	private Long id;
-	private java.lang.String bookid;
-	private java.lang.String contactid;
+	private long bookid;
+	private long contactid;
 	private boolean dirty;
 	private long serverid;
 
@@ -36,36 +36,36 @@ public class Book {
 	/**
 	 * Set bookid
 	 *
-	 * @param bookid from type java.lang.String
+	 * @param bookid from type long
 	 */
-	public void setBookId(java.lang.String bookid) {
+	public void setBookId(long bookid) {
 		this.bookid = bookid;
 	}
 
 	/**
 	 * Get bookid
 	 *
-	 * @return bookid from type java.lang.String				
+	 * @return bookid from type long				
 	 */
-	public java.lang.String getBookId() {
+	public long getBookId() {
 		return this.bookid;
 	}
 
 	/**
 	 * Set contactid
 	 *
-	 * @param contactid from type java.lang.String
+	 * @param contactid from type long
 	 */
-	public void setContactId(java.lang.String contactid) {
+	public void setContactId(long contactid) {
 		this.contactid = contactid;
 	}
 
 	/**
 	 * Get contactid
 	 *
-	 * @return contactid from type java.lang.String				
+	 * @return contactid from type long				
 	 */
-	public java.lang.String getContactId() {
+	public long getContactId() {
 		return this.contactid;
 	}
 

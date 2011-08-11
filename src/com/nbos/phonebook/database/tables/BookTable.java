@@ -21,8 +21,8 @@ public interface BookTable {
 	String[] ALL_COLUMNS = new String[]{ID, BOOKID, CONTACTID, DIRTY, SERVERID};
 
 	String SQL_CREATE = "CREATE TABLE " + TABLE_NAME + " ( " + ID
-			+ " INTEGER PRIMARY KEY AUTOINCREMENT " + "," + BOOKID + " TEXT"
-			+ "," + CONTACTID + " TEXT" + "," + DIRTY + " NUMERIC" + ","
+			+ " INTEGER PRIMARY KEY AUTOINCREMENT " + "," + BOOKID + " INTEGER"
+			+ "," + CONTACTID + " INTEGER" + "," + DIRTY + " NUMERIC" + ","
 			+ SERVERID + " INTEGER" + " )";
 
 	String SQL_INSERT = "INSERT INTO " + TABLE_NAME + " (" + BOOKID + ","
