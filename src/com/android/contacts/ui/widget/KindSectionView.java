@@ -107,7 +107,7 @@ public class KindSectionView extends LinearLayout implements OnClickListener, Ed
         mTitle.setText(kind.titleRes);
 
         // Only show the add button if this is a list
-        mAddPlusButton.setVisibility(mKind.isList ? View.VISIBLE : View.GONE);
+        mAddPlusButton.setVisibility(View.VISIBLE);//mKind.isList ? View.VISIBLE : View.GONE);
 
         this.rebuildFromState();
         this.updateAddEnabled();
@@ -198,8 +198,8 @@ public class KindSectionView extends LinearLayout implements OnClickListener, Ed
     public void onClick(View v) {
         // if this is not a list the plus button is not visible but the user might have clicked
         // the text.
-        if (!mKind.isList)
-            return;
+        //if (!mKind.isList)
+          //  return;
 
         // Insert a new child and rebuild
         final ValuesDelta newValues = EntityModifier.insertChild(mState, mKind);
