@@ -415,8 +415,6 @@ class ImageCursorAdapter extends SimpleCursorAdapter {
 
 	@Override
 	public View getView(int pos, View inView, ViewGroup parent) {
-		String tag = "GroupActivity";
-		Log.v(tag, "position of image " + pos);
 		View v = inView;
 		if (v == null) {
 			LayoutInflater inflater = (LayoutInflater) context
@@ -431,7 +429,6 @@ class ImageCursorAdapter extends SimpleCursorAdapter {
 		String contactName = this.c.getString(this.c
 				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 		byte[] pic = images.get(pos);// this.c.getBlob(this.c.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
-		Log.v(tag, "image #" + pos + ", " + pic + ", num images: " + images.size());
 		ImageView iv = (ImageView) v.findViewById(R.id.contact_pic);
 		if (pic == null) 
 			iv.setImageBitmap(null);
