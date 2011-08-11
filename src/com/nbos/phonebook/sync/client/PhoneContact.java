@@ -60,8 +60,6 @@ public class PhoneContact extends Contact {
     		String contactId = cursor.getString(cursor.getColumnIndex(RawContacts.CONTACT_ID)),
     			dirty = cursor.getString(cursor.getColumnIndex(RawContacts.DIRTY)),
     			mimeType = cursor.getString(cursor.getColumnIndex(Data.MIMETYPE));
-    		
-    		
     		String str = "";
             for (String key : DATA_KEYS) 
             {
@@ -80,7 +78,7 @@ public class PhoneContact extends Contact {
                     }
                 }
             }
-            // Log.i(tag, "contactId: "+contactId+", dirty: "+dirty+", mimetype: "+mimeType+"data: "+str);
+            // Log.i(tag, "contactId: "+contactId+", dirty: "+dirty+", mimetype: "+mimeType+", data:: "+str);
     		if(contactId == null) continue; // TODO: SIM contacts have null contactId
             if(!prevId.equals(contactId))
             {

@@ -121,31 +121,18 @@ public class GroupActivity extends ListActivity {
 	}
 
 	private void callFromGroup(String contactId) {
-
-		Uri myPhoneUri = Uri.withAppendedPath(
+		Uri phoneUri = Uri.withAppendedPath(
 				ContactsContract.CommonDataKinds.Phone.CONTENT_URI, contactId);
-		Log.i(tag, "Phone uri is: " + myPhoneUri);
-
-		Cursor phones = getContentResolver().query(
-				ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-				null,
-				ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = "
-						+ contactId, null, null);
-
-		Log.i(tag, "Calling phonenumber contactID is: " + contactId);
-
+		Cursor phones = getContentResolver().query(phoneUri, null,
+				ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = " + contactId, 
+				null, null);
 		Log.i(tag, "There are " + phones.getCount() + " phone numbers");
-
 		String phoneNumber = null;
 		phones.moveToFirst();
-
-		Log.i(tag, "Calling phonenumber contactID is  :::::::::::" + contactId);
-
-		phoneNumber = phones
-				.getString(phones
+		phoneNumber = phones.getString(phones
 						.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
-		Log.i(tag, "Phone number is: " + phoneNumber);
-
+		Log.i(tag, "Calling contactId:" + contactId + ", phone number is: " + phoneNumber);
+		
 		Intent callIntent = new Intent(Intent.ACTION_CALL);
 		callIntent.setData(Uri.parse("tel:" + phoneNumber));
 		startActivity(callIntent);
@@ -203,7 +190,7 @@ public class GroupActivity extends ListActivity {
 
 	}
 
-	@Override
+	/*@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		m_cursor.moveToPosition(position);
 		String contactId = m_cursor.getString(m_cursor
@@ -211,7 +198,7 @@ public class GroupActivity extends ListActivity {
 		Log.i(tag, "position is: " + position + ", contactId: " + contactId
 				+ ", name: " + name);
 		callFromGroup(contactId);
-	}
+	}*/
 
 	Cursor dataCursor;
 	ImageCursorAdapter adapter;
@@ -444,10 +431,12 @@ class ImageCursorAdapter extends SimpleCursorAdapter {
 		String contactName = this.c.getString(this.c
 				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 		byte[] pic = images.get(pos);// this.c.getBlob(this.c.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
-		Log.v(tag,
-				"image #" + pos + ", " + pic + ", num images: " + images.size());
-		if (pic != null) {
-			ImageView iv = (ImageView) v.findViewById(R.id.contact_pic);
+		Log.v(tag, "image #" + pos + ", " + pic + ", num images: " + images.size());
+		ImageView iv = (ImageView) v.findViewById(R.id.contact_pic);
+		if (pic == null) 
+			iv.setImageBitmap(null);
+		else
+		{
 			iv.setImageBitmap(BitmapFactory.decodeByteArray(pic, 0, pic.length));
 			iv.setScaleType(ScaleType.FIT_XY);
 		}

@@ -225,4 +225,5 @@ public class Test {
 	public static void getShareBooks(Context ctx) {
 		Db.getSharingBooks(false, ctx);
 	}
+	
 }

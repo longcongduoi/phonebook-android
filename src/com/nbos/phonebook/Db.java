@@ -370,11 +370,16 @@ public class Db {
 	        		case BOTH: // handle case where a row with the same key is in both cursors
 	        			String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID)),
 	        				serverId = getServerIdFromContactId(dataCursor, contactId); 
+	        			Log.i(tag, "contactId: "+contactId+", serverId: "+serverId);
 	        				// contactName = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)),
 	        				// contactNumber = getContactPhoneNumber(contactId, phonesCursor);
 	        			// if(contactNumber == null) break;
-	        			contacts.add(new Contact(serverId));
-	        			Log.i(tag, "added contact: "+contactId+", serverId: "+serverId);//+", "+contactNumber+", "+contactName);
+	        			if(serverId != null)
+	        			{
+	        				contacts.add(new Contact(serverId));
+	        				Log.i(tag, "added contact: "+contactId+", serverId: "+serverId);//+", "+contactNumber+", "+contactName);
+	        			}
+	        			
 	        		break;
 	        	}
 	        }	    
