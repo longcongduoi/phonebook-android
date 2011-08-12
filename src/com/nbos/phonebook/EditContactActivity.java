@@ -1376,9 +1376,11 @@ public final class EditContactActivity extends Activity
         }
 
         // Check account type
-        boolean skipAccountTypeCheck = false;
+        boolean skipAccountTypeCheck = true;
         boolean oneIsGoogle = false; // oneSource instanceof GoogleSource;
         boolean twoIsGoogle = false; // twoSource instanceof GoogleSource;
+        Log.i(TAG, "oneSource: "+oneSource+", twoSource: "+twoSource);
+        Log.i(TAG, "one is google: "+oneIsGoogle+", twoIsGoogle: "+twoIsGoogle);
         if (oneIsGoogle && !twoIsGoogle) {
             return -1;
         } else if (twoIsGoogle && !oneIsGoogle) {
