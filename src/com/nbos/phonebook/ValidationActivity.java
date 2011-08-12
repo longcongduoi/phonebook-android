@@ -1,5 +1,11 @@
 package com.nbos.phonebook;
 
+import java.io.IOException;
+
+import org.apache.http.ParseException;
+import org.apache.http.auth.AuthenticationException;
+import org.json.JSONException;
+
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -16,6 +22,8 @@ import android.widget.Toast;
 
 import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
 import com.nbos.phonebook.sync.client.Net;
+import com.nbos.phonebook.sync.platform.Cloud;
+import com.nbos.phonebook.sync.syncadapter.SyncAdapter;
 
 public class ValidationActivity extends Activity {
 
@@ -102,6 +110,16 @@ public class ValidationActivity extends Activity {
         messageText.setText(message);
         if(result) {
         	Toast.makeText(this, "Validation of your account was successful", Toast.LENGTH_LONG).show();
+            final Runnable runnable = new Runnable() {
+                public void run() {
+                	try {
+                		SyncAdapter.doSync();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+                }
+            };
+            Net.performOnBackgroundThread(runnable);				
         	finish();
         }
     }

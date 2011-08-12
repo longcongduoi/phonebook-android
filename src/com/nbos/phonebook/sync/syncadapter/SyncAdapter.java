@@ -50,72 +50,54 @@ import com.nbos.phonebook.sync.platform.Cloud;
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private static final String TAG = "SyncAdapter";
 
-    private final AccountManager mAccountManager;
-    private final Context mContext;
-
-    private Date mLastUpdated;
-
+    private static AccountManager accountManager;
+    private static Context context;
+    static Account account;
+    static String authtoken;
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
-        mContext = context;
-        mAccountManager = AccountManager.get(context);
+        SyncAdapter.context = context;
+        accountManager = AccountManager.get(context);
     }
 
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority,
         ContentProviderClient provider, SyncResult syncResult) {
-        String authtoken = null;
+    	SyncAdapter.account = account;
         try {
              // use the account manager to request the credentials
-        	String phoneNumber = mAccountManager.getUserData(account, Constants.PHONE_NUMBER_KEY);
+        	String phoneNumber = accountManager.getUserData(account, Constants.PHONE_NUMBER_KEY);
         	Log.i(TAG, "phone number is: "+phoneNumber);
-             authtoken =
-                mAccountManager.blockingGetAuthToken(account, Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
+             authtoken = accountManager.blockingGetAuthToken(account, Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
              // fetch updates from the sample service over the cloud
              boolean valid = Net.checkValidAccount(account, authtoken, 
-            		 mAccountManager.getUserData(account, Constants.PHONE_NUMBER_KEY));
+            		 accountManager.getUserData(account, Constants.PHONE_NUMBER_KEY));
              // start the confirmation activity if not valid
              
              Log.i(TAG, "valid account is: "+valid);
              if(!valid) 
              {
-                 final Intent intent = new Intent(mContext, ValidationActivity.class);
+                 final Intent intent = new Intent(context, ValidationActivity.class);
                  intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                  intent.putExtra(Net.PARAM_USERNAME, account.name);
                  intent.putExtra(Net.PARAM_PASSWORD, authtoken);
                  intent.putExtra(Net.PARAM_PHONE_NUMBER, phoneNumber);
-                 mContext.startActivity(intent);
-                 
-                 // intent.putExtra(AuthenticatorActivity.PARAM_AUTHTOKEN_TYPE, authTokenType);
-                 // intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
+                 context.startActivity(intent);
                  return;
-
              }
-             String lastUpdated = mAccountManager.getUserData(account, Constants.ACCOUNT_LAST_UPDATED);
-             Log.i(TAG, "Last updated is: "+lastUpdated);
-             String timestamp = new Cloud(mContext, account.name, authtoken).sync(lastUpdated);
-             Log.i(TAG, "Timestamp is: "+timestamp);
-             mAccountManager.setUserData(account, Constants.ACCOUNT_LAST_UPDATED, timestamp);
-             mLastUpdated = new Date();                     
-             Widget.AppService.message = "Phonebook last updated: "+DateFormat.getInstance().format(mLastUpdated);
-             mContext.startService(new Intent(mContext, AppService.class));
-        } catch (final AuthenticatorException e) {
-            syncResult.stats.numParseExceptions++;
-            Log.e(TAG, "AuthenticatorException", e);
-        } catch (final OperationCanceledException e) {
-            Log.e(TAG, "OperationCanceledExcetpion", e);
-        } catch (final IOException e) {
-            Log.e(TAG, "IOException", e);
-            syncResult.stats.numIoExceptions++;
-        } catch (final ParseException e) {
-            syncResult.stats.numParseExceptions++;
-            Log.e(TAG, "ParseException", e);
-        } catch (final JSONException e) {
-            syncResult.stats.numParseExceptions++;
-            Log.e(TAG, "JSONException", e);
-        } catch (AuthenticationException e) {
-			// TODO Auto-generated catch block
+             doSync();
+        } catch (Exception e) {
 			e.printStackTrace();
 		}
     }
+
+	public static void doSync() throws AuthenticationException, ParseException, JSONException, IOException {
+        String lastUpdated = accountManager.getUserData(account, Constants.ACCOUNT_LAST_UPDATED);
+        Log.i(TAG, "Last updated is: "+lastUpdated);
+        String timestamp = new Cloud(context, account.name, authtoken).sync(lastUpdated);
+        Log.i(TAG, "Timestamp is: "+timestamp);
+        accountManager.setUserData(account, Constants.ACCOUNT_LAST_UPDATED, timestamp);
+        Widget.AppService.message = "Phonebook last updated: "+DateFormat.getInstance().format(new Date(Long.parseLong(lastUpdated)));
+        context.startService(new Intent(context, AppService.class));
+	}
 }
