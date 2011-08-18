@@ -17,6 +17,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.Contacts;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -69,17 +70,20 @@ public class GroupActivity extends ListActivity {
 	public void onCreateContextMenu(ContextMenu menu, View v,
 			ContextMenuInfo menuInfo) {
 		// if (owner != null) return;
+		Log.i(tag, "Create context menu");
 		super.onCreateContextMenu(menu, v, menuInfo);
 		// Get the info on which item was selected
 		AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
 		m_cursor.moveToPosition(info.position);
-		String contactName = m_cursor.getString(m_cursor
-				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+		String contactName = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)),
+			contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID));
+		
 		menu.setHeaderTitle("Menu: " + contactName);
-		menu.add(0, v.getId(), 0, "Call");
-		menu.add(0, v.getId(), 1, "Edit");
-		menu.add(0, v.getId(), 2, "Remove from group");
-		// menu.add(0, v.getId(), 0, "Action 2");
+		int order = 0;
+		if(getPhoneNumber(contactId) != null)
+			menu.add(0, v.getId(), order++, "Call");
+		menu.add(0, v.getId(), order++, "Edit");
+		menu.add(0, v.getId(), order++, "Remove from group");
 	}
 
 	@Override
@@ -90,8 +94,8 @@ public class GroupActivity extends ListActivity {
 
 		m_cursor.moveToPosition(info.position);
 		String contactId = m_cursor.getString(m_cursor
-				.getColumnIndex(ContactsContract.Contacts._ID)), name = m_cursor
-				.getString(m_cursor
+				.getColumnIndex(ContactsContract.Contacts._ID)), 
+			name = m_cursor.getString(m_cursor
 						.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 
 		Log.i(tag, "position is: " + info.position + ", contactId: "
@@ -120,19 +124,26 @@ public class GroupActivity extends ListActivity {
 		startActivityForResult(i, EDIT_CONTACT);
 	}
 
-	private void callFromGroup(String contactId) {
-		Uri phoneUri = Uri.withAppendedPath(
-				ContactsContract.CommonDataKinds.Phone.CONTENT_URI, contactId);
-		Cursor phones = getContentResolver().query(phoneUri, null,
+	private String getPhoneNumber(String contactId) {
+		Log.i(tag, "getPhoneNumber("+contactId+")");
+		Cursor phones = getContentResolver().query(
+				ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
+				new String [] {Phone.NUMBER, Phone.TYPE},
 				ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = " + contactId, 
 				null, null);
-		Log.i(tag, "There are " + phones.getCount() + " phone numbers");
-		String phoneNumber = null;
+		Log.i(tag, "There are "+phones.getCount()+" phone numbers");		
+		if(phones.getCount()==0) return null;
 		phones.moveToFirst();
-		phoneNumber = phones.getString(phones
-						.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
+		String phoneNumber = phones.getString(phones.getColumnIndexOrThrow(Phone.NUMBER));
+		Log.i(tag, "contactId:" + contactId + ", phone number is: " + phoneNumber);
+		phones.close();
+		return phoneNumber;
+	}
+	
+	private void callFromGroup(String contactId) {
+		String phoneNumber = getPhoneNumber(contactId);
+		if(phoneNumber == null) return;
 		Log.i(tag, "Calling contactId:" + contactId + ", phone number is: " + phoneNumber);
-		
 		Intent callIntent = new Intent(Intent.ACTION_CALL);
 		callIntent.setData(Uri.parse("tel:" + phoneNumber));
 		startActivity(callIntent);

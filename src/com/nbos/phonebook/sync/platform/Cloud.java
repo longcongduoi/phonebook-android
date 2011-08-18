@@ -69,7 +69,7 @@ public class Cloud {
     	PARAM_VALIDATION_CODE = "valid",
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
-    	BASE_URL = "http://10.9.8.29:8080/phonebook",
+    	BASE_URL = "http://phonebook.nbostech.com:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",

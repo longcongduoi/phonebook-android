@@ -16,35 +16,36 @@
 
 package com.android.contacts.ui.widget;
 
-import com.nbos.phonebook.R;
-import com.android.contacts.model.ContactsSource;
-import com.android.contacts.model.EntityDelta;
-import com.android.contacts.model.EntityModifier;
-import com.android.contacts.model.ContactsSource.DataKind;
-import com.android.contacts.model.ContactsSource.EditType;
-import com.android.contacts.model.Editor.EditorListener;
-import com.android.contacts.model.EntityDelta.ValuesDelta;
-import com.android.contacts.ui.ViewIdGenerator;
-
-import android.content.Context;
 import nbos.android.content.Entity;
+import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.provider.ContactsContract.CommonDataKinds.Photo;
+import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
-import android.provider.ContactsContract.CommonDataKinds.Photo;
-import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.android.contacts.model.ContactsSource;
+import com.android.contacts.model.ContactsSource.DataKind;
+import com.android.contacts.model.ContactsSource.EditType;
+import com.android.contacts.model.Editor.EditorListener;
+import com.android.contacts.model.EntityDelta;
+import com.android.contacts.model.EntityDelta.ValuesDelta;
+import com.android.contacts.model.EntityModifier;
+import com.android.contacts.ui.ViewIdGenerator;
+import com.nbos.phonebook.R;
 
 /**
  * Custom view that provides all the editor interaction for a specific
@@ -58,6 +59,7 @@ import android.widget.TextView;
  * {@link EntityModifier} to ensure that {@link ContactsSource} are enforced.
  */
 public class ContactEditorView extends BaseContactEditorView implements OnClickListener {
+	static String tag = "ContactEditorView";
     private TextView mReadOnly;
     private TextView mReadOnlyName;
 
@@ -181,15 +183,22 @@ public class ContactEditorView extends BaseContactEditorView implements OnClickL
         // Fill in the header info
         ValuesDelta values = state.getValues();
         String accountName = values.getAsString(RawContacts.ACCOUNT_NAME);
-        CharSequence accountType = source.getDisplayLabel(context);
-        if (TextUtils.isEmpty(accountType)) {
-            accountType = context.getString(R.string.account_phone);
+        CharSequence accountType = null;
+        try {
+	        accountType = source.getDisplayLabel(context);
+	        if (TextUtils.isEmpty(accountType)) {
+	            accountType = context.getString(R.string.account_phone);
+	        }
+        } catch(Exception e) { 
+        	Log.e(tag, "Could not get phone account type");
+        	e.printStackTrace();
         }
         if (!TextUtils.isEmpty(accountName)) {
             mHeaderAccountName.setText(
                     context.getString(R.string.from_account_format, accountName));
         }
-        mHeaderAccountType.setText(context.getString(R.string.account_type_format, accountType));
+        if(accountType != null)
+        	mHeaderAccountType.setText(context.getString(R.string.account_type_format, accountType));
         mHeaderIcon.setImageDrawable(source.getDisplayIcon(context));
 
         mRawContactId = values.getAsLong(RawContacts._ID);
