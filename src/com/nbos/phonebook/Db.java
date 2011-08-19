@@ -222,8 +222,10 @@ public class Db {
 	    			ContactsContract.CommonDataKinds.Photo.PHOTO,
 	    			Data.MIMETYPE, Data.DATA1,
 	    		},
-	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null",
-	    	    null, ContactsContract.Data.CONTACT_ID);
+	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null "
+	    		+"and "+Data.MIMETYPE+" = ? ",
+	    	    new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
+	    	    ContactsContract.Data.CONTACT_ID);
 	    
 	    Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries for newOnly: "+newOnly);
 	    Log.i(tag, "There are "+photosDataCursor.getCount()+" data entries");
@@ -257,12 +259,14 @@ public class Db {
 	    do {
 	    	String cId = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID));
 	    	if(!cId.equals(contactId)) continue;
-	    	String name = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+	    	String name = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)),
+	    		mimeType = dataCursor.getString(dataCursor.getColumnIndex(Data.MIMETYPE));
+	    	Log.i(tag, "Contact["+contactId+"] "+name+", mimetype: "+mimeType);
 	    	byte[] pic = dataCursor.getBlob(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
 	    	String contentType = findMimeTypeForImage(pic); 
 	    		// dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.MIMETYPE));
 	    	// String serverId
-	    	Log.i(tag, "Contact["+contactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
+	    	Log.i(tag, "Contact["+contactId+"] "+name+", mimetype: "+mimeType+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
 	    	return new ContactPicture(pic, contentType);
 	    } while(dataCursor.moveToNext());
 	    return null;

@@ -69,7 +69,7 @@ public class Cloud {
     	PARAM_VALIDATION_CODE = "valid",
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
-    	BASE_URL = "http://phonebook.nbostech.com:8080/phonebook",
+    	BASE_URL = "http://phonebook.nbostech.com/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
@@ -174,8 +174,10 @@ public class Cloud {
 	    			ContactsContract.CommonDataKinds.Photo.PHOTO,
 	    			Data.MIMETYPE, Data.DATA1,
 	    		},
-	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null",
-	    	    null, ContactsContract.Data.CONTACT_ID);
+	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null "
+	    		+"and "+Data.MIMETYPE+" = ? ",
+	    	    new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
+	    	    ContactsContract.Data.CONTACT_ID);
 	    
 	    Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries for newOnly: "+newOnly);
 	    Log.i(tag, "There are "+photosDataCursor.getCount()+" photo data entries");

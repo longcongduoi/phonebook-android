@@ -220,8 +220,7 @@ public class GroupActivity extends ListActivity {
 					+ " contacts sharing with)");
 		else
 			setTitle("Group: " + name + " (" + owner + " is sharing)");
-		dataCursor = Db.getContactsInGroup(id,
-				this.getContentResolver());
+		dataCursor = Db.getContactsInGroup(id, this.getContentResolver());
 		getContactsFromGroupCursor("");
 		String[] fields = new String[] { ContactsContract.Contacts.DISPLAY_NAME };
 		adapter = new ImageCursorAdapter(this, R.layout.contact_entry,

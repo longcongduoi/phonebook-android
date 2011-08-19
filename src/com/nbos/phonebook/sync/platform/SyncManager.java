@@ -108,8 +108,10 @@ public class SyncManager {
 	    			ContactsContract.Data.RAW_CONTACT_ID,
 	    			ContactsContract.CommonDataKinds.Photo.PHOTO,
 	    		},
-	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null",
-	    	    null, ContactsContract.Data.CONTACT_ID);
+	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null "
+	    		+"and "+Data.MIMETYPE+" = ? ",
+	    	    new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
+	    	    ContactsContract.Data.CONTACT_ID);
     	Log.i(tag, "Data pics cursor has "+dataPicsCursor.getCount()+" rows");
 	}
 
