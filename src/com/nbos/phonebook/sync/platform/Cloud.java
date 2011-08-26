@@ -42,6 +42,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.Data;
 import android.util.Log;
 
@@ -174,9 +175,10 @@ public class Cloud {
 	    			ContactsContract.CommonDataKinds.Photo.PHOTO,
 	    			Data.MIMETYPE, Data.DATA1,
 	    		},
-	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null "
-	    		+"and "+Data.MIMETYPE+" = ? ",
-	    	    new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
+	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null ",
+	    		null,
+	    		// +"and "+Data.MIMETYPE+" = ? ",
+	    	    // new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
 	    	    ContactsContract.Data.CONTACT_ID);
 	    
 	    Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries for newOnly: "+newOnly);
@@ -258,6 +260,8 @@ public class Cloud {
 		if(dataCursor.getCount() == 0) return null;
 		dataCursor.moveToFirst();
 	    do {
+	    	String mimetype = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.MIMETYPE));
+	    	if(!mimetype.equals(Photo.CONTENT_ITEM_TYPE)) continue;
 	    	String cId = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID));
 	    	if(!cId.equals(contactId)) continue;
 	    	String name = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));

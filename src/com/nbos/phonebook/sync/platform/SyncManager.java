@@ -18,6 +18,7 @@ import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.util.Log;
 
 import com.nbos.phonebook.Db;
@@ -108,9 +109,10 @@ public class SyncManager {
 	    			ContactsContract.Data.RAW_CONTACT_ID,
 	    			ContactsContract.CommonDataKinds.Photo.PHOTO,
 	    		},
-	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null "
-	    		+"and "+Data.MIMETYPE+" = ? ",
-	    	    new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
+	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null ",
+	    		null,
+	    		//+"and "+Data.MIMETYPE+" = ? ",
+	    	    //new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
 	    	    ContactsContract.Data.CONTACT_ID);
     	Log.i(tag, "Data pics cursor has "+dataPicsCursor.getCount()+" rows");
 	}
@@ -148,15 +150,18 @@ public class SyncManager {
         dataPicsCursor.moveToFirst();
         if(dataPicsCursor.getCount() > 0)
 	    do {
+	    	String mimetype = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(ContactsContract.Data.MIMETYPE));
+	    	if(!mimetype.equals(Photo.CONTENT_ITEM_TYPE)) continue;
+	    	
 	    	String cId = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.CONTACT_ID));
 	    	if(!cId.equals(contactId)) continue;
 	    	Log.i(tag, "Updating pic for serverId: "+c.serverId);
 	    	ContentValues values = new ContentValues();
-	    	values.put(ContactsContract.CommonDataKinds.Photo.PHOTO, image);
+	    	values.put(Photo.PHOTO, image);
 	    	context.getContentResolver().update(uri, values, 
 	    			Data.CONTACT_ID + " = ? and " +
 	    			Data.MIMETYPE + " = ? ", 
-	    			new String[] {contactId, CommonDataKinds.Photo.CONTENT_ITEM_TYPE});
+	    			new String[] {contactId, Photo.CONTENT_ITEM_TYPE});
 	    	newPic = false;
 	    	break;
 	    } while(dataCursor.moveToNext());
@@ -169,7 +174,7 @@ public class SyncManager {
 	        values.put(ContactsContract.Data.IS_SUPER_PRIMARY, 1);
 	        // values.put(ContactsContract.CALLER_IS_SYNCADAPTER, "true");
 	        values.put(ContactsContract.CommonDataKinds.Photo.PHOTO, image);
-	        values.put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE);
+	        values.put(ContactsContract.Data.MIMETYPE, Photo.CONTENT_ITEM_TYPE);
 	        Uri result = context.getContentResolver().insert(uri, values);
 	        Log.i(tag, "pic uri is: "+result);
         }

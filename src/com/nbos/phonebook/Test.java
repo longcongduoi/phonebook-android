@@ -218,6 +218,40 @@ public class Test {
 		getDataTable(applicationContext);
 	}
 
+	public static void getPics(Context ctx) {
+    	/*Cursor dataPicsCursor = ctx.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
+	    		// null,
+	    	    new String[] {
+	    			ContactsContract.Data.CONTACT_ID,
+	    			ContactsContract.Data.RAW_CONTACT_ID,
+	    			ContactsContract.CommonDataKinds.Photo.PHOTO,
+	    		},
+	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null "
+	    		+"and "+Data.MIMETYPE+" = ? ",
+	    	    new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
+	    	    ContactsContract.Data.CONTACT_ID);
+    	Log.i(tag, "There are "+dataPicsCursor.getCount()+" pics");
+		*/
+    	Cursor dataPicsCursor = ctx.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
+	    		null,
+	    	    /*new String[] {
+	    			ContactsContract.Contacts._ID, 
+	    			ContactsContract.Data.CONTACT_ID,
+	    			ContactsContract.Data.RAW_CONTACT_ID,
+	    			ContactsContract.RawContacts._ID,
+	    			ContactsContract.Contacts.DISPLAY_NAME,
+	    			ContactsContract.CommonDataKinds.Photo.PHOTO,
+	    			Data.MIMETYPE, Data.DATA1,
+	    		},*/
+	    		// ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null "
+	    		// +"and "+
+	    		Data.MIMETYPE+"=='"+ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE+"'",
+	    	    null, // new String[] {ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE}, 
+	    	    ContactsContract.Data.CONTACT_ID);
+    	Log.i(tag, "There are "+dataPicsCursor.getCount()+" notes");
+    	
+		
+	}
 	public static void getContactPics(Context ctx) {
 		Db.getContactPictures(ctx, false);
 	}
