@@ -26,7 +26,8 @@ public class Phone {
 			p.type = c.getString(c.getColumnIndex(CommonDataKinds.Phone.DATA3));
 		else
 			p.type = getType(type);
-		contact.phones.add(p);
+		if(p.number != null)
+			contact.phones.add(p);
 		
 	}
 	private static String getType(int type) {
