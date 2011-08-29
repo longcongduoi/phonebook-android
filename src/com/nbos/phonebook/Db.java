@@ -105,8 +105,9 @@ public class Db {
 	    			ContactsContract.Contacts.DISPLAY_NAME,
 	    			ContactsContract.CommonDataKinds.Photo.PHOTO
 	    		},
-	    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+" = "+groupId,
-	    	    null, ContactsContract.Data.CONTACT_ID);
+	    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+" =  ? "
+	    	    +"and "+ContactsContract.Data.MIMETYPE+" = ? ",
+	    	    new String[]{groupId, ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE}, ContactsContract.Data.CONTACT_ID);
 	}
 	
 	public static String getAccountName(Context ctx) {
