@@ -105,9 +105,10 @@ public class SyncManager {
     	dataPicsCursor = context.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
 	    		// null,
 	    	    new String[] {
-	    			ContactsContract.Data.CONTACT_ID,
-	    			ContactsContract.Data.RAW_CONTACT_ID,
-	    			ContactsContract.CommonDataKinds.Photo.PHOTO,
+	    			Data.CONTACT_ID,
+	    			Data.RAW_CONTACT_ID,
+	    			Data.MIMETYPE,
+	    			CommonDataKinds.Photo.PHOTO,
 	    		},
 	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null ",
 	    		null,
