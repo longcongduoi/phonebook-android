@@ -372,7 +372,7 @@ public class Cloud {
 	}
 	
 	public static JSONObject upload(String uploadUrl, byte[] data, String contentType, Map<String, String> params) {
-		System.out.println("Uploading to "+uploadUrl);
+		Log.i(tag, "Uploading to "+uploadUrl);
 		HttpURLConnection connection = null;
 		DataOutputStream outputStream = null;
 
@@ -495,7 +495,7 @@ public class Cloud {
         	sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
         }
  
-        System.out.println("Digest(in hex format):: " + sb.toString());
+        Log.i(tag, "Digest(in hex format):: " + sb.toString());
         return sb.toString();
         //convert the byte to hex format method 2
         /*StringBuffer hexString = new StringBuffer();
