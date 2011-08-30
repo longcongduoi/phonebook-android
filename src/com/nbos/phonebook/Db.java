@@ -554,7 +554,7 @@ public class Db {
 			// Log.i(TAG, "checking: contactID: "+cId+", rawContactId: "+rawContactId);
 			if(cId != null && cId.equals(contactId))
 			{
-				// Log.i(tag, "returning: "+rawContactId);
+				Log.i(tag, "getRawContactId("+contactId+") = "+rawContactId);
 				return rawContactId;
 			}
 		} while(rawContactsCursor.moveToNext());

@@ -150,6 +150,8 @@ public class Cloud {
 	private void sendContactUpdates(List<PhoneContact> contacts, Cursor rawContactsCursor) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
         params.add(new BasicNameValuePair("numContacts", new Integer(contacts.size()).toString()));
+        if(lastUpdated != null)
+        	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
         for(int i=0; i< contacts.size(); i++)
         {
         	String index = new Integer(i).toString();
@@ -215,13 +217,13 @@ public class Cloud {
 				pic = getContactPicture(photosDataCursor, contactId);
 				if(pic == null) continue;
 				String hash = hash(pic.pic);
-				if(picId != null && newOnly) {
-						int pSize = Integer.parseInt(picSize);
-						if(pSize == pic.pic.length && picHash != null && hash.equals(picHash))
-						{
-							Log.i(tag, "Same image not uploading");
-							continue;
-						}
+				if(picId != null) {
+					int pSize = Integer.parseInt(picSize);
+					if(pSize == pic.pic.length && picHash != null && hash.equals(picHash))
+					{
+						Log.i(tag, "Same image not uploading");
+						continue;
+					}
 				}
 	    		String contentType = pic.mimeType.split("/")[1];
 	    		Log.i(tag, "uploading "+contentType);
@@ -438,7 +440,7 @@ public class Cloud {
 			connection.connect();
 		}
 		
-		InputStream in = new BufferedInputStream(connection.getInputStream());
+		InputStream in = new BufferedInputStream(connection.getInputStream(), 8*1024);
 		String response = convertStreamToString(in);
 		Log.i(tag, "Response: "+response);
 		outputStream.flush();

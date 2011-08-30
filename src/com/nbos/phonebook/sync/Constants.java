@@ -36,7 +36,8 @@ public class Constants {
 		PHONEBOOK_PROVIDER_URI = "content://com.nbos.phonebook.provider.defaultname/",
 		// CONTACT_SERVER_ID = ContactsContract.RawContacts.SYNC1,
 		PHONE_NUMBER_KEY = "ph",
-		ACCOUNT_LAST_UPDATED = "lastUpdated";
+		ACCOUNT_LAST_UPDATED = "lastUpdated",
+		ACCOUNT_LAST_UPDATE_STARTED = "updateStarted";
 	public static final Uri 
 		SHARE_BOOK_URI = Uri.parse(PHONEBOOK_PROVIDER_URI + "book");
 		// PIC_URI = Uri.parse(PHONEBOOK_PROVIDER_URI + "pic");

@@ -48,7 +48,7 @@ import com.nbos.phonebook.sync.platform.Cloud;
  * platform ContactOperations provider.
  */
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
-    private static final String TAG = "SyncAdapter";
+    private static final String tag = "SyncAdapter";
 
     private static AccountManager accountManager;
     private static Context context;
@@ -67,14 +67,14 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         try {
              // use the account manager to request the credentials
         	String phoneNumber = accountManager.getUserData(account, Constants.PHONE_NUMBER_KEY);
-        	Log.i(TAG, "phone number is: "+phoneNumber);
+        	Log.i(tag, "phone number is: "+phoneNumber);
              authtoken = accountManager.blockingGetAuthToken(account, Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
              // fetch updates from the sample service over the cloud
              boolean valid = Net.checkValidAccount(account, authtoken, 
             		 accountManager.getUserData(account, Constants.PHONE_NUMBER_KEY));
              // start the confirmation activity if not valid
              
-             Log.i(TAG, "valid account is: "+valid);
+             Log.i(tag, "valid account is: "+valid);
              if(!valid) 
              {
                  final Intent intent = new Intent(context, ValidationActivity.class);
@@ -92,12 +92,27 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
 	public static void doSync() throws AuthenticationException, ParseException, JSONException, IOException {
-        String lastUpdated = accountManager.getUserData(account, Constants.ACCOUNT_LAST_UPDATED);
-        Log.i(TAG, "Last updated is: "+lastUpdated);
-        String timestamp = new Cloud(context, account.name, authtoken).sync(lastUpdated);
-        Log.i(TAG, "Timestamp is: "+timestamp);
-        accountManager.setUserData(account, Constants.ACCOUNT_LAST_UPDATED, timestamp);
-        Widget.AppService.message = "Phonebook last updated: "+DateFormat.getInstance().format(new Date(Long.parseLong(lastUpdated)));
+		Log.i(tag, "doSync()");
+        String lastUpdated = accountManager.getUserData(account, Constants.ACCOUNT_LAST_UPDATED),
+        	lastUpdateStarted = accountManager.getUserData(account, Constants.ACCOUNT_LAST_UPDATE_STARTED);
+        Log.i(tag, "Last update started: "+lastUpdateStarted+", updated is: "+lastUpdated);
+        Cloud cloud = new Cloud(context, account.name, authtoken);
+        String startTimestamp = cloud.getTimestamp();
+        /*if(lastUpdateStarted != null) 
+        {
+        	if(lastUpdated == null 
+        	||(lastUpdated != null 
+        	   && (Long.parseLong(lastUpdated) < Long.parseLong(lastUpdateStarted))))
+        	{
+        		Log.i(tag, "Previous sync has not finished - returning");
+        		return;
+        	}
+        }*/
+        accountManager.setUserData(account, Constants.ACCOUNT_LAST_UPDATE_STARTED, startTimestamp);
+        String endTimestamp = cloud.sync(lastUpdated);
+        Log.i(tag, "Timestamp is: "+endTimestamp);
+        accountManager.setUserData(account, Constants.ACCOUNT_LAST_UPDATED, endTimestamp);
+        Widget.AppService.message = "Phonebook last updated: "+DateFormat.getInstance().format(new Date(Long.parseLong(endTimestamp)));
         context.startService(new Intent(context, AppService.class));
 	}
 }

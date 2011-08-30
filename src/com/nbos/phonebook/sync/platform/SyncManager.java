@@ -110,7 +110,7 @@ public class SyncManager {
 	    			Data.MIMETYPE,
 	    			CommonDataKinds.Photo.PHOTO,
 	    		},
-	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null ",
+	    		Photo.PHOTO +" is not null ",
 	    		null,
 	    		//+"and "+Data.MIMETYPE+" = ? ",
 	    	    //new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
@@ -151,7 +151,7 @@ public class SyncManager {
         dataPicsCursor.moveToFirst();
         if(dataPicsCursor.getCount() > 0)
 	    do {
-	    	String mimetype = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(ContactsContract.Data.MIMETYPE));
+	    	String mimetype = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.MIMETYPE));
 	    	if(!mimetype.equals(Photo.CONTENT_ITEM_TYPE)) continue;
 	    	
 	    	String cId = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.CONTACT_ID));
@@ -165,7 +165,7 @@ public class SyncManager {
 	    			new String[] {contactId, Photo.CONTENT_ITEM_TYPE});
 	    	newPic = false;
 	    	break;
-	    } while(dataCursor.moveToNext());
+	    } while(dataPicsCursor.moveToNext());
         if(newPic)
         {
 	        // insert the pic
