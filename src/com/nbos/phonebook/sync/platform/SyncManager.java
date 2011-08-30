@@ -252,6 +252,7 @@ public class SyncManager {
 	    Cursor groupCursor = Db.getContactsInGroup(groupId, context.getContentResolver());	    
     	Log.i(tag, "Update group: "+g.name+", id: "+groupId+", contacts: "+g.contacts+", group cursor size: "+groupCursor.getCount());
     	syncContacts(g.contacts);
+    	syncPictures(g.contacts);
     	Set<String> contactIds = new HashSet<String>();
     	for(Contact u : g.contacts)
     		contactIds.add(updateGroupContact(u, groupId));
