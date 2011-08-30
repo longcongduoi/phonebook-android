@@ -10,7 +10,6 @@ public class ContactRow implements Comparable<ContactRow> {
 		this.name = name;
 		this.image = image;
 	}
-	@Override
 	public int compareTo(ContactRow other) {
 		return this.name.compareTo(other.name);
 	}
