@@ -133,10 +133,18 @@ public class Cloud {
 	public String sendFriendUpdates() throws ClientProtocolException, IOException, JSONException {
 		sendContactUpdates(Db.getContacts(newOnly, context), rawContactsCursor);
         sendGroupUpdates(Db.getGroups(newOnly, context));
+        sendSharedBookUpdates(Db.getSharingBooks(newOnly, context));
         uploadContactPictures();
-        String timestamp = sendSharedBookUpdates(Db.getSharingBooks(newOnly, context));
+        String timestamp = getTimestamp();
         ContactManager.resetDirtyContacts(context);
         return timestamp;
+	}
+
+	public String getTimestamp() throws ClientProtocolException, JSONException, IOException {
+        JSONArray response = new JSONArray(post(TIMESTAMP_URI, getAuthParams()));
+        Long timestamp = response.getLong(0);
+        return timestamp.toString();
+		
 	}
 
 	private void sendContactUpdates(List<PhoneContact> contacts, Cursor rawContactsCursor) throws ClientProtocolException, IOException, JSONException {
