@@ -47,6 +47,7 @@ public class SyncManager {
         syncContacts(contacts);
         syncGroups(groups, false);
         syncGroups(sharedBooks, true);
+        syncPictures(contacts);
 	}
 
 	void syncContacts(List<Contact> contacts) {
@@ -89,7 +90,6 @@ public class SyncManager {
         batchOperation.execute();
         // if(num == 0) return;
         refreshCursors();
-        syncPictures(contacts);
 	}
 
 	private void syncPictures(List<Contact> contacts) {

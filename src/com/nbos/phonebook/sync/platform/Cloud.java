@@ -51,6 +51,7 @@ import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.Group;
+import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.ServerData;
 import com.nbos.phonebook.sync.client.SharingBook;
@@ -61,7 +62,9 @@ public class Cloud {
     Context context;
     String accountName, authToken, lastUpdated;
     HttpClient httpClient;
-    public static final int REGISTRATION_TIMEOUT = 90 * 1000; // ms
+    Cursor rawContactsCursor;
+    boolean newOnly;
+    public static final int REGISTRATION_TIMEOUT = 20 * 60 * 1000; // ms
 
     public static final String 
     	PARAM_USERNAME = "username",
@@ -70,7 +73,7 @@ public class Cloud {
     	PARAM_VALIDATION_CODE = "valid",
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
-    	BASE_URL = "http://phonebook.nbostech.com/phonebook",
+    	BASE_URL = "http://10.9.8.29:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
@@ -93,14 +96,16 @@ public class Cloud {
 	public String sync(String lastUpdated) throws AuthenticationException, ParseException, JSONException, IOException {
 		// sendAllContacts();
 		this.lastUpdated = lastUpdated;		
+		newOnly = lastUpdated != null;
         Object[] update = fetchFriendUpdates();
         new SyncManager(context, accountName, update);
-        return sendFriendUpdates(true);
+        rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), newOnly);
+        return sendFriendUpdates();
 	}
 
-	public void sendAllContacts() throws ClientProtocolException, IOException, JSONException {
+	/*public void sendAllContacts() throws ClientProtocolException, IOException, JSONException {
 		sendFriendUpdates(false);
-	}
+	}*/
 	
     Object[] fetchFriendUpdates() throws JSONException, ParseException, IOException, AuthenticationException 
     {
@@ -125,16 +130,16 @@ public class Cloud {
         return new Object[] {friendList, groupsList, books}; 
     }
 
-	public String sendFriendUpdates(boolean newOnly) throws ClientProtocolException, IOException, JSONException {
-		Cursor rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), false);
-		sendContactUpdates(Db.getContacts(newOnly, context), newOnly, rawContactsCursor);
+	public String sendFriendUpdates() throws ClientProtocolException, IOException, JSONException {
+		sendContactUpdates(Db.getContacts(newOnly, context), rawContactsCursor);
         sendGroupUpdates(Db.getGroups(newOnly, context));
+        uploadContactPictures();
         String timestamp = sendSharedBookUpdates(Db.getSharingBooks(newOnly, context));
-        rawContactsCursor.close();
+        ContactManager.resetDirtyContacts(context);
         return timestamp;
 	}
 
-	private void sendContactUpdates(List<PhoneContact> contacts, boolean newOnly, Cursor rawContactsCursor) throws ClientProtocolException, IOException, JSONException {
+	private void sendContactUpdates(List<PhoneContact> contacts, Cursor rawContactsCursor) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
         params.add(new BasicNameValuePair("numContacts", new Integer(contacts.size()).toString()));
         for(int i=0; i< contacts.size(); i++)
@@ -147,13 +152,10 @@ public class Cloud {
         JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
         for (int i = 0; i < contactUpdates.length(); i++)
         	ContactManager.updateContact(contactUpdates.getJSONObject(i), context, rawContactsCursor);
-        // send the profile pictures here
-        uploadContactPictures(newOnly);
-        ContactManager.resetDirtyContacts(context);
 	}
 	
 
-	void uploadContactPictures(boolean newOnly) {
+	void uploadContactPictures() {
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("upload", "avatar");
 		params.put("errorAction", "error");
@@ -162,8 +164,7 @@ public class Cloud {
 		params.put("successController", "file");
 
 
-	    Cursor rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), newOnly),
-	    	dataCursor = Db.getData(context),
+	    Cursor dataCursor = Db.getData(context),
 	    	photosDataCursor = context.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
 	    		// null,
 	    	    new String[] {
@@ -181,7 +182,7 @@ public class Cloud {
 	    	    // new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
 	    	    ContactsContract.Data.CONTACT_ID);
 	    
-	    Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries for newOnly: "+newOnly);
+	    Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries");
 	    Log.i(tag, "There are "+photosDataCursor.getCount()+" photo data entries");
 	    
 	    if(rawContactsCursor.getCount() == 0) return;
@@ -206,7 +207,7 @@ public class Cloud {
 				pic = getContactPicture(photosDataCursor, contactId);
 				if(pic == null) continue;
 				String hash = hash(pic.pic);
-				if(picId != null) {
+				if(picId != null && newOnly) {
 						int pSize = Integer.parseInt(picSize);
 						if(pSize == pic.pic.length && picHash != null && hash.equals(picHash))
 						{
@@ -238,8 +239,8 @@ public class Cloud {
 				e.printStackTrace();
 			}
 	    } while(rawContactsCursor.moveToNext());
-		
 	    rawContactsCursor.close();
+	    dataCursor.close();
 	    photosDataCursor.close();
 	}
 

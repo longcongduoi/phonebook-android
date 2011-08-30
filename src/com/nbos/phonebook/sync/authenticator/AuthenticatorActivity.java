@@ -39,7 +39,6 @@ import com.nbos.phonebook.Db;
 import com.nbos.phonebook.R;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Net;
-import com.nbos.phonebook.sync.platform.Cloud;
 
 /**
  * Activity which displays login screen to the user.
@@ -253,9 +252,9 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             } else {
                 finishConfirmCredentials(true);
             }
-            try {
+            /*try {
             	Log.i(TAG, "Sending all contacts");
-            	Db.refreshAccount(getApplicationContext(), mUsername);
+            	// Db.refreshAccount(getApplicationContext(), mUsername);
 				// Net.sendAllContacts(mUsername, this.mAuthtoken, getApplicationContext());
                 final Runnable runnable = new Runnable() {
                     public void run() {
@@ -269,20 +268,18 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
                 Net.performOnBackgroundThread(runnable);				
 			} catch (Exception e) {
 				e.printStackTrace();
-			} 
+			}*/
             Log.i(TAG, "finish authentication");
         } else {
             Log.e(TAG, "onAuthenticationResult: failed to authenticate");
             if (mRequestNewAccount) {
                 // "Please enter a valid username/password.
-                mMessage
-                    .setText(getText(R.string.login_activity_loginfail_text_both));
+                mMessage.setText(getText(R.string.login_activity_loginfail_text_both));
             } else {
                 // "Please enter a valid password." (Used when the
                 // account is already in the database but the password
                 // doesn't work.)
-                mMessage
-                    .setText(getText(R.string.login_activity_loginfail_text_pwonly));
+                mMessage.setText(getText(R.string.login_activity_loginfail_text_pwonly));
             }
         }
     }
