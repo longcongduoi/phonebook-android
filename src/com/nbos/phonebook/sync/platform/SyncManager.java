@@ -41,13 +41,16 @@ public class SyncManager {
 		this.dataCursor = Db.getData(context);
 		rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), false);
 		
-        List<Contact> contacts =  (List<Contact>) update[0];
-        List<Group> groups = (List<Group>) update[1];
-        List<Group> sharedBooks = (List<Group>) update[2];
+        List<Contact> contacts =  (List<Contact>) update[0],
+        	sharedContacts =  (List<Contact>) update[1];
+        List<Group> groups = (List<Group>) update[2];
+        List<Group> sharedBooks = (List<Group>) update[3];
         syncContacts(contacts);
+        syncContacts(sharedContacts);
         syncGroups(groups, false);
         syncGroups(sharedBooks, true);
         syncPictures(contacts);
+        syncPictures(sharedContacts);
 	}
 
 	void syncContacts(List<Contact> contacts) {

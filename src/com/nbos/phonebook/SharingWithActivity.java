@@ -133,7 +133,7 @@ public class SharingWithActivity extends ListActivity {
         		case BOTH: // handle case where a row with the same key is in both cursors
         			id = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
         			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-        			Log.i(tag, "name: "+name);
+        			Log.i(tag, "name: "+name+", id: "+id);
         			//m_cursor.addRow(new String[] {id, name}); 
         			if(name != null)
          				rows.add(new ContactRow(id, name, null));

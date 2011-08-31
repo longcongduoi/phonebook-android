@@ -8,6 +8,7 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
+import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
 import android.telephony.PhoneNumberUtils;
@@ -30,8 +31,16 @@ public class Test {
 	    Log.i(tag, "Updated "+num+" sharebooks to dirty = 0");
 	}
 
-    public static void getContacts(Context ctx) {
-    	Log.i(tag, "Contacts: "+Db.getContacts(false, ctx).toString());
+    public static void getContacts(Activity ctx) {
+    	Cursor contactsCursor = Db.getContacts(ctx);
+    	Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
+    	contactsCursor.moveToFirst();
+    	do {
+    		String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(Contacts._ID)),
+    			name = contactsCursor.getString(contactsCursor.getColumnIndex(Contacts.DISPLAY_NAME));
+    		Log.i(tag, "id: "+contactId+", name: "+name);
+    	} while(contactsCursor.moveToNext());
+    	
 	}
 
     public static void getStringId() {

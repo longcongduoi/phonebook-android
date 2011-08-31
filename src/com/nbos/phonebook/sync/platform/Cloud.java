@@ -109,25 +109,30 @@ public class Cloud {
 	
     Object[] fetchFriendUpdates() throws JSONException, ParseException, IOException, AuthenticationException 
     {
-    	final List<Contact> friendList = new ArrayList<Contact>();
+    	final List<Contact> contactsList = new ArrayList<Contact>(),
+    		sharedContactsList = new ArrayList<Contact>();
         final List<Group> groupsList = new ArrayList<Group>();
         final List<Group> books = new ArrayList<Group>();
         List<NameValuePair> params = getAuthParams();
         if(lastUpdated != null)
         	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
         final JSONArray update = new JSONArray(post(FETCH_FRIEND_UPDATES_URI, params)),
-        	friends = update.getJSONArray(0),
-        	groups = update.getJSONArray(1),
-        	sharedBooks = update.getJSONArray(2);
-        for (int i = 0; i < friends.length(); i++) 
-            friendList.add(Contact.valueOf(friends.getJSONObject(i)));
-        Log.i(tag, "Contacts: "+friendList);
+        	contacts = update.getJSONArray(0),
+        	sharedContacts = update.getJSONArray(1),
+        	groups = update.getJSONArray(2),
+        	sharedBooks = update.getJSONArray(3);
+        for (int i = 0; i < contacts.length(); i++) 
+            contactsList.add(Contact.valueOf(contacts.getJSONObject(i)));
+        for (int i = 0; i < sharedContacts.length(); i++) 
+            sharedContactsList.add(Contact.valueOf(sharedContacts.getJSONObject(i)));
+        
+        Log.i(tag, "Contacts: "+contactsList);
         for (int i = 0; i < groups.length(); i++) 
             groupsList.add(Group.valueOf(groups.getJSONObject(i)));
         for (int i = 0; i < sharedBooks.length(); i++)  
             books.add(Group.valueOf(sharedBooks.getJSONObject(i)));
         
-        return new Object[] {friendList, groupsList, books}; 
+        return new Object[] {contactsList, sharedContactsList, groupsList, books}; 
     }
 
 	public String sendFriendUpdates() throws ClientProtocolException, IOException, JSONException {

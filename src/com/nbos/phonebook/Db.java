@@ -138,7 +138,7 @@ public class Db {
     	// if(owner == null) owner = accountName;
         final BatchOperation batchOperation = new BatchOperation(context);
     	
-		Log.i(tag, "Creating group: "+groupName);
+		Log.i(tag, "Creating group: "+groupName+", account: "+accountName+", owner: "+owner);
 		Uri mEntityUri = ContactsContract.Groups.CONTENT_URI.buildUpon()
 			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_NAME, accountName)
 			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_TYPE, Constants.ACCOUNT_TYPE)
