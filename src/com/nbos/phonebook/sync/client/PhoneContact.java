@@ -34,7 +34,7 @@ public class PhoneContact extends Contact {
 		super();
 	}
 
-	public String contactId, rawContactId;
+	public String contactId, rawContactId, accountType;
 
 	/*public PhoneContact(String contactId) {
 		this.contactId = contactId;
@@ -42,6 +42,7 @@ public class PhoneContact extends Contact {
 	public void addParams(List<NameValuePair> params, String index) {
 		super.addParams(params, index);
     	params.add(new BasicNameValuePair("contactId_"+index, contactId));
+    	params.add(new BasicNameValuePair("accountType_"+index, accountType));
 	}
 
 	public static List<PhoneContact> getContacts(boolean newOnly, Context ctx) {
@@ -59,7 +60,9 @@ public class PhoneContact extends Contact {
     	do {
     		String contactId = cursor.getString(cursor.getColumnIndex(RawContacts.CONTACT_ID)),
     			dirty = cursor.getString(cursor.getColumnIndex(RawContacts.DIRTY)),
-    			mimeType = cursor.getString(cursor.getColumnIndex(Data.MIMETYPE));
+    			mimeType = cursor.getString(cursor.getColumnIndex(Data.MIMETYPE)),
+    			accountType = cursor.getString(cursor.getColumnIndex(RawContacts.ACCOUNT_TYPE));
+    		Log.i(tag, "contactId: "+contactId+", accountType: "+accountType);
     		String str = "";
             for (String key : DATA_KEYS) 
             {
@@ -86,6 +89,7 @@ public class PhoneContact extends Contact {
             		contacts.add(contact);
             	contact = new PhoneContact();
             	contact.contactId = contactId;
+            	contact.accountType = accountType;
             	prevId = contactId;
             }
             addContactField(contact, cursor, mimeType);

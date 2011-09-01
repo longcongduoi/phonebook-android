@@ -45,6 +45,7 @@ import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 
 import com.nbos.phonebook.contentprovider.Provider;
+import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.value.Contact;
 import com.nbos.phonebook.value.Group;
 
@@ -65,7 +66,8 @@ public class WelcomeActivity extends ListActivity {
     	String phoneNumber = getPhoneNumber();
     	Log.i(tag, "phone number: "+phoneNumber);
     	// Test.getGroups(getApplicationContext());
-    	// Test.getContacts(this);
+    	// PhoneContact.getContacts(false, getApplicationContext());
+    	// Test.getRawContacts(getApplicationContext());
     	// Test.getPics(getApplicationContext());
     	//Test.getContacts(this.getApplicationContext());
     	//Test.getGroups(this.getApplicationContext());

@@ -123,9 +123,11 @@ public class Test {
     	Log.i(tag, "There are "+c.getCount()+" raw contacts");
     	c.moveToFirst();
     	do {
-			String cId = c.getString(c.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
+			String cId = c.getString(c.getColumnIndex(RawContacts.CONTACT_ID)),
+				accountName = c.getString(c.getColumnIndex(RawContacts.ACCOUNT_NAME)),
+				accountType = c.getString(c.getColumnIndex(RawContacts.ACCOUNT_TYPE));
 			//String serverId = c.getString(c.getColumnIndex(Constants.CONTACT_SERVER_ID));
-			Log.i(tag, "contactId: "+cId);//+", serverId: "+serverId);
+			Log.i(tag, "contactId: "+cId+", accountName: "+accountName+", accountType: "+accountType);//+", serverId: "+serverId);
     	} while(c.moveToNext());
     	// DatabaseHelper.getSourceIdFromContactId(c, "793");
 	}

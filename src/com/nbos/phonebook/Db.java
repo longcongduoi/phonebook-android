@@ -285,6 +285,7 @@ public class Db {
         		ContactsContract.RawContacts._ID,
         		ContactsContract.RawContacts.CONTACT_ID,
         		ContactsContract.RawContacts.DIRTY,
+        		ContactsContract.RawContacts.ACCOUNT_NAME,
         		ContactsContract.RawContacts.ACCOUNT_TYPE
         };
 	    
