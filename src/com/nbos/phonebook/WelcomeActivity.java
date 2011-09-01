@@ -122,7 +122,7 @@ public class WelcomeActivity extends ListActivity {
 	    ContentResolver cr = getContentResolver();
 	    m_cursor = cr.query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
 	    	ContactsContract.Groups.DELETED + "=0",	    		
-	    	null, null);
+	    	null, ContactsContract.Groups.TITLE);
 	  
         String[] fields = new String[] {
                 ContactsContract.Groups.TITLE,
