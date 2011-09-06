@@ -1,18 +1,20 @@
 package com.nbos.phonebook;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.ContentResolver;
 import android.content.ContentUris;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.database.MatrixCursor;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
@@ -22,23 +24,18 @@ import android.provider.ContactsContract.Contacts;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.FilterQueryProvider;
-import android.widget.ImageView;
-import android.widget.ImageView.ScaleType;
 import android.widget.ListView;
-import android.widget.SimpleCursorAdapter;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.util.ImageCursorAdapter;
 import com.nbos.phonebook.value.ContactRow;
 
 public class GroupActivity extends ListActivity {
@@ -46,7 +43,9 @@ public class GroupActivity extends ListActivity {
 	String id, name, owner;
 	static String tag = "GroupActivity";
 	MatrixCursor m_cursor;
-	List<byte[]> photos;
+	List<String> ids;
+	Cursor groupCursor;
+	ImageCursorAdapter adapter;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -171,11 +170,11 @@ public class GroupActivity extends ListActivity {
 		Cursor contactsCursor = Db.getContacts(this);// getContacts();
 		Log.i(tag, "There are " + contactsCursor.getCount() + " contacts");
 		int numContacts = 0;
-		Cursor dataCursor = Db.getBook(this, id);
-		Log.i(tag, "There are " + dataCursor.getCount()
+		Cursor bookCursor = Db.getBook(this, id);
+		Log.i(tag, "There are " + bookCursor.getCount()
 				+ " contacts sharing this group");
 		IntCursorJoiner joiner = new IntCursorJoiner(contactsCursor,
-				new String[] { ContactsContract.Contacts._ID }, dataCursor,
+				new String[] { ContactsContract.Contacts._ID }, bookCursor,
 				new String[] { BookTable.CONTACTID });
 
 		for (CursorJoiner.Result joinerResult : joiner) {
@@ -211,8 +210,6 @@ public class GroupActivity extends ListActivity {
 		callFromGroup(contactId);
 	}*/
 
-	Cursor dataCursor;
-	ImageCursorAdapter adapter;
 
 	private void queryGroup() {
 		if (owner == null) //
@@ -220,11 +217,11 @@ public class GroupActivity extends ListActivity {
 					+ " contacts sharing with)");
 		else
 			setTitle("Group: " + name + " (" + owner + " is sharing)");
-		dataCursor = Db.getContactsInGroup(id, this.getContentResolver());
+		groupCursor = Db.getContactsInGroup(id, this.getContentResolver());
 		getContactsFromGroupCursor("");
 		String[] fields = new String[] { ContactsContract.Contacts.DISPLAY_NAME };
 		adapter = new ImageCursorAdapter(this, R.layout.contact_entry,
-				m_cursor, photos, fields, new int[] { R.id.contact_name });
+				m_cursor, ids, fields, new int[] { R.id.contact_name });
 
 		adapter.setStringConversionColumn(m_cursor
 				.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
@@ -238,7 +235,7 @@ public class GroupActivity extends ListActivity {
 				}
 				getContactsFromGroupCursor(partialItemName);
 				adapter.setCursor(m_cursor);
-				adapter.setImages(photos);
+				adapter.setIds(ids);
 				return m_cursor;
 			}
 		});
@@ -251,15 +248,15 @@ public class GroupActivity extends ListActivity {
 	}
 
 	private void getContactsFromGroupCursor(String search) {
-		photos = new ArrayList<byte[]>();
-		Log.i(tag, "There are " + dataCursor.getCount()
+		ids = new ArrayList<String>();
+		Log.i(tag, "There are " + groupCursor.getCount()
 				+ " contacts in data for groupId: " + id);
 		Cursor contactsCursor = Db.getContacts(this, search);
 		Log.i(tag, "There are " + contactsCursor.getCount()
 				+ " contacts matching " + search);
 
 		IntCursorJoiner joiner = new IntCursorJoiner(contactsCursor,
-				new String[] { ContactsContract.Contacts._ID }, dataCursor,
+				new String[] { ContactsContract.Contacts._ID }, groupCursor,
 				new String[] { ContactsContract.Data.CONTACT_ID });
 		m_cursor = new MatrixCursor(new String[] {
 				ContactsContract.Contacts._ID,
@@ -277,9 +274,18 @@ public class GroupActivity extends ListActivity {
 								.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 				Log.i(tag, "Contact id: " + contactId + ", name: " + name);
 
-				byte[] photo = null;
+				
+				/*byte[] photo = null;
 
-				Uri contactUri = ContentUris.withAppendedId(
+				Uri photoUri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, Long.parseLong(contactId));
+
+			    Bitmap photoBitmap;
+			    ContentResolver cr = getContentResolver();
+			    InputStream is = ContactsContract.Contacts.openContactPhotoInputStream(cr, photoUri);
+
+			    photoBitmap = BitmapFactory.decodeStream(is);
+				*/
+				/*Uri contactUri = ContentUris.withAppendedId(
 						Contacts.CONTENT_URI, Long.parseLong(contactId));
 				Uri photoUri = Uri.withAppendedPath(contactUri,
 						Contacts.Photo.CONTENT_DIRECTORY);
@@ -296,9 +302,9 @@ public class GroupActivity extends ListActivity {
 					}
 				} finally {
 					cursor.close();
-				}
+				}*/
 				if (name != null)
-					rows.add(new ContactRow(contactId, name, photo));
+					rows.add(new ContactRow(contactId, name));
 				break;
 			}
 		}
@@ -307,7 +313,7 @@ public class GroupActivity extends ListActivity {
 		for (ContactRow row : rows) {
 			m_cursor.addRow(new String[] { row.id, row.name });
 			Log.i(tag, "Adding row[" + row.id + "] = " + row.name);
-			photos.add(row.image);
+			ids.add(row.id);
 		}
 
 	}
@@ -399,57 +405,4 @@ public class GroupActivity extends ListActivity {
 		setResult(RESULT_OK, null);
 		finish();
 	}
-}
-
-class ImageCursorAdapter extends SimpleCursorAdapter {
-
-	private Cursor c;
-	private Context context;
-	List<byte[]> images;
-
-	public ImageCursorAdapter(Context context, int layout, Cursor c,
-			List<byte[]> images, String[] from, int[] to) {
-		super(context, layout, c, from, to);
-		this.c = c;
-		this.context = context;
-		this.images = images;
-	}
-
-	public void setCursor(Cursor c) {
-		this.c = c;
-	}
-
-	public void setImages(List<byte[]> images) {
-		this.images = images;
-	}
-
-	@Override
-	public View getView(int pos, View inView, ViewGroup parent) {
-		View v = inView;
-		if (v == null) {
-			LayoutInflater inflater = (LayoutInflater) context
-					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-			v = inflater.inflate(R.layout.contact_entry, null);
-		}
-		this.c.moveToPosition(pos);
-
-		// ContactsContract.Contacts._ID,
-		// ContactsContract.Contacts.DISPLAY_NAME,
-		// ContactsContract.CommonDataKinds.Photo.PHOTO}, 10);
-		String contactName = this.c.getString(this.c
-				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-		byte[] pic = images.get(pos);// this.c.getBlob(this.c.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
-		ImageView iv = (ImageView) v.findViewById(R.id.contact_pic);
-		if (pic == null) 
-			iv.setImageBitmap(null);
-		else
-		{
-			iv.setImageBitmap(BitmapFactory.decodeByteArray(pic, 0, pic.length));
-			iv.setScaleType(ScaleType.FIT_XY);
-		}
-		TextView cName = (TextView) v.findViewById(R.id.contact_name);
-		cName.setText(contactName);
-		return v;
-	}
-
 }

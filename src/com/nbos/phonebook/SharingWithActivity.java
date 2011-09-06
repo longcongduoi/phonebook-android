@@ -136,7 +136,7 @@ public class SharingWithActivity extends ListActivity {
         			Log.i(tag, "name: "+name+", id: "+id);
         			//m_cursor.addRow(new String[] {id, name}); 
         			if(name != null)
-         				rows.add(new ContactRow(id, name, null));
+         				rows.add(new ContactRow(id, name));
         		break;
         	}
         }	    

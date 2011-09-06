@@ -9,22 +9,26 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.database.MatrixCursor;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
 import android.widget.FilterQueryProvider;
 import android.widget.ListView;
-import android.widget.SimpleCursorAdapter;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
+import com.nbos.phonebook.util.ImageCursorAdapter;
 import com.nbos.phonebook.value.ContactRow;
 
 public class AddContactsActivity extends ListActivity {
 
-	Cursor m_cursor, rawContactsCursor;
+	MatrixCursor m_cursor; 
+	Cursor rawContactsCursor;
 	String tag = "AddContactsActivity",
 		id, name;
+	List<String> ids;
+	ImageCursorAdapter adapter;
 	
 	/** Called when the activity is first created. */
 	@Override
@@ -51,10 +55,13 @@ public class AddContactsActivity extends ListActivity {
         String[] fields = new String[] {
                 ContactsContract.Data.DISPLAY_NAME
         };
-        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.contact_entry, m_cursor,
+		adapter = new ImageCursorAdapter(this, R.layout.contact_entry,
+				m_cursor, ids, fields, new int[] { R.id.contact_name });
+        
+        /*SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.contact_entry, m_cursor,
                 fields, new int[] {R.id.contact_name});
         adapter.setStringConversionColumn(
-                m_cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME));
+                m_cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME));*/
       
         adapter.setFilterQueryProvider(new FilterQueryProvider() {
 
@@ -73,13 +80,13 @@ public class AddContactsActivity extends ListActivity {
 	
 	void getContactsCursor(String search) {
         Cursor contactsCursor = Db.getContacts(this,search);
-        
-        Cursor dataCursor = Db.getContactsInGroup(id, getContentResolver());
+        Cursor groupCursor = Db.getContactsInGroup(id, getContentResolver());
 	    IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
-	    		dataCursor,	new String[] {ContactsContract.Data.CONTACT_ID}
+	    		groupCursor,	new String[] {ContactsContract.Data.CONTACT_ID}
 	    );
 
+	    ids = new ArrayList<String>();
         m_cursor = new MatrixCursor( 
             	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME},10);
 
@@ -88,19 +95,24 @@ public class AddContactsActivity extends ListActivity {
         {
 				switch (joinerResult) {
         		case LEFT:
-        			String id = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
+        			String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts._ID));
         			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
         			if(name != null)
-        				rows.add(new ContactRow(id, name, null));	        			
+        				rows.add(new ContactRow(contactId, name));	        			
         		break;
         		
         	}
         }	     
         //Collections.sort(rows);
         Collections.sort(rows);
-        for(ContactRow row : rows)
-        	 ((MatrixCursor) m_cursor).addRow(new String[] {row.id, row.name});
-		
+		for (ContactRow row : rows) {
+			m_cursor.addRow(new String[] {row.id, row.name});
+			Log.i(tag, "Adding row[" + row.id + "] = " + row.name);
+			ids.add(row.id);
+		}
+
+        contactsCursor.close();
+        groupCursor.close();
 	}
 	
 	ListView mGroupList;

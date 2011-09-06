@@ -1,6 +1,7 @@
 package com.nbos.phonebook;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -11,12 +12,17 @@ import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.CursorJoiner;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds.Photo;
+import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -637,5 +643,17 @@ public class Db {
 	public static void refreshAccount(Context ctx, String accountName) {
     	// int num = ctx.getContentResolver().delete(Constants.PIC_URI, PicTable.ACCOUNT + " = ? ", new String[]{accountName});
     	// Log.i(tag, "Deleted "+num+" pic entries");
+	}
+
+	public static Bitmap getPhoto(ContentResolver contentResolver, String contactId) {
+		
+		Uri photoUri = ContentUris.withAppendedId(Contacts.CONTENT_URI, Long.parseLong(contactId));
+		try {
+			InputStream is = ContactsContract.Contacts.openContactPhotoInputStream(contentResolver, photoUri);
+			return BitmapFactory.decodeStream(is);
+		} catch(Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 }
