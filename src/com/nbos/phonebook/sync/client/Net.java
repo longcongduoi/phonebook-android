@@ -158,20 +158,20 @@ public class Net {
                     Log.i(tag, "Successful authentication");
                     Log.i(tag, "data: "+EntityUtils.toString(resp.getEntity()));
                 //}
-                sendResult(true, handler, context);
+                sendResult(true, handler, context, null);
                 return true;
             } else {
                 // if (Log.isLoggable(TAG, Log.VERBOSE)) {
                     Log.v(tag, "Error authenticating" + resp.getStatusLine());
                 // }
-                sendResult(false, handler, context);
+                sendResult(false, handler, context, "Error authenticating" + resp.getStatusLine());
                 return false;
             }
         } catch (final IOException e) {
             // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                Log.v(tag, "IOException when getting authtoken", e);
+                Log.v(tag, "Exception: ", e);
             // }
-            sendResult(false, handler, context);
+            sendResult(false, handler, context, e.getMessage());
             return false;
         } finally {
             // if (Log.isLoggable(TAG, Log.VERBOSE)) {
@@ -210,20 +210,20 @@ public class Net {
                         Log.i(tag, "Successful authentication");
                         Log.i(tag, "data: "+EntityUtils.toString(resp.getEntity()));
                     //}
-                    sendResult(true, handler, context);
+                    sendResult(true, handler, context, null);
                     return true;
                 } else {
                     // if (Log.isLoggable(TAG, Log.VERBOSE)) {
                         Log.v(tag, "Error authenticating" + resp.getStatusLine());
                     // }
-                    sendResult(false, handler, context);
+                    sendResult(false, handler, context, resp.getStatusLine().toString());
                     return false;
                 }
             } catch (final IOException e) {
                 // if (Log.isLoggable(TAG, Log.VERBOSE)) {
                     Log.v(tag, "IOException when getting authtoken", e);
                 // }
-                sendResult(false, handler, context);
+                sendResult(false, handler, context, e.getMessage());
                 return false;
             } finally {
                 // if (Log.isLoggable(TAG, Log.VERBOSE)) {
@@ -336,14 +336,14 @@ public class Net {
      * @param context The caller Activity's context.
      */
     private static void sendResult(final Boolean result, final Handler handler,
-        final Context context) {
+        final Context context, final String message) {
     	Log.i(tag, "sendResult("+result+")");
         if (handler == null || context == null) {
             return;
         }
         handler.post(new Runnable() {
             public void run() {
-                ((AuthenticatorActivity) context).onAuthenticationResult(result);
+                ((AuthenticatorActivity) context).onAuthenticationResult(result, message);
             }
         });
     }

@@ -78,7 +78,7 @@
         activity.
     -->
     <string
-        name="login_activity_newaccount_text">Sign in to your Phonebook account. </string>
+        name="login_activity_newaccount_text">Sign in to your Phonebook account, or register for a new account. </string>
 
     <!-- Button that takes the user to the "sign in" screen -->
     <string

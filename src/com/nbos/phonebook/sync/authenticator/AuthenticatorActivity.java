@@ -242,7 +242,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
     /**
      * Called when the authentication process completes (see attemptLogin()).
      */
-    public void onAuthenticationResult(boolean result) {
+    public void onAuthenticationResult(boolean result, String message) {
         Log.i(TAG, "onAuthenticationResult(" + result + ")");
         // Hide the progress dialog
         hideProgress();
@@ -271,8 +271,9 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
 			}*/
             Log.i(TAG, "finish authentication");
         } else {
-            Log.e(TAG, "onAuthenticationResult: failed to authenticate");
-            if (mRequestNewAccount) {
+            Log.e(TAG, "onAuthenticationResult: failed to authenticate - "+message);
+            mMessage.setText(message);
+            /*if (mRequestNewAccount) {
                 // "Please enter a valid username/password.
                 mMessage.setText(getText(R.string.login_activity_loginfail_text_both));
             } else {
@@ -280,7 +281,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
                 // account is already in the database but the password
                 // doesn't work.)
                 mMessage.setText(getText(R.string.login_activity_loginfail_text_pwonly));
-            }
+            }*/
         }
     }
 
