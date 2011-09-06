@@ -34,7 +34,4 @@ public interface PhonebookSyncAdapterColumns {
     	PIC_ID = Data.DATA4,
     	PIC_SIZE = Data.DATA5,
     	PIC_HASH = Data.DATA6;
-    	
-    	
-
 }

@@ -59,6 +59,7 @@ public class PhoneContact extends Contact {
     	cursor.moveToFirst();
     	do {
     		String contactId = cursor.getString(cursor.getColumnIndex(RawContacts.CONTACT_ID)),
+    			rawContactId = cursor.getString(cursor.getColumnIndex(RawContacts._ID)),
     			dirty = cursor.getString(cursor.getColumnIndex(RawContacts.DIRTY)),
     			mimeType = cursor.getString(cursor.getColumnIndex(Data.MIMETYPE)),
     			accountType = cursor.getString(cursor.getColumnIndex(RawContacts.ACCOUNT_TYPE));
@@ -89,6 +90,7 @@ public class PhoneContact extends Contact {
             		contacts.add(contact);
             	contact = new PhoneContact();
             	contact.contactId = contactId;
+            	contact.rawContactId = rawContactId;
             	contact.accountType = accountType;
             	prevId = contactId;
             }

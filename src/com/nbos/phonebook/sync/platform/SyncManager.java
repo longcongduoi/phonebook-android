@@ -17,27 +17,30 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
-import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
+import android.provider.ContactsContract.Data;
 import android.util.Log;
 
 import com.nbos.phonebook.Db;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.Net;
+import com.nbos.phonebook.sync.client.PhoneContact;
+import com.nbos.phonebook.sync.client.contact.Email;
+import com.nbos.phonebook.sync.client.contact.Phone;
 
 public class SyncManager {
 	static String tag = "SyncManager";
 	Context context;
     String account; 
-    // List<PhoneContact> allContacts; 
+    List<PhoneContact> allContacts; 
     Cursor dataCursor, rawContactsCursor, dataPicsCursor;
     Set<String> syncedContacts = new HashSet<String>();
 	public SyncManager(Context context, String account, Object[] update) {
 		super();
 		this.context = context;
 		this.account = account;
-		// this.allContacts = Db.getContacts(false, context);
+		this.allContacts = Db.getContacts(false, context);
 		this.dataCursor = Db.getData(context);
 		rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), false);
 		
@@ -362,19 +365,31 @@ public class SyncManager {
 			return rawContactId;
 		} while(dataCursor.moveToNext()); 
 
-		// could not find the contact, do a phone number search		
-		/*for(PhoneContact u : allContacts) {
-			if(u.number.equals(contact.number)) {// maybe a contact
-				// check if the rest of the information is the same
-				if(u.name.equals(contact.name))
+		// could not find the contact, do a phone number and email search		
+		for(PhoneContact u : allContacts) 
+		{
+			for(Phone p : u.phones)
+			{
+				for(Phone cp : contact.phones)
 				{
-					Log.i(tag, "Existing contact; ph: "+u.number+", name: "+u.name+", serverId: "+contact.serverId+", contactId: "+u.contactId+", phone serverId: "+u.serverId+", rawContactId: "+u.rawContactId);
-					// update the serverId of the contact
-					Db.updateContactServerId(u.contactId, contact.serverId, context, rawContactsCursor);
-					return Long.parseLong(u.rawContactId);
+					if(p.number.equals(cp.number)
+					&& u.rawContactId != null)
+						return Long.parseLong(u.rawContactId);
 				}
 			}
-		}*/
+			
+			for(Email e : u.emails)
+			{
+				for(Email ce : contact.emails)
+				{
+					if(ce.address.equals(e.address)
+					&& u.rawContactId != null)
+						return Long.parseLong(u.rawContactId);
+				}
+			}
+			if(u.name.equals(contact.name))
+				return Long.parseLong(u.rawContactId);
+		}
 		return 0;
 	}
 

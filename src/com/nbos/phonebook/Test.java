@@ -17,6 +17,7 @@ import android.util.Log;
 
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
+import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
 
 public class Test {
 	static String tag = "Test";
@@ -269,6 +270,27 @@ public class Test {
 
 	public static void getShareBooks(Context ctx) {
 		Db.getSharingBooks(false, ctx);
+	}
+
+	public static void getContactServerData(Context applicationContext) {
+		Cursor c = Db.getData(applicationContext);
+		c.moveToFirst();
+		do {
+			String mimetype = c.getString(c.getColumnIndex(Data.MIMETYPE));
+			if(!mimetype.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)) continue;
+			String serverId = c.getString(c.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID)),
+				contactId = c.getString(c.getColumnIndex(Data.CONTACT_ID)),
+				rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID)),
+				picId = c.getString(c.getColumnIndex(PhonebookSyncAdapterColumns.PIC_ID)),
+				picHash = c.getString(c.getColumnIndex(PhonebookSyncAdapterColumns.PIC_HASH));
+			Log.i(tag, "contactId: "+contactId+", rawId: "+rawContactId+", serverId: "+serverId+", picId: "+picId);
+		} while(c.moveToNext());
+		
+	}
+
+	public static void deleteContactsServerData(Context applicationContext) {
+		int num = applicationContext.getContentResolver().delete(Data.CONTENT_URI, Data.MIMETYPE + "='" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
+		Log.i(tag, "deleted "+num+" rows");
 	}
 	
 }

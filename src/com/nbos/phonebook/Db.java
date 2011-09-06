@@ -548,11 +548,11 @@ public class Db {
                 Data.DATA8, Data.DATA9, Data.DATA10, 
                 Data.RAW_CONTACT_ID, Data.CONTACT_ID};
 
-    	return ctx.getContentResolver().query(Data.CONTENT_URI, PROJECTION, null, null, null);
+    	return ctx.getContentResolver().query(Data.CONTENT_URI, PROJECTION, null, null, Data.CONTACT_ID);
     }
 
 	public static String getRawContactId(String contactId, Cursor rawContactsCursor) {
-		// Log.i(tag, "getRawContactId("+contactId+"), rawContactsCursor size: "+rawContactsCursor.getCount());
+		Log.i(tag, "getRawContactId("+contactId+"), rawContactsCursor size: "+rawContactsCursor.getCount());
 		if(contactId == null || rawContactsCursor.getCount() == 0) return null;
 		rawContactsCursor.moveToFirst();
 		do {
