@@ -16,18 +16,20 @@ import android.util.Log;
 import android.view.View;
 import android.widget.FilterQueryProvider;
 import android.widget.ListView;
-import android.widget.SimpleCursorAdapter;
 
 import com.nbos.phonebook.contentprovider.Provider;
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.util.ImageCursorAdapter;
 import com.nbos.phonebook.value.ContactRow;
 
 public class SelectContactsToShareWithActivity extends ListActivity {
 
 	MatrixCursor m_cursor;
+	List<String> ids;
 	String tag = "SelectContactsToShareWith",
 		id, name;
+	ImageCursorAdapter adapter;
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -51,8 +53,8 @@ public class SelectContactsToShareWithActivity extends ListActivity {
         String[] fields = new String[] {
                 ContactsContract.Data.DISPLAY_NAME
         };
-        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.contact_entry, m_cursor,
-                fields, new int[] {R.id.contact_name});
+		adapter = new ImageCursorAdapter(this, R.layout.contact_entry,
+				m_cursor, ids, fields, new int[] { R.id.contact_name });
         
         adapter.setStringConversionColumn(
                 m_cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME));
@@ -82,7 +84,7 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
 	    		dataCursor,	new String[] {BookTable.CONTACTID}
 	    );
-
+        ids = new ArrayList<String>();
         m_cursor = new MatrixCursor( 
             	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME},10);
 
@@ -101,7 +103,10 @@ public class SelectContactsToShareWithActivity extends ListActivity {
         
         Collections.sort(rows);
         for(ContactRow row : rows)
+        {
         	m_cursor.addRow(new String[] {row.id, row.name});
+        	ids.add(row.id);
+        }
 		
 	}
 

@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.database.MatrixCursor;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
@@ -58,10 +57,8 @@ public class AddContactsActivity extends ListActivity {
 		adapter = new ImageCursorAdapter(this, R.layout.contact_entry,
 				m_cursor, ids, fields, new int[] { R.id.contact_name });
         
-        /*SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.contact_entry, m_cursor,
-                fields, new int[] {R.id.contact_name});
         adapter.setStringConversionColumn(
-                m_cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME));*/
+                m_cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME));
       
         adapter.setFilterQueryProvider(new FilterQueryProvider() {
 
@@ -107,7 +104,6 @@ public class AddContactsActivity extends ListActivity {
         Collections.sort(rows);
 		for (ContactRow row : rows) {
 			m_cursor.addRow(new String[] {row.id, row.name});
-			Log.i(tag, "Adding row[" + row.id + "] = " + row.name);
 			ids.add(row.id);
 		}
 

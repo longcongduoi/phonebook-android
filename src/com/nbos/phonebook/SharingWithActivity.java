@@ -24,12 +24,15 @@ import android.widget.SimpleCursorAdapter;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.util.ImageCursorAdapter;
 import com.nbos.phonebook.value.ContactRow;
 
 public class SharingWithActivity extends ListActivity {
 
 	String tag = "SharingWithActivity",
 		id, name;
+	List<String> ids;
+	ImageCursorAdapter adapter;	
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -110,7 +113,7 @@ public class SharingWithActivity extends ListActivity {
         Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
         Cursor dataCursor = Db.getBook(this, id);
         Log.i(tag, "all columns: "+BookTable.ALL_COLUMNS.length+", data columns: "+dataCursor.getColumnCount());
-        
+        ids = new ArrayList<String>();
         while(dataCursor.moveToNext())
         	Log.i(tag, "contactid: "+dataCursor.getString(dataCursor.getColumnIndex(BookTable.CONTACTID))
         			+" dirty: "+dataCursor.getString(dataCursor.getColumnIndex(BookTable.DIRTY))
@@ -142,14 +145,17 @@ public class SharingWithActivity extends ListActivity {
         }	    
     	Collections.sort(rows);
     	for(ContactRow row : rows)
+    	{
     		m_cursor.addRow(new String[] {row.id, row.name});
+    		ids.add(row.id);
+    	}
         
         String[] fields = new String[] {
                 ContactsContract.Data.DISPLAY_NAME
         };
         
-        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.contact_entry, m_cursor,
-                fields, new int[] {R.id.contact_name});
+		adapter = new ImageCursorAdapter(this, R.layout.contact_entry,
+				m_cursor, ids, fields, new int[] { R.id.contact_name });
         getListView().setAdapter(adapter);
 	}
 
