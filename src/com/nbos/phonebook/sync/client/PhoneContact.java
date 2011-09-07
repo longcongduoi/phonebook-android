@@ -41,7 +41,7 @@ public class PhoneContact extends Contact {
 	}*/
 	public void addParams(List<NameValuePair> params, String index) {
 		super.addParams(params, index);
-    	params.add(new BasicNameValuePair("contactId_"+index, contactId));
+    	params.add(new BasicNameValuePair("contactId_"+index, rawContactId));
     	params.add(new BasicNameValuePair("accountType_"+index, accountType));
 	}
 
@@ -63,7 +63,6 @@ public class PhoneContact extends Contact {
     			dirty = cursor.getString(cursor.getColumnIndex(RawContacts.DIRTY)),
     			mimeType = cursor.getString(cursor.getColumnIndex(Data.MIMETYPE)),
     			accountType = cursor.getString(cursor.getColumnIndex(RawContacts.ACCOUNT_TYPE));
-    		Log.i(tag, "contactId: "+contactId+", accountType: "+accountType);
     		String str = "";
             for (String key : DATA_KEYS) 
             {
@@ -87,7 +86,10 @@ public class PhoneContact extends Contact {
             if(!prevId.equals(contactId))
             {
             	if(contact != null)
+            	{            	
+            		Log.i(tag, "contactId: "+contact.contactId+", rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType);
             		contacts.add(contact);
+            	}
             	contact = new PhoneContact();
             	contact.contactId = contactId;
             	contact.rawContactId = rawContactId;
@@ -96,6 +98,7 @@ public class PhoneContact extends Contact {
             }
             addContactField(contact, cursor, mimeType);
     	} while(cursor.moveToNext());
+    	Log.i(tag, "contactId: "+contact.contactId+", rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType);
     	if(contact != null)
     		contacts.add(contact);
     	cursor.close();
@@ -127,7 +130,10 @@ public class PhoneContact extends Contact {
         Data.SYNC2,
         Data.SYNC3,
         Data.SYNC4};
-	
+    
+    public String toString() {
+    	return "contactId: "+contactId+", rawId: "+rawContactId+", name: "+name+", accountType: "+accountType+"\n";    	
+    }
 	/*
 	public PhoneContact(String name, String number, String serverId, String contactId, String rawContactId) {
 		super(name, number, serverId);

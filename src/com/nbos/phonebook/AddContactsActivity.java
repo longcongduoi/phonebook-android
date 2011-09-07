@@ -118,11 +118,12 @@ public class AddContactsActivity extends ListActivity {
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		int currentPosition = this.getListView().getFirstVisiblePosition();
 		m_cursor.moveToPosition(position);
-		String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID)),
-			rawContactId = Db.getRawContactId(contactId, rawContactsCursor);
+		String contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID));
+		List<String> rawContactIds = Db.getRawContactIds(contactId, rawContactsCursor);
 		
-		Log.i(tag, "Contact id is: "+contactId+", raw contactId is: "+rawContactId);//+", raw contact id: "+contactId+", lookup key: "+lookupKey);
-		Db.addToGroup(this.id, rawContactId, getContentResolver());
+		Log.i(tag, "Contact id is: "+contactId+", raw contactIds is: "+rawContactIds);//+", raw contact id: "+contactId+", lookup key: "+lookupKey);
+		for(String rawContactId : rawContactIds)
+			Db.addToGroup(this.id, rawContactId, getContentResolver());
 		populateContacts();
 		this.setSelection(currentPosition);
 	}

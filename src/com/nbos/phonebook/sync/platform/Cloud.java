@@ -51,7 +51,6 @@ import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.Group;
-import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.ServerData;
 import com.nbos.phonebook.sync.client.SharingBook;
@@ -63,6 +62,7 @@ public class Cloud {
     String accountName, authToken, lastUpdated;
     HttpClient httpClient;
     Cursor rawContactsCursor;
+    SyncManager syncManager;
     boolean newOnly;
     public static final int REGISTRATION_TIMEOUT = 20 * 60 * 1000; // ms
 
@@ -73,14 +73,15 @@ public class Cloud {
     	PARAM_VALIDATION_CODE = "valid",
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
-    	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	BASE_URL = "http://10.9.8.29:8080/phonebook",
+    	BASE_URL = "http://phonebook.nbostech.com/phonebook",
+    	// BASE_URL = "http://10.9.8.29:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
     	NEW_VALIDATION_CODE_URI = BASE_URL + "/mobile/newValidationCode",
     	CHECK_VALID_ACCOUNT_URI = BASE_URL + "/mobile/valid",
-    	FETCH_FRIEND_UPDATES_URI = BASE_URL + "/mobile/contacts",
+    	GET_CONTACT_UPDATES_URI = BASE_URL + "/mobile/contacts",
+    	GET_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/sharedBooks",
         SEND_CONTACT_UPDATES_URI = BASE_URL + "/mobile/updateContacts",
         SEND_GROUP_UPDATES_URI = BASE_URL + "/mobile/updateGroups",
         TIMESTAMP_URI = BASE_URL + "/mobile/timestamp",
@@ -98,52 +99,56 @@ public class Cloud {
 		// sendAllContacts();
 		this.lastUpdated = lastUpdated;		
 		newOnly = lastUpdated != null;
-        Object[] update = fetchFriendUpdates();
-        new SyncManager(context, accountName, update);
+        Object[] update = getContactUpdates();
+        syncManager = new SyncManager(context, accountName, update);
         rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), newOnly);
-        return sendFriendUpdates();
+        sendFriendUpdates();
+        getSharedBooks();
+        return getTimestamp();
 	}
 
 	/*public void sendAllContacts() throws ClientProtocolException, IOException, JSONException {
 		sendFriendUpdates(false);
 	}*/
 	
-    Object[] fetchFriendUpdates() throws JSONException, ParseException, IOException, AuthenticationException 
-    {
-    	final List<Contact> contactsList = new ArrayList<Contact>(),
-    		sharedContactsList = new ArrayList<Contact>();
-        final List<Group> groupsList = new ArrayList<Group>();
-        final List<Group> books = new ArrayList<Group>();
+    private void getSharedBooks() throws ClientProtocolException, JSONException, IOException {
         List<NameValuePair> params = getAuthParams();
         if(lastUpdated != null)
         	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
-        final JSONArray update = new JSONArray(post(FETCH_FRIEND_UPDATES_URI, params)),
+        final JSONArray sharedBooks = new JSONArray(post(GET_SHARED_BOOK_UPDATES_URI, params));
+        final List<Group> books = new ArrayList<Group>();
+        for (int i = 0; i < sharedBooks.length(); i++)  
+            books.add(Group.valueOf(sharedBooks.getJSONObject(i)));
+        syncManager.syncGroups(books, true);
+	}
+
+	Object[] getContactUpdates() throws JSONException, ParseException, IOException, AuthenticationException 
+    {
+    	final List<Contact> contactsList = new ArrayList<Contact>();
+        final List<Group> groupsList = new ArrayList<Group>();
+        List<NameValuePair> params = getAuthParams();
+        if(lastUpdated != null)
+        	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
+        final JSONArray update = new JSONArray(post(GET_CONTACT_UPDATES_URI, params)),
         	contacts = update.getJSONArray(0),
-        	sharedContacts = update.getJSONArray(1),
-        	groups = update.getJSONArray(2),
-        	sharedBooks = update.getJSONArray(3);
+        	groups = update.getJSONArray(1);
+        	
         for (int i = 0; i < contacts.length(); i++) 
             contactsList.add(Contact.valueOf(contacts.getJSONObject(i)));
-        for (int i = 0; i < sharedContacts.length(); i++) 
-            sharedContactsList.add(Contact.valueOf(sharedContacts.getJSONObject(i)));
         
         Log.i(tag, "Contacts: "+contactsList);
         for (int i = 0; i < groups.length(); i++) 
             groupsList.add(Group.valueOf(groups.getJSONObject(i)));
-        for (int i = 0; i < sharedBooks.length(); i++)  
-            books.add(Group.valueOf(sharedBooks.getJSONObject(i)));
         
-        return new Object[] {contactsList, sharedContactsList, groupsList, books}; 
+        return new Object[] {contactsList, groupsList}; 
     }
 
-	public String sendFriendUpdates() throws ClientProtocolException, IOException, JSONException {
+	public void sendFriendUpdates() throws ClientProtocolException, IOException, JSONException {
 		sendContactUpdates(Db.getContacts(newOnly, context), rawContactsCursor);
         sendGroupUpdates(Db.getGroups(newOnly, context));
         sendSharedBookUpdates(Db.getSharingBooks(newOnly, context));
         uploadContactPictures();
-        String timestamp = getTimestamp();
         ContactManager.resetDirtyContacts(context);
-        return timestamp;
 	}
 
 	public String getTimestamp() throws ClientProtocolException, JSONException, IOException {
@@ -166,8 +171,9 @@ public class Cloud {
         }
 		
         JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
+        Cursor serverDataCursor = Db.getContactServerData(context);
         for (int i = 0; i < contactUpdates.length(); i++)
-        	ContactManager.updateContact(contactUpdates.getJSONObject(i), context, rawContactsCursor);
+        	ContactManager.updateContact(contactUpdates.getJSONObject(i), context, serverDataCursor);
 	}
 	
 
@@ -207,10 +213,10 @@ public class Cloud {
 	    rawContactsCursor.moveToFirst();
 	    do {
 	    	
-	    	String contactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
-	    	ServerData data = Db.getServerDataFromContactId(dataCursor, contactId);
+	    	String rawContactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts._ID));
+	    	ServerData data = Db.getServerDataFromContactId(dataCursor, rawContactId);
 	    	if(data == null) {
-	    		Log.i(tag, "Server data is null for contactId: "+contactId);
+	    		Log.i(tag, "Server data is null for contactId: "+rawContactId);
 	    		continue;
 	    	}
 	    	String serverId = data.serverId,
@@ -220,7 +226,7 @@ public class Cloud {
 	    	
 	    	ContactPicture pic = null;
 			try {
-				pic = getContactPicture(photosDataCursor, contactId);
+				pic = getContactPicture(photosDataCursor, rawContactId);
 				if(pic == null) continue;
 				String hash = hash(pic.pic);
 				if(picId != null) {
@@ -245,7 +251,7 @@ public class Cloud {
 							String pId = response.getString("id");
 								// pSize = response.getString("size"),
 								// hash = response.getString("hash");
-							updateContactPicData(contactId, serverId, pId, new Long(pic.pic.length).toString(), hash);
+							updateContactPicData(rawContactId, serverId, pId, new Long(pic.pic.length).toString(), hash);
 						}
 					} catch (JSONException e) {
 						e.printStackTrace();
@@ -260,33 +266,32 @@ public class Cloud {
 	    photosDataCursor.close();
 	}
 
-	private void updateContactPicData(String contactId, String serverId, String picId, String picSize, String hash) {
+	private void updateContactPicData(String rawContactId, String serverId, String picId, String picSize, String hash) {
 		Uri uri = Data.CONTENT_URI;
 		ContentValues values = new ContentValues();
 		values.put(PhonebookSyncAdapterColumns.PIC_ID, picId);
 		values.put(PhonebookSyncAdapterColumns.PIC_SIZE, picSize);
 		values.put(PhonebookSyncAdapterColumns.PIC_HASH, hash);
 		context.getContentResolver().update(uri, values, 
-				Data.CONTACT_ID + " = " + contactId + " and " +
+				Data.RAW_CONTACT_ID + " = " + rawContactId + " and " +
 				PhonebookSyncAdapterColumns.DATA_PID + " = " + serverId + " and " +
 				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
-
 	}
 
-	private static ContactPicture getContactPicture(Cursor dataCursor, String contactId) throws IOException {
+	private static ContactPicture getContactPicture(Cursor dataCursor, String rawContactId) throws IOException {
 		if(dataCursor.getCount() == 0) return null;
 		dataCursor.moveToFirst();
 	    do {
 	    	String mimetype = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.MIMETYPE));
 	    	if(!mimetype.equals(Photo.CONTENT_ITEM_TYPE)) continue;
-	    	String cId = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID));
-	    	if(!cId.equals(contactId)) continue;
+	    	String rawId = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID));
+	    	if(!rawId.equals(rawContactId)) continue;
 	    	String name = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 	    	byte[] pic = dataCursor.getBlob(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
 	    	String contentType = Db.findMimeTypeForImage(pic); 
 	    		// dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.MIMETYPE));
 	    	// String serverId
-	    	Log.i(tag, "Contact["+contactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
+	    	Log.i(tag, "Contact["+rawContactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
 	    	return new ContactPicture(pic, contentType);
 	    } while(dataCursor.moveToNext());
 	    return null;

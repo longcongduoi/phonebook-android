@@ -285,7 +285,7 @@ public class Test {
 				picHash = c.getString(c.getColumnIndex(PhonebookSyncAdapterColumns.PIC_HASH));
 			Log.i(tag, "contactId: "+contactId+", rawId: "+rawContactId+", serverId: "+serverId+", picId: "+picId);
 		} while(c.moveToNext());
-		
+		Log.i(tag, "Got contact server data");
 	}
 
 	public static void deleteContactsServerData(Context applicationContext) {

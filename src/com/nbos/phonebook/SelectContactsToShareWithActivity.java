@@ -2,7 +2,9 @@ package com.nbos.phonebook;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import android.app.ListActivity;
 import android.content.ContentValues;
@@ -12,6 +14,8 @@ import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.Contacts;
+import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 import android.view.View;
 import android.widget.FilterQueryProvider;
@@ -26,10 +30,12 @@ import com.nbos.phonebook.value.ContactRow;
 public class SelectContactsToShareWithActivity extends ListActivity {
 
 	MatrixCursor m_cursor;
+	Cursor rawContactsCursor;
 	List<String> ids;
 	String tag = "SelectContactsToShareWith",
 		id, name;
 	ImageCursorAdapter adapter;
+	
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -48,6 +54,7 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 	}
 	
 	private void populateContacts() {
+		rawContactsCursor = Db.getRawContactsCursor(getContentResolver(), false);
         getContactsCursor("");
         
         String[] fields = new String[] {
@@ -76,19 +83,24 @@ public class SelectContactsToShareWithActivity extends ListActivity {
     
 	private void getContactsCursor(String search) {
 		Cursor contactsCursor = Db.getContacts(this, search);
-       
-        
-        Cursor dataCursor = Db.getBook(this, id); 
-       
+        Cursor bookCursor = Db.getBook(this, id); 
         IntCursorJoiner joiner = new IntCursorJoiner(
 	    		contactsCursor, new String[] {ContactsContract.Contacts._ID},
-	    		dataCursor,	new String[] {BookTable.CONTACTID}
+	    		bookCursor,	new String[] {BookTable.CONTACTID}
 	    );
         ids = new ArrayList<String>();
         m_cursor = new MatrixCursor( 
-            	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME},10);
-
+            	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME}, 10);
         List<ContactRow> rows = new ArrayList<ContactRow>();
+        Set<String> contactIds = getContactIds(bookCursor);
+        contactsCursor.moveToFirst();
+        if(contactsCursor.getCount() > 0)
+        do {
+        	String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(Contacts._ID)),
+        		name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+        	if(!contactIds.contains(contactId))
+        		rows.add(new ContactRow(contactId, name));
+        } while(contactsCursor.moveToNext());
         for (CursorJoiner.Result joinerResult : joiner) 
         {
         	switch (joinerResult) {
@@ -107,7 +119,41 @@ public class SelectContactsToShareWithActivity extends ListActivity {
         	m_cursor.addRow(new String[] {row.id, row.name});
         	ids.add(row.id);
         }
-		
+	}
+
+	private Set<String> getContactIds(Cursor bookCursor) {
+		Set<String> contactIds = new HashSet<String>();
+        bookCursor.moveToFirst();
+        if(bookCursor.getCount() > 0)
+        do {
+        	String rawContactId = bookCursor.getString(bookCursor.getColumnIndex(BookTable.CONTACTID));
+        	rawContactsCursor.moveToFirst();
+        	if(rawContactsCursor.getCount() > 0)
+        	do {
+    			String rawId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts._ID)),
+				cId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.CONTACT_ID));
+    			if(rawId.equals(rawContactId))
+    				contactIds.add(cId);
+        	} while(rawContactsCursor.moveToNext());
+        } while(bookCursor.moveToNext());
+		return contactIds;
+	}
+
+	private boolean isInBook(String contactId, Cursor bookCursor) {
+        bookCursor.moveToFirst();
+        if(bookCursor.getCount() > 0)
+        do {
+        	String rawContactId = bookCursor.getString(bookCursor.getColumnIndex(BookTable.CONTACTID));
+        	rawContactsCursor.moveToFirst();
+        	if(rawContactsCursor.getCount() > 0)
+        	do {
+    			String rawId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts._ID)),
+				cId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.CONTACT_ID));
+    			if(rawId.equals(rawContactId) && cId.equals(contactId))
+    				return true;
+        	} while(rawContactsCursor.moveToNext());
+        } while(bookCursor.moveToNext());
+		return false;
 	}
 
 	protected void onListItemClick(ListView l, View v, int position, long id) {
@@ -122,16 +168,17 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 
 	private void shareGroupWithContact(String contactId) {
         Uri URI = Uri.parse("content://"+Provider.AUTHORITY+"/"+Provider.BookContent.CONTENT_PATH);
-        
-        ContentValues bookValues = new ContentValues();
-        bookValues.put(BookTable.BOOKID, id);
-        bookValues.put(BookTable.CONTACTID, contactId);
-        bookValues.put(BookTable.SERVERID, "0");
-        // bookValues.put(BookTable.SERVERID, "0");
-        
-        Uri cUri = this.getContentResolver().insert(URI, bookValues);
+        List<String> rawContactIds = Db.getRawContactIds(contactId, rawContactsCursor);
+        for(String rawContactId : rawContactIds)
+        {
+	        ContentValues bookValues = new ContentValues();
+	        bookValues.put(BookTable.BOOKID, id);
+	        bookValues.put(BookTable.CONTACTID, rawContactId);
+	        bookValues.put(BookTable.SERVERID, "0");
+	        Uri cUri = this.getContentResolver().insert(URI, bookValues);
+        }
         Db.setGroupDirty(id, getContentResolver());
-        Log.i(tag, "Sharing "+name+" with "+contactId+", uri: "+cUri);
+        Log.i(tag, "Sharing "+name+" with "+contactId);
         populateContacts();	
 	}
 }

@@ -44,18 +44,13 @@ public class SyncManager {
 		this.dataCursor = Db.getData(context);
 		rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), false);
 		
-        List<Contact> contacts =  (List<Contact>) update[0],
-        	sharedContacts =  (List<Contact>) update[1];
-        List<Group> groups = (List<Group>) update[2];
-        List<Group> sharedBooks = (List<Group>) update[3];
+        List<Contact> contacts =  (List<Contact>) update[0];
+        List<Group> groups = (List<Group>) update[1];
         syncContacts(contacts);
-        syncContacts(sharedContacts);
         syncGroups(groups, false);
-        syncGroups(sharedBooks, true);
         syncPictures(contacts);
-        syncPictures(sharedContacts);
 	}
-
+	
 	void syncContacts(List<Contact> contacts) {
         long rawContactId = 0;
         final BatchOperation batchOperation = new BatchOperation(context);
@@ -152,7 +147,7 @@ public class SyncManager {
 		byte[] image = downloadPic(c);
 		if(image == null) return;
 		boolean newPic = true;
-        String contactId = getContactIdFromServerId(c.serverId);
+        Long rawContactId = lookupRawContact(c);
         Uri uri = addCallerIsSyncAdapterParameter(Data.CONTENT_URI);
         dataPicsCursor.moveToFirst();
         if(dataPicsCursor.getCount() > 0)
@@ -160,24 +155,24 @@ public class SyncManager {
 	    	String mimetype = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.MIMETYPE));
 	    	if(!mimetype.equals(Photo.CONTENT_ITEM_TYPE)) continue;
 	    	
-	    	String cId = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.CONTACT_ID));
-	    	if(!cId.equals(contactId)) continue;
+	    	String rawId = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+	    	if(!rawId.equals(rawContactId)) continue;
 	    	Log.i(tag, "Updating pic for serverId: "+c.serverId);
 	    	ContentValues values = new ContentValues();
 	    	values.put(Photo.PHOTO, image);
 	    	context.getContentResolver().update(uri, values, 
-	    			Data.CONTACT_ID + " = ? and " +
+	    			Data.RAW_CONTACT_ID + " = ? and " +
 	    			Data.MIMETYPE + " = ? ", 
-	    			new String[] {contactId, Photo.CONTENT_ITEM_TYPE});
+	    			new String[] {rawContactId.toString(), Photo.CONTENT_ITEM_TYPE});
 	    	newPic = false;
 	    	break;
 	    } while(dataPicsCursor.moveToNext());
         if(newPic)
         {
 	        // insert the pic
-	        Log.i(tag, "inserting pic for serverId: "+c.serverId+", image is: "+image.length);
+	        Log.i(tag, "inserting pic for serverId: "+c.serverId+", image is: "+image.length+", rawContactId: "+rawContactId);
 	        ContentValues values = new ContentValues();
-	        values.put(ContactsContract.Data.RAW_CONTACT_ID, Db.getRawContactId(contactId, rawContactsCursor));
+	        values.put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
 	        values.put(ContactsContract.Data.IS_SUPER_PRIMARY, 1);
 	        // values.put(ContactsContract.CALLER_IS_SYNCADAPTER, "true");
 	        values.put(ContactsContract.CommonDataKinds.Photo.PHOTO, image);
@@ -259,15 +254,15 @@ public class SyncManager {
     	Log.i(tag, "Update group: "+g.name+", id: "+groupId+", contacts: "+g.contacts+", group cursor size: "+groupCursor.getCount());
     	syncContacts(g.contacts);
     	syncPictures(g.contacts);
-    	Set<String> contactIds = new HashSet<String>();
+    	Set<String> rawContactIds = new HashSet<String>();
     	for(Contact u : g.contacts)
-    		contactIds.add(updateGroupContact(u, groupId));
+    		rawContactIds.add(updateGroupContact(u, groupId, groupCursor));
     	groupCursor.moveToFirst();
     	if(groupCursor.getCount() > 0)
     	do {
-    		String contactId = groupCursor.getString(groupCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID));
-    		if(!contactIds.contains(contactId))
-    			deleteContactFromGroup(contactId, groupId);
+    		String rawContactId = groupCursor.getString(groupCursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID));
+    		if(!rawContactIds.contains(rawContactId))
+    			deleteContactFromGroup(rawContactId, groupId);
     	} while(groupCursor.moveToNext());
     	
     	cursor.close();
@@ -293,17 +288,16 @@ public class SyncManager {
 		
 	}
 
-	private String updateGroupContact(Contact u, String groupId) {
-		String contactId = getContactIdFromServerId(u.serverId),
-			rawContactId = Db.getRawContactId(contactId, rawContactsCursor);
-		Log.i(tag, "updateGroupContact() groupId: "+groupId+", serverId: "+u.serverId+", contactId: "+contactId+", rawContactId: "+rawContactId);
-		updateToGroup(groupId, contactId, rawContactId);
-		return contactId;
+	private String updateGroupContact(Contact u, String groupId, Cursor groupCursor) {
+		Long rawContactId = lookupRawContact(u);
+		Log.i(tag, "updateGroupContact() groupId: "+groupId+", serverId: "+u.serverId+", rawContactId: "+rawContactId);
+		updateToGroup(groupId, rawContactId.toString(), groupCursor);
+		return rawContactId.toString();
 	}
 
-	void updateToGroup(String groupId, String contactId, String rawContactId) {
-			if(groupId == null || contactId == null || rawContactId == null) return;
-			if(isContactInGroup(groupId, contactId)) return;
+	void updateToGroup(String groupId, String rawContactId, Cursor groupCursor) {
+			if(groupId == null || rawContactId == null) return;
+			if(isContactInGroup(groupId, rawContactId, groupCursor)) return;
 		    ContentValues values = new ContentValues();
 		    values.put(ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID,
 		            rawContactId);
@@ -318,39 +312,17 @@ public class SyncManager {
 		    // DatabaseHelper.setGroupDirty(groupId, cr);		    
 	}
 	
-	boolean isContactInGroup(String groupId, String contactId) {
-	    Cursor c = context.getContentResolver()
-	    	.query(ContactsContract.Data.CONTENT_URI,
-	    		// null,
-	    	    new String[] {
-	    			ContactsContract.Contacts._ID, 
-	    			ContactsContract.Data.CONTACT_ID, 
-	    			ContactsContract.RawContacts._ID,
-	    			ContactsContract.Contacts.DISPLAY_NAME
-	    		},
-	    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+" = "+groupId
-	    	    +" and "+ContactsContract.Data.CONTACT_ID + " = "+contactId,
-	    	    null, ContactsContract.Data.CONTACT_ID);
-	    Log.i(tag, "isContactInGroup() groupId: "+groupId+", contactId: "+contactId+", num results: "+c.getCount());
-	    return c.getCount() > 0;
+	boolean isContactInGroup(String groupId, String rawContactId, Cursor groupCursor) {
+		groupCursor.moveToFirst();
+		if(groupCursor.getCount() > 0)
+		do {
+			String rawId = groupCursor.getColumnName(groupCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+			if(rawId.equals(rawContactId))
+				return true;
+		} while(groupCursor.moveToNext());
+		return false;
 	}
 	
-	private String getContactIdFromServerId(String serverId) {
-		if(dataCursor.getCount() == 0) return null;
-		dataCursor.moveToFirst();
-		do {
-			String mimeType = dataCursor.getString(dataCursor.getColumnIndex(Data.MIMETYPE));
-			String sId = dataCursor.getString(dataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
-			if(!mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)
-			|| !sId.equals(serverId))
-				continue;
-			String contactId = dataCursor.getString(dataCursor.getColumnIndex(Data.CONTACT_ID));
-			Log.i(tag, "getContactIdFromServerId("+serverId+") = "+contactId);
-			return contactId;
-		} while(dataCursor.moveToNext());
-		return null;
-	}
-
 	long lookupRawContact(Contact contact) {
 		dataCursor.moveToFirst();
 		if(dataCursor.getCount() > 0)
