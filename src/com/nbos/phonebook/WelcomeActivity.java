@@ -66,7 +66,7 @@ public class WelcomeActivity extends ListActivity {
     	String phoneNumber = getPhoneNumber();
     	Log.i(tag, "phone number: "+phoneNumber);
     	// Test.deleteContactsServerData(getApplicationContext());
-    	Test.getContactServerData(getApplicationContext());
+    	// Test.getContactServerData(getApplicationContext());
     	// Test.getGroups(getApplicationContext());
     	// PhoneContact.getContacts(false, getApplicationContext());
     	// Test.getRawContacts(getApplicationContext());

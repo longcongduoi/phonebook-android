@@ -87,7 +87,8 @@ public class Cloud {
         TIMESTAMP_URI = BASE_URL + "/mobile/timestamp",
     	SEND_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/updateSharedBooks",
     	UPLOAD_CONTACT_PIC_URI = BASE_URL + "/fileUploader/process",
-    	DOWNLOAD_CONTACT_PIC_URI = BASE_URL + "/download/index/";
+    	DOWNLOAD_CONTACT_PIC_URI = BASE_URL + "/download/index/",
+    	GET_PIC_DATA_URI = BASE_URL + "/mobile/picData";
 
 	public Cloud(Context context, String name, String authtoken) {
 		this.context = context;
@@ -176,8 +177,19 @@ public class Cloud {
         	ContactManager.updateContact(contactUpdates.getJSONObject(i), context, serverDataCursor);
 	}
 	
+	private List<PicData> getServerPicData() throws ClientProtocolException, JSONException, IOException {
+		List<PicData> picData = new ArrayList<PicData>();
+		JSONArray picsJson = new JSONArray(post(GET_PIC_DATA_URI, getAuthParams()));
+		for(int i=0; i< picsJson.length(); i++)
+		{
+			JSONArray picJson = picsJson.getJSONArray(i);
+			picData.add(new PicData(picJson.getLong(0), picJson.getLong(0)));
+		}
+		return picData;
+	}
 
-	void uploadContactPictures() {
+	void uploadContactPictures() throws ClientProtocolException, JSONException, IOException {
+		List<PicData> serverPicData = getServerPicData();
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("upload", "avatar");
 		params.put("errorAction", "error");
@@ -231,7 +243,8 @@ public class Cloud {
 				String hash = hash(pic.pic);
 				if(picId != null) {
 					int pSize = Integer.parseInt(picSize);
-					if(pSize == pic.pic.length && picHash != null && hash.equals(picHash))
+					if(pSize == pic.pic.length && picHash != null && hash.equals(picHash)
+					&& isServerPicData(serverId, picId, serverPicData))
 					{
 						Log.i(tag, "Same image not uploading");
 						continue;
@@ -264,6 +277,24 @@ public class Cloud {
 	    rawContactsCursor.close();
 	    dataCursor.close();
 	    photosDataCursor.close();
+	}
+
+	private boolean isServerPicData(String serverId, String picId,
+			List<PicData> serverPicData) {
+		for(PicData p : serverPicData)
+		{
+			if(p.serverId.equals(serverId))
+			{
+				if(p.picId.equals(picId))
+				{
+					Log.i(tag, "Pic is same on server");
+					return true;
+				}
+				else return false;
+			}
+		}
+		Log.i(tag, "No pic on server");
+		return false;
 	}
 
 	private void updateContactPicData(String rawContactId, String serverId, String picId, String picSize, String hash) {
@@ -519,4 +550,12 @@ public class Cloud {
     	}
     	System.out.println("Digest(in hex format):: " + hexString.toString());*/
     }
+}
+
+class PicData {
+	public PicData(long serverId, long picId) {
+		this.serverId = new Long(serverId).toString();
+		this.picId = new Long(picId).toString();
+	}
+	String serverId, picId;
 }
