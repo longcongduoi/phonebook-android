@@ -108,7 +108,7 @@ public class Cloud {
 		serverPicData = getServerPicData();
         syncManager = new SyncManager(context, accountName, update, serverPicData);
         rawContactsCursor = db.getRawContactsCursor(newOnly);
-        sendFriendUpdates();
+        sendUpdates();
         getSharedBooks();
         return getTimestamp();
 	}
@@ -149,7 +149,7 @@ public class Cloud {
         return new Object[] {contactsList, groupsList}; 
     }
 
-	public void sendFriendUpdates() throws ClientProtocolException, IOException, JSONException {
+	public void sendUpdates() throws ClientProtocolException, IOException, JSONException {
 		sendContactUpdates(db.getContacts(newOnly), rawContactsCursor);
         sendGroupUpdates(db.getGroups(newOnly));
         sendSharedBookUpdates(db.getSharingBooks(newOnly));

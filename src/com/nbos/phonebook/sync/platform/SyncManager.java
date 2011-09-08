@@ -320,7 +320,7 @@ public class SyncManager {
 
 		    Uri uri = context.getContentResolver().insert(
 		    	addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI), values);
-		    Log.i(tag, "insert uri is: "+uri);
+		    Log.i(tag, "update to group uri is: "+uri);
 		    // DatabaseHelper.setGroupDirty(groupId, cr);		    
 	}
 	
@@ -328,7 +328,7 @@ public class SyncManager {
 		groupCursor.moveToFirst();
 		if(groupCursor.getCount() > 0)
 		do {
-			String rawId = groupCursor.getColumnName(groupCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+			String rawId = groupCursor.getString(groupCursor.getColumnIndex(Data.RAW_CONTACT_ID));
 			if(rawId.equals(rawContactId))
 			{
 				Log.i(tag, "contact is in group");

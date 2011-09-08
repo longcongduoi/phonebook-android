@@ -14,6 +14,7 @@ import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -263,10 +264,13 @@ public class GroupActivity extends ListActivity {
 						// cursors
 				String contactId = contactsCursor.getString(contactsCursor
 						.getColumnIndex(ContactsContract.Contacts._ID));
+				String rawContactId = groupCursor.getString(groupCursor
+						.getColumnIndex(Data.RAW_CONTACT_ID));
+				
 				String name = contactsCursor
 						.getString(contactsCursor
 								.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-				Log.i(tag, "Contact id: " + contactId + ", name: " + name);
+				Log.i(tag, "Contact id: " + contactId + ", rawContactId: "+rawContactId+", name: " + name);
 
 				
 				/*byte[] photo = null;
