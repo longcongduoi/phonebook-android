@@ -54,10 +54,11 @@ import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.ServerData;
 import com.nbos.phonebook.sync.client.SharingBook;
+import com.nbos.phonebook.util.SimpleImageInfo;
 
 public class Cloud {
 	static String tag = "Cloud";
-	
+	Db db;
     Context context;
     String accountName, authToken, lastUpdated;
     HttpClient httpClient;
@@ -92,6 +93,7 @@ public class Cloud {
 
 	public Cloud(Context context, String name, String authtoken) {
 		this.context = context;
+		this.db = new Db(context);
 		accountName = name;
 		authToken = authtoken;
 	}
@@ -102,7 +104,7 @@ public class Cloud {
 		newOnly = lastUpdated != null;
         Object[] update = getContactUpdates();
         syncManager = new SyncManager(context, accountName, update);
-        rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), newOnly);
+        rawContactsCursor = db.getRawContactsCursor(newOnly);
         sendFriendUpdates();
         getSharedBooks();
         return getTimestamp();
@@ -145,9 +147,9 @@ public class Cloud {
     }
 
 	public void sendFriendUpdates() throws ClientProtocolException, IOException, JSONException {
-		sendContactUpdates(Db.getContacts(newOnly, context), rawContactsCursor);
-        sendGroupUpdates(Db.getGroups(newOnly, context));
-        sendSharedBookUpdates(Db.getSharingBooks(newOnly, context));
+		sendContactUpdates(db.getContacts(newOnly), rawContactsCursor);
+        sendGroupUpdates(db.getGroups(newOnly));
+        sendSharedBookUpdates(db.getSharingBooks(newOnly));
         uploadContactPictures();
         ContactManager.resetDirtyContacts(context);
 	}
@@ -198,7 +200,7 @@ public class Cloud {
 		params.put("successController", "file");
 
 
-	    Cursor dataCursor = Db.getData(context),
+	    Cursor dataCursor = db.getData(),
 	    	photosDataCursor = context.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
 	    		// null,
 	    	    new String[] {
@@ -240,7 +242,9 @@ public class Cloud {
 			try {
 				pic = getContactPicture(photosDataCursor, rawContactId);
 				if(pic == null) continue;
-				String hash = hash(pic.pic);
+				String hash = SimpleImageInfo.hash(pic.pic);
+		        Log.i(tag, "Digest: " + hash);
+
 				if(picId != null) {
 					int pSize = Integer.parseInt(picSize);
 					if(pSize == pic.pic.length && picHash != null && hash.equals(picHash)
@@ -309,7 +313,7 @@ public class Cloud {
 				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
 	}
 
-	private static ContactPicture getContactPicture(Cursor dataCursor, String rawContactId) throws IOException {
+	private ContactPicture getContactPicture(Cursor dataCursor, String rawContactId) throws IOException {
 		if(dataCursor.getCount() == 0) return null;
 		dataCursor.moveToFirst();
 	    do {
@@ -319,7 +323,7 @@ public class Cloud {
 	    	if(!rawId.equals(rawContactId)) continue;
 	    	String name = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 	    	byte[] pic = dataCursor.getBlob(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
-	    	String contentType = Db.findMimeTypeForImage(pic); 
+	    	String contentType = new SimpleImageInfo(pic).getMimeType(); 
 	    		// dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.MIMETYPE));
 	    	// String serverId
 	    	Log.i(tag, "Contact["+rawContactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
@@ -415,7 +419,7 @@ public class Cloud {
         return params;
 	}
 	
-	public static JSONObject upload(String uploadUrl, byte[] data, String contentType, Map<String, String> params) {
+	JSONObject upload(String uploadUrl, byte[] data, String contentType, Map<String, String> params) {
 		Log.i(tag, "Uploading to "+uploadUrl);
 		HttpURLConnection connection = null;
 		DataOutputStream outputStream = null;
@@ -496,8 +500,7 @@ public class Cloud {
 		return null;
 	}
 	
-    public static String convertStreamToString(InputStream is)
-    throws IOException {
+    String convertStreamToString(InputStream is) throws IOException {
 	/*
 	 * To convert the InputStream to String we use the
 	 * Reader.read(char[] buffer) method. We iterate until the
@@ -522,33 +525,6 @@ public class Cloud {
 		} else {        
 		    return "";
 		}
-    }
-
-    public static String hash(byte[] data)  {
-        MessageDigest md = null;
-		try {
-			md = MessageDigest.getInstance("MD5");
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}
-        md.update(data);
-        byte byteData[] = md.digest();
-        //convert the byte to hex format method 1
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < byteData.length; i++) {
-        	sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
-        }
- 
-        Log.i(tag, "Digest(in hex format):: " + sb.toString());
-        return sb.toString();
-        //convert the byte to hex format method 2
-        /*StringBuffer hexString = new StringBuffer();
-    	for (int i=0;i<byteData.length;i++) {
-    		String hex=Integer.toHexString(0xff & byteData[i]);
-   	     	if(hex.length()==1) hexString.append('0');
-   	     	hexString.append(hex);
-    	}
-    	System.out.println("Digest(in hex format):: " + hexString.toString());*/
     }
 }
 

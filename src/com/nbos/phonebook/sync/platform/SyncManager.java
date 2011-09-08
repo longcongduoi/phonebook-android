@@ -28,10 +28,12 @@ import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.contact.Email;
 import com.nbos.phonebook.sync.client.contact.Phone;
+import com.nbos.phonebook.util.SimpleImageInfo;
 
 public class SyncManager {
 	static String tag = "SyncManager";
 	Context context;
+	Db db;
     String account; 
     List<PhoneContact> allContacts; 
     Cursor dataCursor, rawContactsCursor, dataPicsCursor;
@@ -39,10 +41,11 @@ public class SyncManager {
 	public SyncManager(Context context, String account, Object[] update) {
 		super();
 		this.context = context;
+		db = new Db(context);
 		this.account = account;
-		this.allContacts = Db.getContacts(false, context);
-		this.dataCursor = Db.getData(context);
-		rawContactsCursor = Db.getRawContactsCursor(context.getContentResolver(), false);
+		this.allContacts = db.getContacts(false);
+		this.dataCursor = db.getData();
+		rawContactsCursor = db.getRawContactsCursor(false);
 		
         List<Contact> contacts =  (List<Contact>) update[0];
         List<Group> groups = (List<Group>) update[1];
@@ -183,7 +186,7 @@ public class SyncManager {
 		ContentValues values = new ContentValues();
 		values.put(PhonebookSyncAdapterColumns.PIC_ID, c.picId);
 		values.put(PhonebookSyncAdapterColumns.PIC_SIZE, image.length);
-		values.put(PhonebookSyncAdapterColumns.PIC_HASH, Cloud.hash(image));
+		values.put(PhonebookSyncAdapterColumns.PIC_HASH, SimpleImageInfo.hash(image));
 		int num = context.getContentResolver().update(uri, values, 
 				PhonebookSyncAdapterColumns.DATA_PID + " = ? and " + Data.MIMETYPE + " = ? ", 
 				new String[] {c.serverId, PhonebookSyncAdapterColumns.MIME_PROFILE});

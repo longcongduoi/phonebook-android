@@ -35,6 +35,7 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 	String tag = "SelectContactsToShareWith",
 		id, name;
 	ImageCursorAdapter adapter;
+	Db db;
 	
 	/** Called when the activity is first created. */
 	@Override
@@ -42,6 +43,7 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 	    super.onCreate(savedInstanceState);
 	    setContentView(R.layout.contacts_to_share_with);
 	    Bundle extras = getIntent().getExtras();
+	    db = new Db(getApplicationContext());
 	    if(extras !=null)
 	    {
 	    	id = extras.getString("id");
@@ -54,7 +56,7 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 	}
 	
 	private void populateContacts() {
-		rawContactsCursor = Db.getRawContactsCursor(getContentResolver(), false);
+		rawContactsCursor = db.getRawContactsCursor(false);
         getContactsCursor("");
         
         String[] fields = new String[] {

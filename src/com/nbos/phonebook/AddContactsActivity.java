@@ -28,10 +28,11 @@ public class AddContactsActivity extends ListActivity {
 		id, name;
 	List<String> ids;
 	ImageCursorAdapter adapter;
-	
+	Db db;
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		db = new Db(getApplicationContext());
 	    super.onCreate(savedInstanceState);
 	    setContentView(R.layout.add_contacts);
 	    Bundle extras = getIntent().getExtras();
@@ -41,8 +42,7 @@ public class AddContactsActivity extends ListActivity {
 	    	name = extras.getString("name");
 	    }
 	    setTitle("Phonebook: Add contacts to "+name);
-	    Log.i(tag, "Intent is: "+getIntent().getClass().getName());
-	    rawContactsCursor = Db.getRawContactsCursor(getApplicationContext().getContentResolver(), false);
+	    rawContactsCursor = db.getRawContactsCursor(false);
 	    
 	    populateContacts();
 	    getListView().setTextFilterEnabled(true);

@@ -45,9 +45,8 @@ public class PhoneContact extends Contact {
     	params.add(new BasicNameValuePair("accountType_"+index, accountType));
 	}
 
-	public static List<PhoneContact> getContacts(boolean newOnly, Context ctx) {
+	public static List<PhoneContact> getContacts(boolean newOnly, ContentResolver cr) {
 		List<PhoneContact> contacts = new ArrayList<PhoneContact>();
-    	ContentResolver cr = ctx.getContentResolver();
     	Cursor cursor = getRawContactsEntityCursor(cr, newOnly);
     	
     	Log.i(tag, "There are "+cursor.getCount()+" entries, "+cursor.getColumnCount()+" columns.");

@@ -35,12 +35,14 @@ public class SharingWithActivity extends ListActivity {
 		id, name;
 	List<String> ids;
 	Cursor rawContactsCursor;
-	ImageCursorAdapter adapter;	
+	ImageCursorAdapter adapter;
+	MatrixCursor m_cursor;
+	Db db;
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
-	    
+	    db = new Db(getApplicationContext());
 	    setContentView(R.layout.sharing_with);
 	    registerForContextMenu(getListView());  
 		
@@ -109,9 +111,8 @@ public class SharingWithActivity extends ListActivity {
 		
 	}
 
-	MatrixCursor m_cursor;
 	private void populateContacts() {	
-		rawContactsCursor = Db.getRawContactsCursor(getContentResolver(), false);
+		rawContactsCursor = db.getRawContactsCursor(false);
         Cursor contactsCursor = Db.getContacts(this);
         Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
         Cursor bookCursor = Db.getBook(this, id);

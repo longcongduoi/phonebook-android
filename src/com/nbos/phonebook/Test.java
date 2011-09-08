@@ -120,7 +120,7 @@ public class Test {
 	}*/
 
     public static void getRawContacts(Context ctx) {
-    	Cursor c = Db.getRawContactsCursor(ctx.getContentResolver(), false);
+    	Cursor c = new Db(ctx).getRawContactsCursor(false);
     	Log.i(tag, "There are "+c.getCount()+" raw contacts");
     	c.moveToFirst();
     	do {
@@ -135,12 +135,12 @@ public class Test {
 
     
     public static void getGroups(Context ctx) {
-    	Db.getGroups(false, ctx);
+    	new Db(ctx).getGroups(false);
     }
     
 
     public static void getDirtyGroups(Context ctx) {
-    	Db.getGroups(true, ctx);
+    	new Db(ctx).getGroups(true);
     }
     
     public static void getGroupList(Context ctx) {
@@ -175,7 +175,7 @@ public class Test {
     }
     
 	public static void getRawContactsTable(Context ctx) {
-		Cursor c = Db.getRawContactsCursor(ctx.getContentResolver(), false);
+		Cursor c = new Db(ctx).getRawContactsCursor(false);
 		c.moveToFirst();
 		do {
     		String contactId = c.getString(c.getColumnIndex(RawContacts.CONTACT_ID));
@@ -184,7 +184,7 @@ public class Test {
 	}
 
 	public static void getDataTable(Context applicationContext) {
-		Cursor c = Db.getData(applicationContext);
+		Cursor c = new Db(applicationContext).getData();
 		c.moveToFirst();
 		do {
     		String rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID));
@@ -225,11 +225,6 @@ public class Test {
 		c.close();
 	}
 
-	public static void updateServerId(Context applicationContext) {
-		Db.updateContactServerId("997", "1", applicationContext, Db.getRawContactsCursor(applicationContext.getContentResolver(), false));
-		getDataTable(applicationContext);
-	}
-
 	public static void getPics(Context ctx) {
     	/*Cursor dataPicsCursor = ctx.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
 	    		// null,
@@ -264,16 +259,13 @@ public class Test {
     	
 		
 	}
-	public static void getContactPics(Context ctx) {
-		Db.getContactPictures(ctx, false);
-	}
 
 	public static void getShareBooks(Context ctx) {
-		Db.getSharingBooks(false, ctx);
+		new Db(ctx).getSharingBooks(false);
 	}
 
 	public static void getContactServerData(Context applicationContext) {
-		Cursor c = Db.getData(applicationContext);
+		Cursor c = new Db(applicationContext).getData();
 		c.moveToFirst();
 		do {
 			String mimetype = c.getString(c.getColumnIndex(Data.MIMETYPE));

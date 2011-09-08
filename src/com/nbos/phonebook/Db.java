@@ -1,6 +1,5 @@
 package com.nbos.phonebook;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -16,50 +15,55 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.CursorJoiner;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.ContactsContract;
-import android.provider.ContactsContract.CommonDataKinds.Photo;
+import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.Groups;
 import android.provider.ContactsContract.RawContacts;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.nbos.phonebook.contentprovider.Provider;
-import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
-import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.ServerData;
 import com.nbos.phonebook.sync.client.SharingBook;
 import com.nbos.phonebook.sync.platform.BatchOperation;
 import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
-import com.nbos.phonebook.util.SimpleImageInfo;
 
 public class Db {
+	ContentResolver cr;
+	public Db(ContentResolver cr) {
+		this.cr = cr;
+	}
+
+	public Db(Context context) {
+		this.cr = context.getContentResolver();
+	}
+
 	static String tag = "DATA";
 	public static Cursor getContacts(Activity activity) {
-		return activity.managedQuery(ContactsContract.Contacts.CONTENT_URI, null, null, null,
-				ContactsContract.Contacts._ID);
-				// ContactsContract.Contacts.DISPLAY_NAME);
+		return activity.managedQuery(Contacts.CONTENT_URI, null, null, null,
+				Contacts._ID);
 	}
 	
-	public static Cursor getGroups(ContentResolver cr) {
-	    return cr.query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
-	    		ContactsContract.Groups.DELETED + " = 0 ", null, null);
+	public Cursor getGroups() {
+	    return cr.query(Groups.CONTENT_SUMMARY_URI, null,
+	    		Groups.DELETED + " = 0 ", null, null);
 	}
 
 	public static Cursor getContacts(Activity activity, String searchString) {
-		return activity.managedQuery(ContactsContract.Contacts.CONTENT_URI, null, 
-				ContactsContract.Data.DISPLAY_NAME+" like '" + searchString + "%'", null,
-				ContactsContract.Contacts._ID);
-				// ContactsContract.Contacts.DISPLAY_NAME);
+		return activity.managedQuery(Contacts.CONTENT_URI, null, 
+				Data.DISPLAY_NAME+" like '" + searchString + "%'", null,
+				Contacts._ID);
 	}
 
 	public static Cursor getBook(Activity activity, String id) {
@@ -72,11 +76,11 @@ public class Db {
 	
 	public static void setGroupDirty(String groupId, ContentResolver cr) {
 	    ContentValues values = new ContentValues();
-	    values.put(ContactsContract.Groups.DIRTY, "1");
+	    values.put(Groups.DIRTY, "1");
 
 	    int num = cr.update(
-	    		ContactsContract.Groups.CONTENT_URI, values,
-	    		ContactsContract.Groups._ID + " = " + groupId, null);
+	    		Groups.CONTENT_URI, values,
+	    		Groups._ID + " = " + groupId, null);
 	    Log.i(tag, "Updated "+num+" groups to dirty");
 
 	}
@@ -85,32 +89,23 @@ public class Db {
 		   // this.removeFromGroup(personId, groupId);
 			Log.i(tag, "Added contact to group: "+groupId+", contactId: "+rawContactId);
 		    ContentValues values = new ContentValues();
-		    values.put(ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID,
-		            rawContactId);
-		    values.put(
-		            ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID,
-		            groupId);
-		    values
-		            .put(
-		                    ContactsContract.CommonDataKinds.GroupMembership.MIMETYPE,
-		                    ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE);
-
-		    cr.insert(
-		            ContactsContract.Data.CONTENT_URI, values);
+		    values.put(GroupMembership.RAW_CONTACT_ID, rawContactId);
+		    values.put(GroupMembership.GROUP_ROW_ID, groupId);
+		    values.put(GroupMembership.MIMETYPE, GroupMembership.CONTENT_ITEM_TYPE);
+		    cr.insert(Data.CONTENT_URI, values);
 		    Db.setGroupDirty(groupId, cr);		    
 	}
 
-	public static Cursor getContactsInGroup(String groupId,
-			ContentResolver cr) {
-	    return cr.query(ContactsContract.Data.CONTENT_URI,
+	public static Cursor getContactsInGroup(String groupId, ContentResolver cr) {
+	    return cr.query(Data.CONTENT_URI,
 	    		// null,
 	    	    new String[] {
 	    			Data.CONTACT_ID,
 	    			Data.RAW_CONTACT_ID,
 	    		},
-	    	    ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID+" =  ? "
-	    	    +"and "+ContactsContract.Data.MIMETYPE+" = ? ",
-	    	    new String[]{groupId, ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE}, Data.CONTACT_ID);
+	    	    GroupMembership.GROUP_ROW_ID+" =  ? "
+	    	    +"and "+Data.MIMETYPE+" = ? ",
+	    	    new String[]{groupId, GroupMembership.CONTENT_ITEM_TYPE}, Data.CONTACT_ID);
 	}
 	
 	public static String getAccountName(Context ctx) {
@@ -142,104 +137,31 @@ public class Db {
         final BatchOperation batchOperation = new BatchOperation(context);
     	
 		Log.i(tag, "Creating group: "+groupName+", account: "+accountName+", owner: "+owner);
-		Uri mEntityUri = ContactsContract.Groups.CONTENT_URI.buildUpon()
-			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_NAME, accountName)
-			.appendQueryParameter(ContactsContract.Groups.ACCOUNT_TYPE, Constants.ACCOUNT_TYPE)
+		Uri mEntityUri = Groups.CONTENT_URI.buildUpon()
+			.appendQueryParameter(Groups.ACCOUNT_NAME, accountName)
+			.appendQueryParameter(Groups.ACCOUNT_TYPE, Constants.ACCOUNT_TYPE)
 			.appendQueryParameter(ContactsContract.CALLER_IS_SYNCADAPTER, "true")
 			.build();
 		
 	
 		ContentProviderOperation.Builder builder = ContentProviderOperation.newInsert(mEntityUri);
 		Log.v("Group", "create accountgroup: "+Constants.ACCOUNT_TYPE+", "+accountName);
-		builder.withValue(ContactsContract.Groups.ACCOUNT_TYPE, Constants.ACCOUNT_TYPE);
-		builder.withValue(ContactsContract.Groups.ACCOUNT_NAME, accountName);
-		builder.withValue(ContactsContract.Groups.SYSTEM_ID, accountName);
-		builder.withValue(ContactsContract.Groups.TITLE, groupName);
-		builder.withValue(ContactsContract.Groups.SOURCE_ID, id);
-		builder.withValue(ContactsContract.Groups.SYNC1, owner); // using sync1 for the owner of the shared book
-		builder.withValue(ContactsContract.Groups.GROUP_VISIBLE, 1);
+		builder.withValue(Groups.ACCOUNT_TYPE, Constants.ACCOUNT_TYPE);
+		builder.withValue(Groups.ACCOUNT_NAME, accountName);
+		builder.withValue(Groups.SYSTEM_ID, accountName);
+		builder.withValue(Groups.TITLE, groupName);
+		builder.withValue(Groups.SOURCE_ID, id);
+		builder.withValue(Groups.SYNC1, owner); // using sync1 for the owner of the shared book
+		builder.withValue(Groups.GROUP_VISIBLE, 1);
 		batchOperation.add(builder.build());
 		batchOperation.execute();
 	}
     
-    public static List<PhoneContact> getContacts(boolean newOnly, Context ctx) {
-    	return PhoneContact.getContacts(newOnly, ctx);
+    public List<PhoneContact> getContacts(boolean newOnly) {
+    	return PhoneContact.getContacts(newOnly, cr);
     }
     
-	public static List<ContactPicture> getContactPictures(Context ctx, boolean newOnly) {
-		List<ContactPicture> pics = new ArrayList<ContactPicture>();
-	    Cursor rawContactsCursor = getRawContactsCursor(ctx.getContentResolver(), newOnly),
-	    	dataCursor = getData(ctx),
-	    	photosDataCursor = ctx.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
-	    		// null,
-	    	    new String[] {
-	    			ContactsContract.Contacts._ID, 
-	    			ContactsContract.Data.CONTACT_ID,
-	    			ContactsContract.Data.RAW_CONTACT_ID,
-	    			ContactsContract.RawContacts._ID,
-	    			ContactsContract.Contacts.DISPLAY_NAME,
-	    			ContactsContract.CommonDataKinds.Photo.PHOTO,
-	    			Data.MIMETYPE, Data.DATA1,
-	    		},
-	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null "
-	    		+"and "+Data.MIMETYPE+" = ? ",
-	    	    new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
-	    	    ContactsContract.Data.CONTACT_ID);
-	    
-	    Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries for newOnly: "+newOnly);
-	    Log.i(tag, "There are "+photosDataCursor.getCount()+" data entries");
-	    
-	    if(rawContactsCursor.getCount() == 0) return pics;
-	    
-	    photosDataCursor.moveToFirst();
-	    rawContactsCursor.moveToFirst();
-	    do {
-	    	String contactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID)),
-	    		rawContactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts._ID)),
-	    		serverId = getServerIdFromContactId(dataCursor, contactId);
-	    	ContactPicture pic = null;
-			try {
-				pic = getContactPicture(photosDataCursor, contactId, rawContactId, serverId);
-				if(pic != null) pics.add(pic);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-	    	
-	    } while(rawContactsCursor.moveToNext());
-		
-	    rawContactsCursor.close();
-	    photosDataCursor.close();
-		return pics;
-	}
-	
-	private static ContactPicture getContactPicture(Cursor dataCursor,
-			String contactId, String rawContactId, String serverId) throws IOException {
-		if(dataCursor.getCount() == 0) return null;
-		dataCursor.moveToFirst();
-	    do {
-	    	String cId = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.CONTACT_ID)),
-	    		rawId = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID));
-	    	if(!cId.equals(contactId)
-	    	|| !rawId.equals(rawContactId)) continue;
-	    	String name = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)),
-	    		mimeType = dataCursor.getString(dataCursor.getColumnIndex(Data.MIMETYPE));
-	    	Log.i(tag, "Contact["+contactId+"] "+name+", mimetype: "+mimeType);
-	    	byte[] pic = dataCursor.getBlob(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
-	    	String contentType = findMimeTypeForImage(pic); 
-	    		// dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.MIMETYPE));
-	    	// String serverId
-	    	Log.i(tag, "Contact["+contactId+"] "+name+", mimetype: "+mimeType+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
-	    	return new ContactPicture(pic, contentType);
-	    } while(dataCursor.moveToNext());
-	    return null;
-	}
-
-    public static String findMimeTypeForImage(final byte[] bytes) throws IOException {
-    	SimpleImageInfo info = new SimpleImageInfo(bytes);
-    	return info.getMimeType();
-    }
-
-	public static Cursor getRawContactsCursor(ContentResolver cr, boolean newOnly) {
+	public Cursor getRawContactsCursor(boolean newOnly) {
 	    String where = newOnly ? RawContacts.DIRTY + " = 1" : null;
         final String[] PROJECTION =
             new String[] {
@@ -252,29 +174,28 @@ public class Db {
 		return cr.query(RawContacts.CONTENT_URI, PROJECTION, where, null, RawContacts.CONTACT_ID);	
 	}
 
-	public static List<Group> getGroups(boolean newOnly, Context ctx) {
+	public List<Group> getGroups(boolean newOnly) {
 		List<Group> groups = new ArrayList<Group>();
-	    ContentResolver cr = ctx.getContentResolver();
-	    String where = ContactsContract.Groups.DELETED + " = 0 ";
+	    String where = Groups.DELETED + " = 0 ";
 	    if(newOnly)
-	    	where += " and " + ContactsContract.Groups.DIRTY + " = 1 ";
-	    Cursor groupsCursor = cr.query(ContactsContract.Groups.CONTENT_SUMMARY_URI, 
+	    	where += " and " + Groups.DIRTY + " = 1 ";
+	    Cursor groupsCursor = cr.query(Groups.CONTENT_SUMMARY_URI, 
 	    		new String [] {
-	    			ContactsContract.Groups.TITLE,
-	    			ContactsContract.Groups._ID,
-	    			ContactsContract.Groups.SOURCE_ID,
-	    			ContactsContract.Groups.ACCOUNT_NAME,
-	    			ContactsContract.Groups.ACCOUNT_TYPE,
-	    			ContactsContract.Groups.DIRTY
+	    			Groups.TITLE,
+	    			Groups._ID,
+	    			Groups.SOURCE_ID,
+	    			Groups.ACCOUNT_NAME,
+	    			Groups.ACCOUNT_TYPE,
+	    			Groups.DIRTY
 	    		},
 	    		where, null, null);
 	    Log.i(tag, "There are "+groupsCursor.getCount()+" groups");
-    	Cursor dataCursor = Db.getData(ctx);
+    	Cursor dataCursor = getData();
 
-	    Cursor phonesCursor = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
+	    Cursor phonesCursor = cr.query(Phone.CONTENT_URI, 
         		new String[] {
-	    			ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-	    			ContactsContract.CommonDataKinds.Phone.NUMBER
+	    			Phone.CONTACT_ID,
+	    			Phone.NUMBER
 	    		}, 		
         		null,
         		null, null);
@@ -282,12 +203,12 @@ public class Db {
 	    while(groupsCursor.moveToNext())
 	    {
 	    	List<Contact> contacts = new ArrayList<Contact>();
-	    	String name = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.TITLE));
-	    	String groupId = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups._ID));
-	    	String groupSourceId = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.SOURCE_ID));
-	    	String dirty = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.DIRTY));
-	    	String accName = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.ACCOUNT_NAME));
-	    	String accType = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.ACCOUNT_TYPE));
+	    	String name = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.TITLE));
+	    	String groupId = groupsCursor.getString(groupsCursor.getColumnIndex(Groups._ID));
+	    	String groupSourceId = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.SOURCE_ID));
+	    	String dirty = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.DIRTY));
+	    	String accName = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.ACCOUNT_NAME));
+	    	String accType = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.ACCOUNT_TYPE));
 	    	Log.i(tag, "Group: "+name+", account: "+accName+", account type: "+accType);
 		    Cursor groupCursor = getContactsInGroup(new Long(groupId).toString(), cr);
 		    Log.i(tag, "There are "+groupCursor.getCount()+" contacts in group: "+groupId);
@@ -313,25 +234,13 @@ public class Db {
 	    return groups;
 	}
 	
-	private static String getContactPhoneNumber(String contactId, Cursor phonesCursor) {
-		phonesCursor.moveToFirst();
-		do {
-			String cId = phonesCursor.getString(phonesCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
-			if(!cId.equals(contactId)) continue;
-			return phonesCursor.getString(phonesCursor
-                    .getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
-		} while(phonesCursor.moveToNext());
-		return null;
-	}
-
-	public static List<SharingBook> getSharingBooks(boolean newOnly, Context ctx) {
+	public List<SharingBook> getSharingBooks(boolean newOnly) {
     	List<SharingBook> books = new ArrayList<SharingBook>();
     	String where = newOnly ? BookTable.DIRTY + " is null" : null;
-    	ContentResolver cr = ctx.getContentResolver();
     	Cursor cursor = cr.query(
     			Constants.SHARE_BOOK_URI, null, where, null, null),
-    		dataCursor = getData(ctx),
-    		groupsCursor = getGroups(cr);
+    		dataCursor = getData(),
+    		groupsCursor = getGroups();
     	if(cursor != null)
     		Log.i(tag, "There are "+cursor.getCount()+" contacts sharing books");
     	while(cursor.moveToNext())
@@ -354,8 +263,8 @@ public class Db {
 		if(groupsCursor.getCount() == 0) return null;
 		groupsCursor.moveToFirst();
 		do {
-			String gId = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups._ID)),
-				sourceId = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.SOURCE_ID));
+			String gId = groupsCursor.getString(groupsCursor.getColumnIndex(Groups._ID)),
+				sourceId = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.SOURCE_ID));
 			if(gId.equals(groupId))
 				return sourceId;
 		}
@@ -449,14 +358,14 @@ public class Db {
 	}
 
 	
-    public static Cursor getData(Context ctx) {
+    public Cursor getData() {
         final String[] PROJECTION =
             new String[] {Data._ID, Data.MIMETYPE, Data.DATA1, Data.DATA2,
                 Data.DATA3, Data.DATA4, Data.DATA5, Data.DATA6, Data.DATA7, 
                 Data.DATA8, Data.DATA9, Data.DATA10, 
                 Data.RAW_CONTACT_ID, Data.CONTACT_ID};
 
-    	return ctx.getContentResolver().query(Data.CONTENT_URI, PROJECTION, null, null, Data.CONTACT_ID);
+    	return cr.query(Data.CONTENT_URI, PROJECTION, null, null, Data.CONTACT_ID);
     }
 
 	public static List<String> getRawContactIds(String contactId, Cursor rawContactsCursor) {
@@ -465,8 +374,8 @@ public class Db {
 		List<String> rawContactIds = new ArrayList<String>();
 		rawContactsCursor.moveToFirst();
 		do {
-			String cId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.CONTACT_ID));
-			String rawContactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts._ID));
+			String cId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.CONTACT_ID));
+			String rawContactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts._ID));
 			// Log.i(TAG, "checking: contactID: "+cId+", rawContactId: "+rawContactId);
 			if(cId != null && cId.equals(contactId))
 			{
@@ -481,27 +390,27 @@ public class Db {
 	public static String getGroupNamesFromPhoneNumber(String phoneNumber, Context context) {
 		Log.i(tag, "Getting groups for phone number: "+phoneNumber);
 		if(phoneNumber == null) return null;
-    	Cursor phonesCursor = context.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
+    	Cursor phonesCursor = context.getContentResolver().query(Phone.CONTENT_URI, 
                 new String[] {
-        		ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-        		ContactsContract.CommonDataKinds.Phone.NUMBER }, 
-        		ContactsContract.CommonDataKinds.Phone.NUMBER +" = ? ", 
+	        		Phone.CONTACT_ID,
+	        		Phone.NUMBER }, 
+	        		Phone.NUMBER +" = ? ", 
                 new String[] { phoneNumber  }, null);
 		Log.i(tag, "There are "+phonesCursor.getCount()+" contact entries");
 		if(phonesCursor.getCount() == 0) return null;
 		phonesCursor.moveToFirst();
-		String contactId = phonesCursor.getString(phonesCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID));
+		String contactId = phonesCursor.getString(phonesCursor.getColumnIndex(Phone.CONTACT_ID));
 
 		Cursor contactGroupsCursor = context.getContentResolver()
-    		.query(ContactsContract.Data.CONTENT_URI, 
+    		.query(Data.CONTENT_URI, 
 	    	    new String[] {
-    				ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID, 
-    				ContactsContract.Data.CONTACT_ID },
-    				ContactsContract.Data.CONTACT_ID + " = ? "
-    				+ " and "+ContactsContract.CommonDataKinds.GroupMembership.MIMETYPE
+    				GroupMembership.GROUP_ROW_ID, 
+    				Data.CONTACT_ID },
+    				Data.CONTACT_ID + " = ? "
+    				+ " and "+GroupMembership.MIMETYPE
     				+ " = ? ",
-                new String[] { contactId, ContactsContract.CommonDataKinds.GroupMembership.CONTENT_ITEM_TYPE }, 
-                ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID);
+                new String[] { contactId, GroupMembership.CONTENT_ITEM_TYPE }, 
+                	GroupMembership.GROUP_ROW_ID);
     	Log.i(tag, "contactId: "+contactId+", is in "+contactGroupsCursor.getCount()+" groups");
     	if(contactGroupsCursor.getCount() == 0) return null;
     	contactGroupsCursor.moveToFirst();
@@ -510,7 +419,7 @@ public class Db {
     	do {
     		
     		String groupId = contactGroupsCursor.getString(contactGroupsCursor.getColumnIndex(
-    				ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID));
+    				GroupMembership.GROUP_ROW_ID));
     		Log.i(tag, "Group id: "+groupId);
     		groupIdsIn += groupId;
     		if(count < num -1) 
@@ -521,12 +430,12 @@ public class Db {
     	groupIdsIn += ")";
     	Log.i(tag, "groups in = "+groupIdsIn);
     	Cursor groupsCursor = context.getContentResolver().query(
-    			ContactsContract.Groups.CONTENT_URI, 
+    			Groups.CONTENT_URI, 
     			new String[] {
-    				ContactsContract.Groups.TITLE
+    				Groups.TITLE
     			},
-	    		ContactsContract.Groups.DELETED + " = 0 and " 
-    			+ ContactsContract.Groups._ID + " in "+groupIdsIn, null, null);
+	    		Groups.DELETED + " = 0 and " 
+    			+ Groups._ID + " in "+groupIdsIn, null, null);
     	Log.i(tag, "There are "+groupsCursor.getCount()+" groups");
     	if(groupsCursor.getCount() == 0) return null;
     	Set<String> groups = new HashSet<String>();
@@ -534,7 +443,7 @@ public class Db {
     	 
     	groupsCursor.moveToFirst();
     	do {
-    		String groupName = groupsCursor.getString(groupsCursor.getColumnIndex(ContactsContract.Groups.TITLE));
+    		String groupName = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.TITLE));
     		groups.add(groupName);
     	} while(groupsCursor.moveToNext());
     	
@@ -558,7 +467,7 @@ public class Db {
 		
 		Uri photoUri = ContentUris.withAppendedId(Contacts.CONTENT_URI, Long.parseLong(contactId));
 		try {
-			InputStream is = ContactsContract.Contacts.openContactPhotoInputStream(contentResolver, photoUri);
+			InputStream is = Contacts.openContactPhotoInputStream(contentResolver, photoUri);
 			return BitmapFactory.decodeStream(is);
 		} catch(Exception e) {
 			e.printStackTrace();
