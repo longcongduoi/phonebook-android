@@ -123,36 +123,6 @@ public class ContactManager {
 		return false;
 	}
 
-	/*public static long lookupRawContact(ContentResolver resolver, Contact contact, Cursor rawContactsCursor, List<PhoneContact> allContacts) {
-		if(rawContactsCursor.getCount() == 0) return 0;
-		rawContactsCursor.moveToFirst();
-		do
-		{
-			String serverId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(Constants.CONTACT_SERVER_ID));
-			// String sourceId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.SOURCE_ID));
-			try {
-				if(serverId.equals(contact.serverId))
-					return rawContactsCursor.getLong(0);
-			}
-			catch(Exception e){}
-			
-		} while(rawContactsCursor.moveToNext());
-		// could not find the contact, do a phone number search
-		for(PhoneContact u : allContacts) {
-			if(u.number.equals(contact.number)) {// maybe a contact
-				// check if the rest of the information is the same
-				if(u.name.equals(contact.name))
-				{
-					Log.i(TAG, "Existing contact; ph: "+u.number+", name: "+u.name+", serverId: "+contact.serverId+", contactId: "+u.contactId+", phone serverId: "+u.serverId);
-					// update the serverId of the contact
-					DatabaseHelper.updateContactServerId(u.contactId, contact.serverId, resolver);
-					return Long.parseLong(u.contactId);
-				}
-			}
-		}
-		return 0;
-	}*/
-
 	/**
      * Add a list of status messages to the contacts provider.
      * 
@@ -473,11 +443,11 @@ public class ContactManager {
 	    Log.i("ContactManager", "Resetting "+num+" dirty on contacts");
 	}
 
-	public static void updateContact(JSONObject contact, Context context, Cursor serverDataCursor) throws JSONException {
+	public static void updateContact(JSONObject contact, Context context, Cursor serverDataCursor, BatchOperation batchOperation) throws JSONException {
         int serverId = contact.getInt("sourceId"),
         	contactId = contact.getInt("contactId");
         // Log.i(TAG, "updateContact, sourceId: "+serverId+", contactId: "+contactId);
-        Db.updateContactServerId(new Integer(contactId).toString(), new Integer(serverId).toString(), context, serverDataCursor);
+        Db.updateContactServerId(new Integer(contactId).toString(), new Integer(serverId).toString(), context, serverDataCursor, batchOperation);
 	}
 
 	public static void updateBook(JSONObject book, Context context) throws JSONException {

@@ -54,7 +54,8 @@ import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.ServerData;
 import com.nbos.phonebook.sync.client.SharingBook;
-import com.nbos.phonebook.util.SimpleImageInfo;
+import com.nbos.phonebook.util.ImageInfo;
+import com.nbos.phonebook.value.PicData;
 
 public class Cloud {
 	static String tag = "Cloud";
@@ -64,6 +65,7 @@ public class Cloud {
     HttpClient httpClient;
     Cursor rawContactsCursor;
     SyncManager syncManager;
+    List<PicData> serverPicData;
     boolean newOnly;
     public static final int REGISTRATION_TIMEOUT = 20 * 60 * 1000; // ms
 
@@ -74,8 +76,8 @@ public class Cloud {
     	PARAM_VALIDATION_CODE = "valid",
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
-    	BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	// BASE_URL = "http://10.9.8.29:8080/phonebook",
+    	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
+    	BASE_URL = "http://10.9.8.29:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
@@ -103,7 +105,8 @@ public class Cloud {
 		this.lastUpdated = lastUpdated;		
 		newOnly = lastUpdated != null;
         Object[] update = getContactUpdates();
-        syncManager = new SyncManager(context, accountName, update);
+		serverPicData = getServerPicData();
+        syncManager = new SyncManager(context, accountName, update, serverPicData);
         rawContactsCursor = db.getRawContactsCursor(newOnly);
         sendFriendUpdates();
         getSharedBooks();
@@ -175,8 +178,14 @@ public class Cloud {
 		
         JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
         Cursor serverDataCursor = Db.getContactServerData(context);
+        final BatchOperation batchOperation = new BatchOperation(context);
         for (int i = 0; i < contactUpdates.length(); i++)
-        	ContactManager.updateContact(contactUpdates.getJSONObject(i), context, serverDataCursor);
+        {
+        	ContactManager.updateContact(contactUpdates.getJSONObject(i), context, serverDataCursor, batchOperation);
+        	if(batchOperation.size() > 50)
+        		batchOperation.execute();
+        }
+        batchOperation.execute();
 	}
 	
 	private List<PicData> getServerPicData() throws ClientProtocolException, JSONException, IOException {
@@ -185,7 +194,7 @@ public class Cloud {
 		for(int i=0; i< picsJson.length(); i++)
 		{
 			JSONArray picJson = picsJson.getJSONArray(i);
-			picData.add(new PicData(picJson.getLong(0), picJson.getLong(0)));
+			picData.add(new PicData(picJson.getLong(0), picJson.getLong(1), picJson.getLong(2), picJson.getString(2)));
 		}
 		return picData;
 	}
@@ -198,8 +207,8 @@ public class Cloud {
 		params.put("errorController", "file");
 		params.put("successAction", "success");
 		params.put("successController", "file");
-
-
+		Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries");
+		if(rawContactsCursor.getCount() == 0) return;
 	    Cursor dataCursor = db.getData(),
 	    	photosDataCursor = context.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
 	    		// null,
@@ -218,10 +227,7 @@ public class Cloud {
 	    	    // new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
 	    	    ContactsContract.Data.CONTACT_ID);
 	    
-	    Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries");
 	    Log.i(tag, "There are "+photosDataCursor.getCount()+" photo data entries");
-	    
-	    if(rawContactsCursor.getCount() == 0) return;
 	    
 	    photosDataCursor.moveToFirst();
 	    rawContactsCursor.moveToFirst();
@@ -242,8 +248,8 @@ public class Cloud {
 			try {
 				pic = getContactPicture(photosDataCursor, rawContactId);
 				if(pic == null) continue;
-				String hash = SimpleImageInfo.hash(pic.pic);
-		        Log.i(tag, "Digest: " + hash);
+				String hash = ImageInfo.hash(pic.pic);
+		        Log.i(tag, "picId: "+picId+", hash: " + hash);
 
 				if(picId != null) {
 					int pSize = Integer.parseInt(picSize);
@@ -323,7 +329,7 @@ public class Cloud {
 	    	if(!rawId.equals(rawContactId)) continue;
 	    	String name = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 	    	byte[] pic = dataCursor.getBlob(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
-	    	String contentType = new SimpleImageInfo(pic).getMimeType(); 
+	    	String contentType = new ImageInfo(pic).getMimeType(); 
 	    		// dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.MIMETYPE));
 	    	// String serverId
 	    	Log.i(tag, "Contact["+rawContactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
@@ -526,12 +532,4 @@ public class Cloud {
 		    return "";
 		}
     }
-}
-
-class PicData {
-	public PicData(long serverId, long picId) {
-		this.serverId = new Long(serverId).toString();
-		this.picId = new Long(picId).toString();
-	}
-	String serverId, picId;
 }

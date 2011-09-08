@@ -7,20 +7,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
+
+import com.nbos.phonebook.value.PicData;
 
 import android.util.Log;
 
 @SuppressWarnings("all")
-public class SimpleImageInfo {
-	private int height;
-	private int width;
+public class ImageInfo {
+	static String tag = "ImageInfo";
+	private int width, height;
 	private String mimeType;
 
-	private SimpleImageInfo() {
+	private ImageInfo() {}
 
-	}
-
-	public SimpleImageInfo(File file) throws IOException {
+	public ImageInfo(File file) throws IOException {
 		InputStream is = new FileInputStream(file);
 		try {
 			processStream(is);
@@ -29,11 +30,11 @@ public class SimpleImageInfo {
 		}
 	}
 
-	public SimpleImageInfo(InputStream is) throws IOException {
+	public ImageInfo(InputStream is) throws IOException {
 		processStream(is);
 	}
 
-	public SimpleImageInfo(byte[] bytes) throws IOException {
+	public ImageInfo(byte[] bytes) throws IOException {
 		InputStream is = new ByteArrayInputStream(bytes);
 		try {
 			processStream(is);
@@ -155,6 +156,23 @@ public class SimpleImageInfo {
     	System.out.println("Digest(in hex format):: " + hexString.toString());*/
     }
 	
+	public static boolean isServerPic(String serverId, byte[] photo, List<PicData> serverPicData) {
+		for(PicData p : serverPicData)
+		{
+			if(p.serverId.equals(serverId))
+			{
+				if(p.picSize == photo.length 
+				&& ImageInfo.hash(photo).equals(p.picHash))
+				{
+					Log.i(tag, "Pic is same on server");
+					return true;
+				}
+				else return false;
+			}
+		}
+		return false;
+	}
+    
 	public int getHeight() {
 		return height;
 	}

@@ -26,6 +26,7 @@ import android.util.Log;
 
 
 public class PhoneContact extends Contact {
+	static String tag = "PhoneContact";
 	public PhoneContact(String serverId) {
 		super(serverId);
 	}

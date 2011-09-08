@@ -28,19 +28,22 @@ import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.contact.Email;
 import com.nbos.phonebook.sync.client.contact.Phone;
-import com.nbos.phonebook.util.SimpleImageInfo;
+import com.nbos.phonebook.util.ImageInfo;
+import com.nbos.phonebook.value.PicData;
 
 public class SyncManager {
-	static String tag = "SyncManager";
+	static String tag = "Sync";
 	Context context;
 	Db db;
     String account; 
     List<PhoneContact> allContacts; 
     Cursor dataCursor, rawContactsCursor, dataPicsCursor;
     Set<String> syncedContacts = new HashSet<String>();
-	public SyncManager(Context context, String account, Object[] update) {
+    List<PicData> serverPicData;
+	public SyncManager(Context context, String account, Object[] update, List<PicData> serverPicData) {
 		super();
 		this.context = context;
+		this.serverPicData = serverPicData;
 		db = new Db(context);
 		this.account = account;
 		this.allContacts = db.getContacts(false);
@@ -147,9 +150,8 @@ public class SyncManager {
 	}
 
 	private void updateContactPic(Contact c) {
-		byte[] image = downloadPic(c);
-		if(image == null) return;
 		boolean newPic = true;
+		byte[] image = null;
         Long rawContactId = lookupRawContact(c);
         Uri uri = addCallerIsSyncAdapterParameter(Data.CONTENT_URI);
         dataPicsCursor.moveToFirst();
@@ -160,6 +162,12 @@ public class SyncManager {
 	    	
 	    	String rawId = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.RAW_CONTACT_ID));
 	    	if(!rawId.equals(rawContactId)) continue;
+	    	byte[] photo = dataPicsCursor.getBlob(dataPicsCursor.getColumnIndex(Photo.PHOTO));
+	    	if(photo != null 
+	    	&& ImageInfo.isServerPic(c.serverId, photo, serverPicData))
+	    		return;
+	    	image = downloadPic(c);
+	    	if(image == null) return;
 	    	Log.i(tag, "Updating pic for serverId: "+c.serverId);
 	    	ContentValues values = new ContentValues();
 	    	values.put(Photo.PHOTO, image);
@@ -170,9 +178,10 @@ public class SyncManager {
 	    	newPic = false;
 	    	break;
 	    } while(dataPicsCursor.moveToNext());
-        if(newPic)
+        if(newPic) // insert the pic
         {
-	        // insert the pic
+	    	image = downloadPic(c);
+	    	if(image == null) return;
 	        Log.i(tag, "inserting pic for serverId: "+c.serverId+", image is: "+image.length+", rawContactId: "+rawContactId);
 	        ContentValues values = new ContentValues();
 	        values.put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
@@ -186,7 +195,7 @@ public class SyncManager {
 		ContentValues values = new ContentValues();
 		values.put(PhonebookSyncAdapterColumns.PIC_ID, c.picId);
 		values.put(PhonebookSyncAdapterColumns.PIC_SIZE, image.length);
-		values.put(PhonebookSyncAdapterColumns.PIC_HASH, SimpleImageInfo.hash(image));
+		values.put(PhonebookSyncAdapterColumns.PIC_HASH, ImageInfo.hash(image));
 		int num = context.getContentResolver().update(uri, values, 
 				PhonebookSyncAdapterColumns.DATA_PID + " = ? and " + Data.MIMETYPE + " = ? ", 
 				new String[] {c.serverId, PhonebookSyncAdapterColumns.MIME_PROFILE});
@@ -321,8 +330,12 @@ public class SyncManager {
 		do {
 			String rawId = groupCursor.getColumnName(groupCursor.getColumnIndex(Data.RAW_CONTACT_ID));
 			if(rawId.equals(rawContactId))
+			{
+				Log.i(tag, "contact is in group");
 				return true;
+			}
 		} while(groupCursor.moveToNext());
+		Log.i(tag, "contact is not in group");
 		return false;
 	}
 	

@@ -37,6 +37,7 @@ import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.ServerData;
 import com.nbos.phonebook.sync.client.SharingBook;
 import com.nbos.phonebook.sync.platform.BatchOperation;
+import com.nbos.phonebook.sync.platform.ContactOperations;
 import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
 
 public class Db {
@@ -317,10 +318,15 @@ public class Db {
 		return ph;
     }
 
-	public static void updateContactServerId(String rawContactId, String serverId, Context context, Cursor serverDataCursor) {
+	public static void updateContactServerId(String rawContactId, String serverId, Context context, Cursor serverDataCursor, BatchOperation batchOperation) {
 		Log.i(tag, "Raw contact id is: "+rawContactId+", serverId: "+serverId);
 		boolean insert = true;
 		String phoneServerId = null;
+        final ContactOperations contactOp =
+            ContactOperations.updateExistingContact(context, 
+            	Long.parseLong(rawContactId),
+                batchOperation);
+		
 		serverDataCursor.moveToFirst();
 		if(serverDataCursor.getCount() > 0)
 		do {
@@ -332,29 +338,37 @@ public class Db {
 				break;
 			}
 		} while(serverDataCursor.moveToNext());
-		ContentValues values = new ContentValues();
+		// ContentValues values = new ContentValues();
 		if(insert) { // insert
 			Log.i(tag, "inserting");
-            values.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
+			contactOp.addProfileAction(Integer.parseInt(serverId));
+            /*values.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
             values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
             values.put(Data.RAW_CONTACT_ID, rawContactId);
-            context.getContentResolver().insert(Data.CONTENT_URI, values);
+            context.getContentResolver().insert(Data.CONTENT_URI, values);*/
 			return;
 		}
 		// update 
 		Log.i(tag, "updating");
-		values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
-		if(phoneServerId != null && !phoneServerId.equals(serverId)) // server id has changed
+		// values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
+		/*if(phoneServerId != null && !phoneServerId.equals(serverId)) // server id has changed
 		{
 			Log.i(tag, "Server id has changed. deleting pic data");
 			values.put(PhonebookSyncAdapterColumns.PIC_ID, (String)null);
 			values.put(PhonebookSyncAdapterColumns.PIC_SIZE, (String)null);
 			values.put(PhonebookSyncAdapterColumns.PIC_HASH, (String)null);
-		}
-		// 
-		context.getContentResolver().update(Data.CONTENT_URI, values, 
+		}*/
+		//
+		Uri uri = Data.CONTENT_URI.buildUpon()
+			.appendQueryParameter(Data.RAW_CONTACT_ID, rawContactId)
+			.build();
+		Log.i(tag, "uri is: "+uri);
+		contactOp.updateProfileAction(Integer.parseInt(serverId), uri);
+		/*context.getContentResolver().update(Data.CONTENT_URI, values, 
 				Data.RAW_CONTACT_ID + " = " + rawContactId + " and " +
 				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
+		
+		*/
 	}
 
 	
