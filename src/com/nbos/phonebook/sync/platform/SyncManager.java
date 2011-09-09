@@ -244,6 +244,7 @@ public class SyncManager {
 	private void refreshCursors() {
 		Log.i(tag, "refreshCursors");
         dataCursor.requery();
+        serverDataCursor.requery();
         rawContactsCursor.requery();
 	}
 
