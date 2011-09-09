@@ -40,7 +40,9 @@ public class SyncManager {
     Cursor dataCursor, rawContactsCursor, dataPicsCursor;
     Set<String> syncedContacts = new HashSet<String>();
     List<PicData> serverPicData;
-	public SyncManager(Context context, String account, Object[] update, List<PicData> serverPicData) {
+    List<String> unchangedPicsRawContactIds;
+	public SyncManager(Context context, String account, List<Contact> contacts, List<Group> groups, 
+			List<Group> sharedBooks, List<PicData> serverPicData, List<String> unchangedPicsRawContactIds) {
 		super();
 		this.context = context;
 		this.serverPicData = serverPicData;
@@ -49,11 +51,10 @@ public class SyncManager {
 		this.allContacts = db.getContacts(false);
 		this.dataCursor = db.getData();
 		rawContactsCursor = db.getRawContactsCursor(false);
-		
-        List<Contact> contacts =  (List<Contact>) update[0];
-        List<Group> groups = (List<Group>) update[1];
+		this.unchangedPicsRawContactIds = unchangedPicsRawContactIds;
         syncContacts(contacts);
         syncGroups(groups, false);
+        syncGroups(sharedBooks, true);
         syncPictures(contacts);
 	}
 	
@@ -134,10 +135,11 @@ public class SyncManager {
 			if(!mimetype.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)) continue;
 			String serverId = dataCursor.getString(dataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
 			if(serverId == null || !c.serverId.equals(serverId)) continue;
-			
+			String rawContactId = dataCursor.getString(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
 			String picId = dataCursor.getString(dataCursor.getColumnIndex(PhonebookSyncAdapterColumns.PIC_ID));
 			if(c.picId.equals(picId)) // no change in pic 
 			{
+				unchangedPicsRawContactIds.add(rawContactId);
 				Log.i(tag, "no change in pic: "+c.picId+", serverId: "+serverId);
 				return;
 			}

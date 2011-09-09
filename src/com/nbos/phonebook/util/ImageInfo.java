@@ -161,8 +161,8 @@ public class ImageInfo {
 		{
 			if(p.serverId.equals(serverId))
 			{
-				if(p.picSize == photo.length 
-				&& ImageInfo.hash(photo).equals(p.picHash))
+				if(p.picSize == photo.length) 
+				// && ImageInfo.hash(photo).equals(p.picHash))
 				{
 					Log.i(tag, "Pic is same on server");
 					return true;

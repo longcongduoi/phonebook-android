@@ -43,6 +43,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
+import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.util.Log;
 
@@ -63,9 +64,8 @@ public class Cloud {
     Context context;
     String accountName, authToken, lastUpdated;
     HttpClient httpClient;
-    Cursor rawContactsCursor;
-    SyncManager syncManager;
     List<PicData> serverPicData;
+    List<String> unchangedPicsRawContactIds;
     boolean newOnly;
     public static final int REGISTRATION_TIMEOUT = 20 * 60 * 1000; // ms
 
@@ -105,11 +105,18 @@ public class Cloud {
 		this.lastUpdated = lastUpdated;		
 		newOnly = lastUpdated != null;
         Object[] update = getContactUpdates();
-		serverPicData = getServerPicData();
-        syncManager = new SyncManager(context, accountName, update, serverPicData);
-        rawContactsCursor = db.getRawContactsCursor(newOnly);
+		unchangedPicsRawContactIds = new ArrayList<String>();
+        List<Contact> contacts =  (List<Contact>) update[0];
+        List<Group> groups = (List<Group>) update[1];
+        List<Group> sharedBooks = getSharedBooks();
+        if(contacts.size() > 0 || groups.size() > 0 || sharedBooks.size() > 0)
+        {
+        	serverPicData = getServerPicData();
+        	new SyncManager(context, accountName, 
+        			contacts, groups, sharedBooks, 
+        			serverPicData, unchangedPicsRawContactIds);
+        }
         sendUpdates();
-        getSharedBooks();
         return getTimestamp();
 	}
 
@@ -117,7 +124,7 @@ public class Cloud {
 		sendFriendUpdates(false);
 	}*/
 	
-    private void getSharedBooks() throws ClientProtocolException, JSONException, IOException {
+	private List<Group> getSharedBooks() throws ClientProtocolException, JSONException, IOException {
         List<NameValuePair> params = getAuthParams();
         if(lastUpdated != null)
         	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
@@ -125,7 +132,7 @@ public class Cloud {
         final List<Group> books = new ArrayList<Group>();
         for (int i = 0; i < sharedBooks.length(); i++)  
             books.add(Group.valueOf(sharedBooks.getJSONObject(i)));
-        syncManager.syncGroups(books, true);
+        return books;
 	}
 
 	Object[] getContactUpdates() throws JSONException, ParseException, IOException, AuthenticationException 
@@ -150,11 +157,13 @@ public class Cloud {
     }
 
 	public void sendUpdates() throws ClientProtocolException, IOException, JSONException {
-		sendContactUpdates(db.getContacts(newOnly), rawContactsCursor);
+		List<PhoneContact> contacts = db.getContacts(newOnly);
+		sendContactUpdates(contacts);
         sendGroupUpdates(db.getGroups(newOnly));
         sendSharedBookUpdates(db.getSharingBooks(newOnly));
         uploadContactPictures();
-        ContactManager.resetDirtyContacts(context);
+        if(contacts.size() > 0)
+        	ContactManager.resetDirtyContacts(context);
 	}
 
 	public String getTimestamp() throws ClientProtocolException, JSONException, IOException {
@@ -164,7 +173,7 @@ public class Cloud {
 		
 	}
 
-	private void sendContactUpdates(List<PhoneContact> contacts, Cursor rawContactsCursor) throws ClientProtocolException, IOException, JSONException {
+	private void sendContactUpdates(List<PhoneContact> contacts) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
         params.add(new BasicNameValuePair("numContacts", new Integer(contacts.size()).toString()));
         if(lastUpdated != null)
@@ -194,21 +203,22 @@ public class Cloud {
 		for(int i=0; i< picsJson.length(); i++)
 		{
 			JSONArray picJson = picsJson.getJSONArray(i);
-			picData.add(new PicData(picJson.getLong(0), picJson.getLong(1), picJson.getLong(2), picJson.getString(2)));
+			picData.add(new PicData(picJson.getLong(0), picJson.getLong(1), picJson.getLong(2)));
 		}
 		return picData;
 	}
 
 	void uploadContactPictures() throws ClientProtocolException, JSONException, IOException {
-		List<PicData> serverPicData = getServerPicData();
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("upload", "avatar");
 		params.put("errorAction", "error");
 		params.put("errorController", "file");
 		params.put("successAction", "success");
 		params.put("successController", "file");
+		Cursor rawContactsCursor = db.getRawContactsCursor(newOnly);
 		Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries");
 		if(rawContactsCursor.getCount() == 0) return;
+		serverPicData = getServerPicData();
 	    Cursor dataCursor = db.getData(),
 	    	photosDataCursor = context.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
 	    		// null,
@@ -234,6 +244,11 @@ public class Cloud {
 	    do {
 	    	
 	    	String rawContactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts._ID));
+	    	if(unchangedPicsRawContactIds.contains(rawContactId))
+	    	{
+	    		Log.i(tag, "Unchanged pic");
+	    		continue;
+	    	}
 	    	ServerData data = Db.getServerDataFromContactId(dataCursor, rawContactId);
 	    	if(data == null) {
 	    		Log.i(tag, "Server data is null for contactId: "+rawContactId);
@@ -249,11 +264,12 @@ public class Cloud {
 				pic = getContactPicture(photosDataCursor, rawContactId);
 				if(pic == null) continue;
 				String hash = ImageInfo.hash(pic.pic);
-		        Log.i(tag, "picId: "+picId+", hash: " + hash);
+		        Log.i(tag, "picId: "+picId);//+", hash: " + hash);
 
 				if(picId != null) {
 					int pSize = Integer.parseInt(picSize);
-					if(pSize == pic.pic.length && picHash != null && hash.equals(picHash)
+					if(pSize == pic.pic.length 
+					&& picHash != null && hash.equals(picHash)
 					&& isServerPicData(serverId, picId, serverPicData))
 					{
 						Log.i(tag, "Same image not uploading");
@@ -323,12 +339,12 @@ public class Cloud {
 		if(dataCursor.getCount() == 0) return null;
 		dataCursor.moveToFirst();
 	    do {
-	    	String mimetype = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.MIMETYPE));
+	    	String mimetype = dataCursor.getString(dataCursor.getColumnIndex(Data.MIMETYPE));
 	    	if(!mimetype.equals(Photo.CONTENT_ITEM_TYPE)) continue;
-	    	String rawId = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Data.RAW_CONTACT_ID));
+	    	String rawId = dataCursor.getString(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
 	    	if(!rawId.equals(rawContactId)) continue;
-	    	String name = dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-	    	byte[] pic = dataCursor.getBlob(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
+	    	String name = dataCursor.getString(dataCursor.getColumnIndex(Contacts.DISPLAY_NAME));
+	    	byte[] pic = dataCursor.getBlob(dataCursor.getColumnIndex(Photo.PHOTO));
 	    	String contentType = new ImageInfo(pic).getMimeType(); 
 	    		// dataCursor.getString(dataCursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.MIMETYPE));
 	    	// String serverId
@@ -360,11 +376,12 @@ public class Cloud {
         JSONArray groupUpdates = new JSONArray(post(SEND_GROUP_UPDATES_URI, params));
         for (int i = 0; i < groupUpdates.length(); i++)
         	ContactManager.updateGroup(groupUpdates.getJSONObject(i), context);
-        ContactManager.resetDirtyGroups(context);
+        if(groups.size() > 0)
+        	ContactManager.resetDirtyGroups(context);
 
 	}
 	
-	private String sendSharedBookUpdates(List<SharingBook> books) throws ClientProtocolException, IOException, JSONException {
+	private void sendSharedBookUpdates(List<SharingBook> books) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
         params.add(new BasicNameValuePair("numShareBooks", new Integer(books.size()).toString()));
         for(int i=0; i< books.size(); i++)
@@ -374,13 +391,11 @@ public class Cloud {
         	params.add(new BasicNameValuePair("shareBookId_"+index, book.groupId));
         	params.add(new BasicNameValuePair("shareContactId_"+index, book.contactId));
         }
-        JSONArray response = new JSONArray(post(SEND_SHARED_BOOK_UPDATES_URI, params));
-        JSONArray  bookUpdates = response.getJSONArray(0);
-        Long timestamp = response.getLong(1);
+        JSONArray bookUpdates = new JSONArray(post(SEND_SHARED_BOOK_UPDATES_URI, params));
         for (int i = 0; i < bookUpdates.length(); i++)
         	ContactManager.updateBook(bookUpdates.getJSONObject(i), context);
-        ContactManager.resetDirtySharedBooks(context);
-        return timestamp.toString();
+        if(books.size() > 0)
+        	ContactManager.resetDirtySharedBooks(context);
 	}
 	
 	public String post(String url, List<NameValuePair> params) throws ClientProtocolException, IOException, JSONException {
