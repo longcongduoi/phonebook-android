@@ -11,12 +11,12 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -65,7 +65,7 @@ public class Cloud {
     String accountName, authToken, lastUpdated;
     HttpClient httpClient;
     List<PicData> serverPicData;
-    List<String> unchangedPicsRawContactIds;
+    Set<String> unchangedPicsRawContactIds;
     boolean newOnly;
     public static final int REGISTRATION_TIMEOUT = 20 * 60 * 1000; // ms
 
@@ -76,8 +76,8 @@ public class Cloud {
     	PARAM_VALIDATION_CODE = "valid",
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
-    	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	BASE_URL = "http://10.9.8.29:8080/phonebook",
+    	BASE_URL = "http://phonebook.nbostech.com/phonebook",
+    	// BASE_URL = "http://10.9.8.29:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
@@ -105,7 +105,7 @@ public class Cloud {
 		this.lastUpdated = lastUpdated;		
 		newOnly = lastUpdated != null;
         Object[] update = getContactUpdates();
-		unchangedPicsRawContactIds = new ArrayList<String>();
+		unchangedPicsRawContactIds = new HashSet<String>();
         List<Contact> contacts =  (List<Contact>) update[0];
         List<Group> groups = (List<Group>) update[1];
         List<Group> sharedBooks = getSharedBooks();
@@ -219,7 +219,7 @@ public class Cloud {
 		Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries");
 		if(rawContactsCursor.getCount() == 0) return;
 		serverPicData = getServerPicData();
-	    Cursor dataCursor = db.getData(),
+	    Cursor dataCursor = db.getProfileData(),
 	    	photosDataCursor = context.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
 	    		// null,
 	    	    new String[] {

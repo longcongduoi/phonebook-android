@@ -37,12 +37,14 @@ public class SyncManager {
 	Db db;
     String account; 
     List<PhoneContact> allContacts; 
-    Cursor dataCursor, rawContactsCursor, dataPicsCursor;
-    Set<String> syncedContacts = new HashSet<String>();
+    Cursor dataCursor, serverDataCursor, rawContactsCursor, dataPicsCursor;
+    Set<String> syncedContacts = new HashSet<String>(),
+    	unchangedPicsRawContactIds;
     List<PicData> serverPicData;
-    List<String> unchangedPicsRawContactIds;
-	public SyncManager(Context context, String account, List<Contact> contacts, List<Group> groups, 
-			List<Group> sharedBooks, List<PicData> serverPicData, List<String> unchangedPicsRawContactIds) {
+	public SyncManager(Context context, String account, 
+			List<Contact> contacts, List<Group> groups, 
+			List<Group> sharedBooks, List<PicData> serverPicData, 
+			Set<String> unchangedPicsRawContactIds) {
 		super();
 		this.context = context;
 		this.serverPicData = serverPicData;
@@ -50,14 +52,23 @@ public class SyncManager {
 		this.account = account;
 		this.allContacts = db.getContacts(false);
 		this.dataCursor = db.getData();
+		this.serverDataCursor = db.getProfileData();
 		rawContactsCursor = db.getRawContactsCursor(false);
 		this.unchangedPicsRawContactIds = unchangedPicsRawContactIds;
         syncContacts(contacts);
         syncGroups(groups, false);
         syncGroups(sharedBooks, true);
         syncPictures(contacts);
+        closeCursors();
 	}
 	
+	private void closeCursors() {
+		dataCursor.close();
+		serverDataCursor.close();
+		rawContactsCursor.close();
+		dataPicsCursor.close();
+	}
+
 	void syncContacts(List<Contact> contacts) {
         long rawContactId = 0;
         final BatchOperation batchOperation = new BatchOperation(context);
@@ -342,18 +353,18 @@ public class SyncManager {
 	}
 	
 	long lookupRawContact(Contact contact) {
-		dataCursor.moveToFirst();
-		if(dataCursor.getCount() > 0)
+		serverDataCursor.moveToFirst();
+		if(serverDataCursor.getCount() > 0)
 		do {
-			String mimeType = dataCursor.getString(dataCursor.getColumnIndex(Data.MIMETYPE));
-			String serverId = dataCursor.getString(dataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
+			String mimeType = serverDataCursor.getString(serverDataCursor.getColumnIndex(Data.MIMETYPE));
+			String serverId = serverDataCursor.getString(serverDataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
 			if(!mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)
 			|| !serverId.equals(contact.serverId))
 				continue;
-			long rawContactId = dataCursor.getLong(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+			long rawContactId = serverDataCursor.getLong(serverDataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
 			Log.i(tag, "lookupRawContact returning rawContactId: "+rawContactId+", for serverId: "+serverId);
 			return rawContactId;
-		} while(dataCursor.moveToNext()); 
+		} while(serverDataCursor.moveToNext()); 
 
 		// could not find the contact, do a phone number and email search		
 		for(PhoneContact u : allContacts) 

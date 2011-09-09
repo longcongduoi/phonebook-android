@@ -495,4 +495,19 @@ public class Db {
 				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null, Data.RAW_CONTACT_ID);
 		return c;
 	}
+
+	public Cursor getProfileData() {
+        final String[] PROJECTION =
+            new String[] {
+        		Data.RAW_CONTACT_ID, Data.CONTACT_ID, Data.MIMETYPE, 
+        		PhonebookSyncAdapterColumns.DATA_PID,
+        		PhonebookSyncAdapterColumns.PIC_ID,
+        		PhonebookSyncAdapterColumns.PIC_SIZE,
+        		PhonebookSyncAdapterColumns.PIC_HASH,
+        };
+
+    	return cr.query(Data.CONTENT_URI, PROJECTION, 
+    			Data.MIMETYPE+"='"+PhonebookSyncAdapterColumns.MIME_PROFILE+"'", 
+    			null, Data.CONTACT_ID);
+	}
 }
