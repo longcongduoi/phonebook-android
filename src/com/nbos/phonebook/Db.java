@@ -74,7 +74,13 @@ public class Db {
 	    		BookTable.BOOKID + "=" +id,
 	    	    null, BookTable.CONTACTID);
 	}
-	
+
+	public static Cursor getBooks(ContentResolver cr) {
+    	return cr.query(
+    			Uri.parse("content://"+Provider.AUTHORITY+"/"+Provider.BookContent.CONTENT_PATH),
+	    		null, null, null, BookTable.BOOKID);
+	}
+
 	public static void setGroupDirty(String groupId, ContentResolver cr) {
 	    ContentValues values = new ContentValues();
 	    values.put(Groups.DIRTY, "1");

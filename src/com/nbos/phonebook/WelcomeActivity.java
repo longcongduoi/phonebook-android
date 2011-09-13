@@ -46,6 +46,7 @@ import android.widget.SimpleCursorAdapter;
 
 import com.nbos.phonebook.contentprovider.Provider;
 import com.nbos.phonebook.sync.client.PhoneContact;
+import com.nbos.phonebook.util.WelcomeActivityCursorAdapter;
 import com.nbos.phonebook.value.Contact;
 import com.nbos.phonebook.value.Group;
 
@@ -77,14 +78,13 @@ public class WelcomeActivity extends ListActivity {
     	Test.telephony(this);
     }
 
-	@Override
+/*	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 	    MenuInflater inflater = getMenuInflater();
 	    inflater.inflate(R.menu.group_list_menu, menu);
 	    return true;
 		
 	}
-    static int ADD_GROUP = 1, SHOW_GROUP = 2;
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 	    // Handle item selection
@@ -95,8 +95,20 @@ public class WelcomeActivity extends ListActivity {
 	     }
 	     return true;
 	  
-	    }
-		
+    }*/
+    static int ADD_GROUP = 1, SHOW_GROUP = 2;
+	public boolean onClickAddGroup(View v) {
+	    // Handle item selection
+	    switch (v.getId()) {
+	    case R.id.add_group_new:
+		     Intent i = new Intent(WelcomeActivity.this, AddGroupActivity.class);
+	         startActivityForResult(i, ADD_GROUP);
+	         break;
+	     }
+	    
+	     return true;
+	  
+    }
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -131,8 +143,9 @@ public class WelcomeActivity extends ListActivity {
                 ContactsContract.Groups.SUMMARY_COUNT,
                 ContactsContract.Groups.SYNC1
         };
-        
-        SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, R.layout.group_entry, m_cursor,
+        Cursor sharedBooksCursor = Db.getBooks(cr);
+        WelcomeActivityCursorAdapter adapter = new WelcomeActivityCursorAdapter(this, R.layout.group_entry, 
+        		m_cursor, sharedBooksCursor,
                 fields, new int[] {R.id.groupName, R.id.groupCount, R.id.groupOwner});
         
         adapter.setStringConversionColumn(

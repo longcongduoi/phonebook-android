@@ -70,7 +70,7 @@ public class SharingWithActivity extends ListActivity {
 	    
 		menu.add(0, v.getId(), 0, "Stop share");
 		menu.add(1,v.getId(),0,   "Permissions");
-		}
+	}
 	
 	
 	@Override
@@ -140,7 +140,7 @@ public class SharingWithActivity extends ListActivity {
 	    );*/
 	    	
         m_cursor = new MatrixCursor( 
-            	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME},10);
+            	new String[] {ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME}, 10);
         
         
         /*for (CursorJoiner.Result joinerResult : joiner) 
