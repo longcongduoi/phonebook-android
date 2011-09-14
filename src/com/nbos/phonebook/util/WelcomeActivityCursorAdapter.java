@@ -6,6 +6,7 @@ import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
@@ -31,14 +32,21 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 	public View getView(int position, View inView, ViewGroup parent) {
 		View v = super.getView(position, inView, parent);
 		Log.i(tag, "Super view is: "+v);
-		TextView sharedText = (TextView) v.findViewById(R.id.shared);
+		TextView sharedText = (TextView) v.findViewById(R.id.sharing_with);
+		ImageView image=(ImageView) v.findViewById(R.id.sharing_with_icon);
 		c.moveToPosition(position);
 		int groupId = c.getInt(c.getColumnIndex(ContactsContract.Groups._ID));
 		int numSharingWith = getNumSharingWith(groupId);
 		if(numSharingWith > 0)
-			sharedText.setText("sharing with "+numSharingWith);
+		{
+			image.setImageResource(android.R.drawable.ic_menu_share);
+			sharedText.setText(new Integer(numSharingWith).toString());
+		}
 		else
+		{
+			image.setImageDrawable(null);
 			sharedText.setText(null);
+		}
 		return v;
 	}
 
@@ -58,4 +66,5 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 	}
 
 
+	
 }

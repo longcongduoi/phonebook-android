@@ -28,6 +28,7 @@
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:text="@string/add_group"
-    android:onClick="onClickAddGroup" />   
+    android:onClick="onClickAddGroup" 
+    android:drawableTop="@drawable/group" />   
    </LinearLayout>
 </LinearLayout>

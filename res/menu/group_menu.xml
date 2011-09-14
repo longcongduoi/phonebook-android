@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu
   xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/delete_group" android:title="@string/delete_group"></item>
-    <item android:id="@+id/share_group" android:title="@string/share_group"></item>
-    <item android:id="@+id/add_contacts" android:title="@string/add_contacts"></item>
+    <item android:id="@+id/delete_group" android:title="@string/delete_group" android:icon="@drawable/android:ic_delete"></item>
+    <item android:id="@+id/share_group" android:title="@string/share_group" android:icon="@drawable/android:ic_menu_share"></item>
+    <item android:id="@+id/add_contacts" android:title="@string/add_contacts" android:icon="@drawable/add_group"></item>
 </menu>

@@ -28,4 +28,5 @@
     <color name="translucent_search_background">#cc000000</color>
     <color name="kind_title">#fff</color>
     <color name="warning">#FF6600</color>
+    <color name="title_bg_color">#FFEDA6</color>
 </resources>

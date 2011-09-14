@@ -21,6 +21,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.SimpleCursorAdapter;
 
@@ -43,7 +44,9 @@ public class SharingWithActivity extends ListActivity {
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
 	    db = new Db(getApplicationContext());
+        requestWindowFeature(Window.FEATURE_LEFT_ICON);
 	    setContentView(R.layout.sharing_with);
+        setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, android.R.drawable.ic_menu_share);
 	    registerForContextMenu(getListView());  
 		
 	    Bundle extras = getIntent().getExtras();

@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -22,7 +23,9 @@ public class AddGroupActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_LEFT_ICON);
 	    setContentView(R.layout.add_group);
+        setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.group);
 	    getWindow().setTitle("Add a group");
 	}
 	

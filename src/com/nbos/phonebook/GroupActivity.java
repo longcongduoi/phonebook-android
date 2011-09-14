@@ -23,6 +23,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.FilterQueryProvider;
 import android.widget.ListView;
@@ -46,7 +47,10 @@ public class GroupActivity extends ListActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_LEFT_ICON);
 		setContentView(R.layout.group);
+        setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.group);
+
 		// this.registerForContextMenu(getListView());
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
@@ -58,6 +62,14 @@ public class GroupActivity extends ListActivity {
 		queryGroup();
 		registerForContextMenu(getListView());
 		getListView().setTextFilterEnabled(true);
+		
+	}
+
+	@Override
+	public void onAttachedToWindow() {
+		// TODO Auto-generated method stub
+		super.onAttachedToWindow();
+		openOptionsMenu();
 	}
 
 	@Override

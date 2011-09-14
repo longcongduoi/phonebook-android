@@ -51,7 +51,7 @@
     
     <application
         android:icon="@drawable/icon"
-        android:label="@string/label" android:debuggable="true">
+        android:label="@string/label" android:debuggable="true" android:theme="@style/Theme.OTPMain">
 		<provider android:name="com.nbos.phonebook.contentprovider.Provider" android:authorities="com.nbos.phonebook.provider.defaultname" />        
         <!-- The authenticator service -->
         <service
