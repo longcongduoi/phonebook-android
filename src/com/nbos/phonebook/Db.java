@@ -344,37 +344,36 @@ public class Db {
 				break;
 			}
 		} while(serverDataCursor.moveToNext());
-		// ContentValues values = new ContentValues();
+		ContentValues values = new ContentValues();
 		if(insert) { // insert
 			Log.i(tag, "inserting");
-			contactOp.addProfileAction(Integer.parseInt(serverId));
-            /*values.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
+			//contactOp.addProfileAction(Integer.parseInt(serverId));
+            values.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
             values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
             values.put(Data.RAW_CONTACT_ID, rawContactId);
-            context.getContentResolver().insert(Data.CONTENT_URI, values);*/
+            context.getContentResolver().insert(Data.CONTENT_URI, values);
 			return;
 		}
 		// update 
 		Log.i(tag, "updating");
-		// values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
-		/*if(phoneServerId != null && !phoneServerId.equals(serverId)) // server id has changed
+		values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
+		if(phoneServerId != null && !phoneServerId.equals(serverId)) // server id has changed
 		{
 			Log.i(tag, "Server id has changed. deleting pic data");
 			values.put(PhonebookSyncAdapterColumns.PIC_ID, (String)null);
 			values.put(PhonebookSyncAdapterColumns.PIC_SIZE, (String)null);
 			values.put(PhonebookSyncAdapterColumns.PIC_HASH, (String)null);
-		}*/
+		}
 		//
-		Uri uri = Data.CONTENT_URI.buildUpon()
+		/*Uri uri = Data.CONTENT_URI.buildUpon()
 			.appendQueryParameter(Data.RAW_CONTACT_ID, rawContactId)
+			.appendQueryParameter(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE)
 			.build();
-		Log.i(tag, "uri is: "+uri);
-		contactOp.updateProfileAction(Integer.parseInt(serverId), uri);
-		/*context.getContentResolver().update(Data.CONTENT_URI, values, 
+		Log.i(tag, "uri is: "+uri);*/
+		// contactOp.updateProfileAction(Integer.parseInt(serverId), uri);
+		context.getContentResolver().update(Data.CONTENT_URI, values, 
 				Data.RAW_CONTACT_ID + " = " + rawContactId + " and " +
 				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
-		
-		*/
 	}
 
 	

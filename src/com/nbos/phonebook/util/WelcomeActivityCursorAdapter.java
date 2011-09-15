@@ -31,7 +31,6 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 	@Override
 	public View getView(int position, View inView, ViewGroup parent) {
 		View v = super.getView(position, inView, parent);
-		Log.i(tag, "Super view is: "+v);
 		TextView sharedText = (TextView) v.findViewById(R.id.sharing_with);
 		ImageView image=(ImageView) v.findViewById(R.id.sharing_with_icon);
 		c.moveToPosition(position);

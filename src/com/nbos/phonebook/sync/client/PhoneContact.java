@@ -98,10 +98,13 @@ public class PhoneContact extends Contact {
             }
             addContactField(contact, cursor, mimeType);
     	} while(cursor.moveToNext());
-    	Log.i(tag, "contactId: "+contact.contactId+", rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType);
     	if(contact != null)
+    	{
+    		Log.i(tag, "last contactId: "+contact.contactId+", rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType);
     		contacts.add(contact);
+    	}
     	cursor.close();
+    	Log.i(tag, "returning "+contacts.size()+" contacts");
     	return contacts;
 	}
 

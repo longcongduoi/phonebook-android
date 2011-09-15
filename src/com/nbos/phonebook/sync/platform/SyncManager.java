@@ -38,13 +38,13 @@ public class SyncManager {
     String account; 
     List<PhoneContact> allContacts; 
     Cursor dataCursor, serverDataCursor, rawContactsCursor, dataPicsCursor;
-    Set<String> syncedContacts = new HashSet<String>(),
+    Set<String> syncedContactServerIds,
     	unchangedPicsRawContactIds;
     List<PicData> serverPicData;
 	public SyncManager(Context context, String account, 
 			List<Contact> contacts, List<Group> groups, 
 			List<Group> sharedBooks, List<PicData> serverPicData, 
-			Set<String> unchangedPicsRawContactIds) {
+			Set<String> unchangedPicsRawContactIds, Set<String> syncedContactServerIds) {
 		super();
 		this.context = context;
 		this.serverPicData = serverPicData;
@@ -55,6 +55,7 @@ public class SyncManager {
 		this.serverDataCursor = db.getProfileData();
 		rawContactsCursor = db.getRawContactsCursor(false);
 		this.unchangedPicsRawContactIds = unchangedPicsRawContactIds;
+		this.syncedContactServerIds = syncedContactServerIds;
         syncContacts(contacts);
         syncGroups(groups, false);
         syncGroups(sharedBooks, true);
@@ -75,13 +76,13 @@ public class SyncManager {
         Log.i(tag, "In SyncContacts: There are "+rawContactsCursor.getCount()+" raw contacts, num columns: "+rawContactsCursor.getColumnCount());
         for (final Contact contact : contacts) 
         {
-        	if(syncedContacts.contains(contact.serverId)) continue;
-        	syncedContacts.add(contact.serverId);
+        	if(syncedContactServerIds.contains(contact.serverId)) continue;
+        	syncedContactServerIds.add(contact.serverId);
             // userId = Integer.parseInt(user.getUserId());
             // Check to see if the contact needs to be inserted or updated
             rawContactId = lookupRawContact(contact);
             boolean dirty = ContactManager.isDirtyContact(rawContactId, rawContactsCursor); 
-            Log.d(tag, "Raw contact id is: "+rawContactId+", dirty: "+dirty);
+            Log.d(tag, "Raw contact id is: "+rawContactId+", name: "+contact.name+", dirty: "+dirty);
             if(dirty) continue;
             if (rawContactId != 0) {
                 if (!contact.deleted) {

@@ -134,6 +134,7 @@ public class Contact {
 	}
 	
 	static void addContactField(Contact contact, Cursor cursor, String mimeType) {
+		if(mimeType == null) return;
         if(mimeType.equals(CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE))
         	Name.add(contact, cursor);
         if(mimeType.equals(CommonDataKinds.Phone.CONTENT_ITEM_TYPE))

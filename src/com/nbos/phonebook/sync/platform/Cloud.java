@@ -65,7 +65,7 @@ public class Cloud {
     String accountName, authToken, lastUpdated;
     HttpClient httpClient;
     List<PicData> serverPicData;
-    Set<String> unchangedPicsRawContactIds;
+    Set<String> unchangedPicsRawContactIds, syncedContactServerIds;
     boolean newOnly;
     public static final int REGISTRATION_TIMEOUT = 20 * 60 * 1000; // ms
 
@@ -76,8 +76,8 @@ public class Cloud {
     	PARAM_VALIDATION_CODE = "valid",
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
-    	BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	// BASE_URL = "http://10.9.8.29:8080/phonebook",
+    	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
+    	BASE_URL = "http://10.9.8.29:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
@@ -106,6 +106,7 @@ public class Cloud {
 		newOnly = lastUpdated != null;
         Object[] update = getContactUpdates();
 		unchangedPicsRawContactIds = new HashSet<String>();
+		syncedContactServerIds = new HashSet<String>();
         List<Contact> contacts =  (List<Contact>) update[0];
         List<Group> groups = (List<Group>) update[1];
         List<Group> sharedBooks = getSharedBooks();
@@ -114,7 +115,7 @@ public class Cloud {
         	serverPicData = getServerPicData();
         	new SyncManager(context, accountName, 
         			contacts, groups, sharedBooks, 
-        			serverPicData, unchangedPicsRawContactIds);
+        			serverPicData, unchangedPicsRawContactIds, syncedContactServerIds);
         }
         sendUpdates();
         return getTimestamp();
@@ -175,15 +176,20 @@ public class Cloud {
 
 	private void sendContactUpdates(List<PhoneContact> contacts) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
-        params.add(new BasicNameValuePair("numContacts", new Integer(contacts.size()).toString()));
-        if(lastUpdated != null)
-        	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
+        int numContacts = 0;
         for(int i=0; i< contacts.size(); i++)
         {
-        	String index = new Integer(i).toString();
         	PhoneContact contact =  contacts.get(i);
-        	contact.addParams(params, index);
+        	if(contact.serverId != null // this server id has already been synced in the pull 
+        	&& syncedContactServerIds.contains(contact.serverId))
+        		continue; 
+        	contact.addParams(params, new Integer(numContacts).toString());
+        	numContacts++;
         }
+        
+        params.add(new BasicNameValuePair("numContacts", new Integer(numContacts).toString()));
+        if(lastUpdated != null)
+        	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
 		
         JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
         Cursor serverDataCursor = Db.getContactServerData(context);
@@ -266,7 +272,7 @@ public class Cloud {
 				String hash = ImageInfo.hash(pic.pic);
 		        Log.i(tag, "picId: "+picId);//+", hash: " + hash);
 
-				if(picId != null) {
+				if(picId != null && picSize != null) {
 					int pSize = Integer.parseInt(picSize);
 					if(pSize == pic.pic.length 
 					&& picHash != null && hash.equals(picHash)
