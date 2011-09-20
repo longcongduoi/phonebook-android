@@ -52,7 +52,7 @@ public class WelcomeActivity extends ListActivity {
     	//Test.getContacts(this.getApplicationContext());
     	//Test.getGroups(this.getApplicationContext());
     	// Test.getContacts(this.getApplicationContext());
-    	Test.telephony(this);
+    	// Test.telephony(this);
     }
 
 /*	@Override
