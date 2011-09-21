@@ -45,6 +45,7 @@ public class WelcomeActivity extends ListActivity {
     	Log.i(tag, "phone number: "+phoneNumber);
     	// Test.deleteContactsServerData(getApplicationContext());
     	// Test.getContactServerData(getApplicationContext());
+    	// Log.i(tag, "WelcomeActivity");
     	// Test.getGroups(getApplicationContext());
     	// PhoneContact.getContacts(false, getApplicationContext());
     	// Test.getRawContacts(getApplicationContext());
