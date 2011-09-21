@@ -2,13 +2,14 @@ package com.nbos.phonebook;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.CursorJoiner;
 import android.database.MatrixCursor;
 import android.os.Bundle;
 import android.provider.ContactsContract;
@@ -23,9 +24,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.SimpleCursorAdapter;
 
-import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.util.ImageCursorAdapter;
 import com.nbos.phonebook.value.ContactRow;
@@ -55,8 +54,6 @@ public class SharingWithActivity extends ListActivity {
 	    	id = extras.getString("id");
 	    	name = extras.getString("name");
 	    }
-	    
-	    setTitle("Sharing "+name+" with");
 	    populateContacts();
 	}
 
@@ -119,7 +116,7 @@ public class SharingWithActivity extends ListActivity {
         Cursor contactsCursor = Db.getContacts(this);
         Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
         Cursor bookCursor = Db.getBook(this, id);
-        Log.i(tag, "all columns: "+BookTable.ALL_COLUMNS.length+", data columns: "+bookCursor.getColumnCount());
+        Log.i(tag, "Book["+id+"] has "+bookCursor.getCount()+" contacts");
         ids = new ArrayList<String>();
         while(bookCursor.moveToNext())
         	Log.i(tag, "contactid: "+bookCursor.getString(bookCursor.getColumnIndex(BookTable.CONTACTID))
@@ -128,11 +125,12 @@ public class SharingWithActivity extends ListActivity {
 
         Log.i(tag, "Sharing with "+bookCursor.getCount()+" contacts");
         List<ContactRow> rows= new ArrayList<ContactRow>();
+        Set<String> contactIds = new HashSet<String>();
         bookCursor.moveToFirst();
         if(bookCursor.getCount() > 0)
         do {
         	String rawContactId = bookCursor.getString(bookCursor.getColumnIndex(BookTable.CONTACTID));
-        	ContactRow row = getContactRow(rawContactId, contactsCursor);
+        	ContactRow row = getContactRow(rawContactId, contactsCursor, contactIds);
         	if(row != null)
         		rows.add(row);
         } while(bookCursor.moveToNext());
@@ -183,6 +181,15 @@ public class SharingWithActivity extends ListActivity {
 	    return true;
 		
 	}
+	
+	
+	@Override
+	public void onAttachedToWindow() {
+		// TODO Auto-generated method stub
+		super.onAttachedToWindow();
+		openOptionsMenu();
+	}
+
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -210,7 +217,7 @@ public class SharingWithActivity extends ListActivity {
 	}
 
 	private ContactRow getContactRow(String rawContactId,
-			Cursor contactsCursor) {
+			Cursor contactsCursor, Set<String> contactIds) {
 		rawContactsCursor.moveToFirst();
 		String contactId = null;
 		if(rawContactsCursor.getCount() > 0)
@@ -226,7 +233,10 @@ public class SharingWithActivity extends ListActivity {
 		if(contactId != null && contactsCursor.getCount() > 0)
 		do {
 			String cId = contactsCursor.getString(contactsCursor.getColumnIndex(Contacts._ID));
-			if(!cId.equals(contactId)) continue;
+			if(!cId.equals(contactId)
+			|| contactIds.contains(contactId)) 
+				continue;
+			contactIds.add(contactId);
 			String name = contactsCursor.getString(contactsCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 			if(name != null)
 				return new ContactRow(contactId, name);
