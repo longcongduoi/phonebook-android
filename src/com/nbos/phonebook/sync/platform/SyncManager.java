@@ -38,13 +38,13 @@ public class SyncManager {
     String account; 
     List<PhoneContact> allContacts; 
     Cursor dataCursor, serverDataCursor, rawContactsCursor, dataPicsCursor;
-    Set<String> syncedContactServerIds,
+    Set<String> syncedContactServerIds, syncedGroupServerIds,
     	unchangedPicsRawContactIds;
     List<PicData> serverPicData;
 	public SyncManager(Context context, String account, 
 			List<Contact> contacts, List<Group> groups, 
 			List<Group> sharedBooks, List<PicData> serverPicData, 
-			Set<String> unchangedPicsRawContactIds, Set<String> syncedContactServerIds) {
+			Set<String> unchangedPicsRawContactIds, Set<String> syncedContactServerIds, Set<String> syncedGroupServerIds) {
 		super();
 		this.context = context;
 		this.serverPicData = serverPicData;
@@ -56,6 +56,7 @@ public class SyncManager {
 		rawContactsCursor = db.getRawContactsCursor(false);
 		this.unchangedPicsRawContactIds = unchangedPicsRawContactIds;
 		this.syncedContactServerIds = syncedContactServerIds;
+		this.syncedGroupServerIds = syncedGroupServerIds;
         syncContacts(contacts);
         syncGroups(groups, false);
         syncGroups(sharedBooks, true);
@@ -261,7 +262,7 @@ public class SyncManager {
 	    		ContactsContract.Groups.SOURCE_ID + " = "+id, null, null);
 	    if(cursor.getCount() == 0)
 	    {
-	    	Log.i(tag, "New group: "+account);
+	    	Log.i(tag, "New group: "+account+", "+g.name+", owner: "+g.owner+", sourceId: "+g.groupId);
 	    	// create a group with the share book name
 	    	//DatabaseHelper.createAGroup(ctx, sharedBook.name, sharedBook.owner, accountName, id);
 	    	Db.createAGroup(context, g.name, isSharedBook ? g.owner : null , account, Integer.parseInt(id));
@@ -277,6 +278,7 @@ public class SyncManager {
 	    	Log.i(tag, "Group is dirty, skipping update");
 	    	return;
 	    }
+	    syncedGroupServerIds.add(id);
 	    Cursor groupCursor = Db.getContactsInGroup(groupId, context.getContentResolver());	    
     	Log.i(tag, "Update group: "+g.name+", id: "+groupId+", contacts: "+g.contacts+", group cursor size: "+groupCursor.getCount());
     	syncContacts(g.contacts);

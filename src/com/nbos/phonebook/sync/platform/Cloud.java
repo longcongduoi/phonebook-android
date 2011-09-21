@@ -65,7 +65,7 @@ public class Cloud {
     String accountName, authToken, lastUpdated;
     HttpClient httpClient;
     List<PicData> serverPicData;
-    Set<String> unchangedPicsRawContactIds, syncedContactServerIds;
+    Set<String> unchangedPicsRawContactIds, syncedContactServerIds, syncedGroupServerIds;
     boolean newOnly;
     public static final int REGISTRATION_TIMEOUT = 20 * 60 * 1000; // ms
 
@@ -76,8 +76,8 @@ public class Cloud {
     	PARAM_VALIDATION_CODE = "valid",
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
-    	BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	// BASE_URL = "http://10.9.8.29:8080/phonebook",
+    	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
+    	BASE_URL = "http://10.9.8.29:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
@@ -107,6 +107,7 @@ public class Cloud {
         Object[] update = getContactUpdates();
 		unchangedPicsRawContactIds = new HashSet<String>();
 		syncedContactServerIds = new HashSet<String>();
+		syncedGroupServerIds = new HashSet<String>();
         List<Contact> contacts =  (List<Contact>) update[0];
         List<Group> groups = (List<Group>) update[1];
         List<Group> sharedBooks = getSharedBooks();
@@ -115,7 +116,7 @@ public class Cloud {
         	serverPicData = getServerPicData();
         	new SyncManager(context, accountName, 
         			contacts, groups, sharedBooks, 
-        			serverPicData, unchangedPicsRawContactIds, syncedContactServerIds);
+        			serverPicData, unchangedPicsRawContactIds, syncedContactServerIds, syncedGroupServerIds);
         }
         sendUpdates();
         return getTimestamp();
@@ -362,11 +363,19 @@ public class Cloud {
 	
 	private void sendGroupUpdates(List<Group> groups) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
-        params.add(new BasicNameValuePair("numBooks", new Integer(groups.size()).toString()));
+        int numGroups = 0;
+        
         for(int i=0; i< groups.size(); i++)
         {
-        	String index = new Integer(i).toString();
         	Group group =  groups.get(i);
+        	if(group.serverId != null 
+        	&& syncedGroupServerIds.contains(group.serverId))
+        	{
+        		Log.i(tag, "Already synced group "+group.name+"["+group.serverId+"]");
+        		continue;
+        	}
+        	String index = new Integer(numGroups).toString();
+        	
         	params.add(new BasicNameValuePair("groupId_"+index, group.groupId));
         	params.add(new BasicNameValuePair("serverId_"+index, group.serverId));
         	params.add(new BasicNameValuePair("bookName_"+index, group.name));
@@ -378,7 +387,9 @@ public class Cloud {
         		String cIndex = new Integer(j).toString();
         		params.add(new BasicNameValuePair("serverId_"+index+"_"+cIndex, bContact.serverId));
         	}
+        	numGroups++;
         }
+        params.add(new BasicNameValuePair("numBooks", new Integer(numGroups).toString()));
         JSONArray groupUpdates = new JSONArray(post(SEND_GROUP_UPDATES_URI, params));
         for (int i = 0; i < groupUpdates.length(); i++)
         	ContactManager.updateGroup(groupUpdates.getJSONObject(i), context);

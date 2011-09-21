@@ -216,7 +216,8 @@ public class Db {
 	    	String dirty = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.DIRTY));
 	    	String accName = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.ACCOUNT_NAME));
 	    	String accType = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.ACCOUNT_TYPE));
-	    	Log.i(tag, "Group: "+name+", account: "+accName+", account type: "+accType);
+	    	// String owner = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.SYNC1));
+	    	Log.i(tag, "Group: "+name+", account: "+accName+", account type: "+accType+", sourceId: "+groupSourceId);//+", owner: "+owner);
 		    Cursor groupCursor = getContactsInGroup(new Long(groupId).toString(), cr);
 		    Log.i(tag, "There are "+groupCursor.getCount()+" contacts in group: "+groupId);
 	    	groupCursor.moveToFirst();
