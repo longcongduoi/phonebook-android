@@ -17,6 +17,7 @@ import android.util.Log;
 
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
+import com.nbos.phonebook.sync.platform.ContactManager;
 import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
 
 public class Test {
@@ -119,16 +120,21 @@ public class Test {
     	} while(cursor.moveToNext());
 	}*/
 
+    public static void resetDirtyContacts(Context ctx) {
+    	ContactManager.resetDirtyContacts(ctx);
+    }
     public static void getRawContacts(Context ctx) {
     	Cursor c = new Db(ctx).getRawContactsCursor(false);
     	Log.i(tag, "There are "+c.getCount()+" raw contacts");
     	c.moveToFirst();
     	do {
 			String cId = c.getString(c.getColumnIndex(RawContacts.CONTACT_ID)),
+				rawContactId = c.getString(c.getColumnIndex(RawContacts._ID)),
+				dirty = c.getString(c.getColumnIndex(RawContacts.DIRTY)),
 				accountName = c.getString(c.getColumnIndex(RawContacts.ACCOUNT_NAME)),
 				accountType = c.getString(c.getColumnIndex(RawContacts.ACCOUNT_TYPE));
 			//String serverId = c.getString(c.getColumnIndex(Constants.CONTACT_SERVER_ID));
-			Log.i(tag, "contactId: "+cId+", accountName: "+accountName+", accountType: "+accountType);//+", serverId: "+serverId);
+			Log.i(tag, "contactId: "+cId+", raw: "+rawContactId+", accountName: "+accountName+", accountType: "+accountType+", dirty: "+dirty);//+", serverId: "+serverId);
     	} while(c.moveToNext());
     	// DatabaseHelper.getSourceIdFromContactId(c, "793");
 	}

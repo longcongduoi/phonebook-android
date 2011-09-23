@@ -48,6 +48,7 @@ public class WelcomeActivity extends ListActivity {
     	// Log.i(tag, "WelcomeActivity");
     	// Test.getGroups(getApplicationContext());
     	// PhoneContact.getContacts(false, getApplicationContext());
+    	// Test.resetDirtyContacts(getApplicationContext());
     	// Test.getRawContacts(getApplicationContext());
     	// Test.getPics(getApplicationContext());
     	//Test.getContacts(this.getApplicationContext());
