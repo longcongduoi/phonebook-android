@@ -111,6 +111,7 @@ public class Cloud {
         List<Contact> contacts =  (List<Contact>) update[0];
         List<Group> groups = (List<Group>) update[1];
         List<Group> sharedBooks = getSharedBooks();
+        
         if(contacts.size() > 0 || groups.size() > 0 || sharedBooks.size() > 0)
         {
         	serverPicData = getServerPicData();
@@ -118,6 +119,7 @@ public class Cloud {
         			contacts, groups, sharedBooks, 
         			serverPicData, unchangedPicsRawContactIds, syncedContactServerIds, syncedGroupServerIds);
         }
+        
         sendUpdates();
         return getTimestamp();
 	}

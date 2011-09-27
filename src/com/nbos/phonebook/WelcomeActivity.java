@@ -1,6 +1,11 @@
 package com.nbos.phonebook;
 
+import java.io.IOException;
 import java.util.List;
+
+import org.apache.http.ParseException;
+import org.apache.http.auth.AuthenticationException;
+import org.json.JSONException;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -18,15 +23,21 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.FilterQueryProvider;
 import android.widget.ListView;
 import android.widget.RemoteViews;
+import android.widget.Toast;
 
 import com.nbos.phonebook.contentprovider.Provider;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
+import com.nbos.phonebook.sync.syncadapter.SyncAdapter;
+import com.nbos.phonebook.util.Notify;
 import com.nbos.phonebook.util.WelcomeActivityCursorAdapter;
 import com.nbos.phonebook.value.Contact;
 import com.nbos.phonebook.value.Group;
@@ -37,12 +48,6 @@ public class WelcomeActivity extends ListActivity {
 	List<Contact> m_phoneContacts = null;
 	ProgressDialog m_ProgressDialog = null;
 
-	private static final int HELLO_ID = 1;
-	String ns = Context.NOTIFICATION_SERVICE;
-	int icon = R.drawable.icon;
-	CharSequence tickerText = "Hello";
-	long when = System.currentTimeMillis();
-
 	/** Called when the activity is first created. */
 
 	@Override
@@ -51,29 +56,8 @@ public class WelcomeActivity extends ListActivity {
 		requestWindowFeature(Window.FEATURE_LEFT_ICON);
 		setContentView(R.layout.main);
 		setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.icon);
-
-		// Notification icon
-
-		Context context = getApplicationContext();
-		NotificationManager notificationManager = (NotificationManager) context
-				.getSystemService(NOTIFICATION_SERVICE);
-
-		Notification notification = new Notification(icon, tickerText, when);
-
-		RemoteViews contentView = new RemoteViews(getPackageName(),
-				R.layout.add_group);
-		contentView.setTextViewText(R.id.textView1,
-				"Hello, this message is in a custom expanded view");
-		notification.contentView = contentView;
-		Intent notificationIntent = new Intent(context, WelcomeActivity.class);
-		PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
-				notificationIntent, 0);
-
-		notification.setLatestEventInfo(context, "phonebookAccount", "raghu",
-				contentIntent);
-
-		notificationManager.notify(HELLO_ID, notification);
-
+		Notify.show("Title", "This is the text", getApplicationContext());
+		Notify.show("Second", "This is the second note", getApplicationContext());
 		testContentProvider();
 		populateGroups();
 		getListView().setTextFilterEnabled(true);
@@ -103,23 +87,48 @@ public class WelcomeActivity extends ListActivity {
 
 	}
 
-	/*
-	 * @Override public boolean onCreateOptionsMenu(Menu menu) { MenuInflater
-	 * inflater = getMenuInflater(); inflater.inflate(R.menu.group_list_menu,
-	 * menu); return true;
-	 * 
-	 * }
-	 * 
-	 * @Override public boolean onOptionsItemSelected(MenuItem item) { // Handle
-	 * item selection switch (item.getItemId()) { case R.id.add_group: Intent i
-	 * = new Intent(WelcomeActivity.this, AddGroupActivity.class);
-	 * startActivityForResult(i, ADD_GROUP); } return true;
-	 * 
-	 * }
-	 */
+
+	@Override 
+	public boolean onCreateOptionsMenu(Menu menu) { 
+		MenuInflater inflater = getMenuInflater(); 
+		inflater.inflate(R.menu.group_list_menu, menu); 
+		return true;
+	}
+	  
+	@Override 
+	public boolean onOptionsItemSelected(MenuItem item) { 
+		// Handle item selection 
+		switch (item.getItemId()) { 
+			case R.id.add_group: 
+				Intent i = new Intent(WelcomeActivity.this, AddGroupActivity.class);
+		 		startActivityForResult(i, ADD_GROUP); 
+		 	break;
+			case R.id.sync:
+			try {
+				doSync();
+			} catch (Exception e) {
+				e.printStackTrace();
+			} 
+		 	break;
+
+		} 
+		return true;
+	}
+	
+	private void doSync() {
+		SyncAdapter syncAdapter = new SyncAdapter(getApplicationContext(), true);
+		Account account = getAccount();
+		Log.i(tag, "Account is: "+account);//.name+", "+account.type);
+		if(account != null)
+			syncAdapter.onPerformSync(account, null, null, null, null);
+		else
+			Toast.makeText(getApplicationContext(), "You have not added a phonebook account", Toast.LENGTH_LONG)
+				.show();
+	}
+
 	static int ADD_GROUP = 1, SHOW_GROUP = 2;
 
-	public boolean onClickAddGroup(View v) {
+	/*public boolean onClickAddGroup(View v) {
 
 		// Handle item selection
 		switch (v.getId()) {
@@ -131,7 +140,7 @@ public class WelcomeActivity extends ListActivity {
 
 		return true;
 
-	}
+	}*/
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -233,9 +242,7 @@ public class WelcomeActivity extends ListActivity {
 			for (Account account : accounts) {
 				Log.i(tag, "account name: " + account.name);
 				Log.i(tag, "account type: " + account.type);
-			}
-
-			// TODO Auto-generated method stub
+		}
 
 		}
 	};
@@ -286,15 +293,14 @@ public class WelcomeActivity extends ListActivity {
 				return true;
 		return false;
 	}
-
-	private void getAccounts() {
+	
+	private Account getAccount() {
 		Account[] accounts = AccountManager.get(getApplicationContext())
 				.getAccounts();
 		Log.i(tag, "There are " + accounts.length + " accounts");
-		for (Account account : accounts) {
-			Log.i(tag, "account name: " + account.name);
-			Log.i(tag, "account type: " + account.type);
-		}
+		for (Account account : accounts) 
+			if(Constants.ACCOUNT_TYPE.equals(account.type))
+				return account;
+		return null;
 	}
-
 }
