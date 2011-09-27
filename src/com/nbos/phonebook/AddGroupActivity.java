@@ -2,9 +2,13 @@ package com.nbos.phonebook;
 
 
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
@@ -19,6 +23,7 @@ import com.nbos.phonebook.sync.platform.BatchOperation;
 public class AddGroupActivity extends Activity {
 
 	static String tag = "AddGroupActivity";
+	
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -26,7 +31,7 @@ public class AddGroupActivity extends Activity {
         requestWindowFeature(Window.FEATURE_LEFT_ICON);
 	    setContentView(R.layout.add_group);
         setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.group);
-	    getWindow().setTitle("Add a group");
+        setTitle("Phonebook: Add a group");
 	}
 	
     public void addGroupButtonClicked(View v) {

@@ -89,7 +89,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         mConfirmCredentials =
             intent.getBooleanExtra(PARAM_CONFIRMCREDENTIALS, false);
 
-        Log.i(TAG, "    request new: " + mRequestNewAccount);
+        Log.i(TAG, "request new: " + mRequestNewAccount);
         requestWindowFeature(Window.FEATURE_LEFT_ICON);
         setContentView(R.layout.login_activity);
         getWindow().setFeatureDrawableResource(Window.FEATURE_LEFT_ICON,

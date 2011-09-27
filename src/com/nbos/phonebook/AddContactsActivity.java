@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.FilterQueryProvider;
 import android.widget.ListView;
 
@@ -34,7 +35,9 @@ public class AddContactsActivity extends ListActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		db = new Db(getApplicationContext());
 	    super.onCreate(savedInstanceState);
+	    requestWindowFeature(Window.FEATURE_LEFT_ICON);
 	    setContentView(R.layout.add_contacts);
+	    setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.add_group);
 	    Bundle extras = getIntent().getExtras();
 	    if(extras !=null)
 	    {
@@ -52,10 +55,10 @@ public class AddContactsActivity extends ListActivity {
 		getContactsCursor("");
         
         String[] fields = new String[] {
-                ContactsContract.Data.DISPLAY_NAME
+                ContactsContract.Data.DISPLAY_NAME,
         };
 		adapter = new ImageCursorAdapter(this, R.layout.contact_entry,
-				m_cursor, ids, fields, new int[] { R.id.contact_name });
+				m_cursor, ids, fields, new int[] { R.id.contact_name});
         
         adapter.setStringConversionColumn(
                 m_cursor.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME));

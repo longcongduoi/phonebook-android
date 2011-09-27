@@ -11,6 +11,7 @@ import android.app.ListActivity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.MatrixCursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.Contacts;
@@ -198,11 +199,35 @@ public class SharingWithActivity extends ListActivity {
 	    	case R.id.add_contact_share_with:
 	    		showAddContactsToShareWith();
 	    		break;
+	    	case R.id.add_new_contact:
+	    		showCreateNewContact();
+	    		break;
 	    }
 	     return true;
     }
 
-	static int SHARE_WITH = 1;
+	private void showCreateNewContact() {
+		/*Intent intent = new Intent(ContactsContract.Intents.SHOW_OR_CREATE_CONTACT);
+		intent.setData(ContactsContract.Contacts.CONTENT_URI);
+		intent.putExtra(ContactsContract.Intents.EXTRA_FORCE_CREATE, true);
+		*/
+		Intent addContactIntent = new Intent(ContactsContract.Intents.Insert.ACTION); 
+		addContactIntent.setType(ContactsContract.Contacts.CONTENT_TYPE); 
+		startActivity(addContactIntent);
+		/*Intent i = new Intent(SharingWithActivity.this, EditContactActivity.class);
+		// i.setData(ContactsContract.Contacts.CONTENT_URI);
+		i.setData(Uri.parse(ContactsContract.Contacts.CONTENT_URI + "/0" ));
+		startActivityForResult(i, INSERT_CONTACT_REQUEST);*/
+				// this.getApplicationContext(), SharingWithActivity.class);
+		// Intent intent = new Intent(Contacts.Intents.SHOW_OR_CREATE_CONTACT);
+		// startActivity(intent);
+		// startActivityForResult(intent, INSERT_CONTACT_REQUEST);
+		
+
+		
+	}
+
+	static int SHARE_WITH = 1, INSERT_CONTACT_REQUEST = 2;
 	private void showAddContactsToShareWith() {
 		Intent i = new Intent(SharingWithActivity.this, SelectContactsToShareWithActivity.class);
 		i.putExtra("id", id);
@@ -212,8 +237,10 @@ public class SharingWithActivity extends ListActivity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		//if(requestCode == SHARE_WITH)
+		if(requestCode == SHARE_WITH)
 			populateContacts();
+		if(requestCode == INSERT_CONTACT_REQUEST)
+			Log.i(tag, "Inserted contact");
 	}
 
 	private ContactRow getContactRow(String rawContactId,

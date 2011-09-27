@@ -67,7 +67,6 @@ public class GroupActivity extends ListActivity {
 
 	@Override
 	public void onAttachedToWindow() {
-		// TODO Auto-generated method stub
 		super.onAttachedToWindow();
 		openOptionsMenu();
 	}

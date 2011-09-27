@@ -178,9 +178,10 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 	        bookValues.put(BookTable.CONTACTID, rawContactId);
 	        bookValues.put(BookTable.SERVERID, "0");
 	        Uri cUri = this.getContentResolver().insert(URI, bookValues);
+	        Log.i(tag, "Sharing "+name+" with rawContact: "+rawContactId);
         }
         Db.setGroupDirty(id, getContentResolver());
-        Log.i(tag, "Sharing "+name+" with "+contactId);
+        
         populateContacts();	
 	}
 }
