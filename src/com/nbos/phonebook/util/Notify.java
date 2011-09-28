@@ -12,7 +12,7 @@ import com.nbos.phonebook.WelcomeActivity;
 	
 public class Notify {
 	static int NOTE_ID = 1;
-	public static void show(String title, String text, Context context) {
+	public static void show(String title, String text, String ticker, Context context) {
 		
 		int icon = R.drawable.icon;
 		// CharSequence tickerText = "Hello";
@@ -21,7 +21,7 @@ public class Notify {
 		NotificationManager notificationManager = (NotificationManager) context
 				.getSystemService(Context.NOTIFICATION_SERVICE);
 
-		Notification notification = new Notification(icon, title, when);
+		Notification notification = new Notification(icon, ticker, when);
 
 		RemoteViews contentView = new RemoteViews(context.getPackageName(),
 				R.layout.add_group);

@@ -56,6 +56,7 @@ import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.ServerData;
 import com.nbos.phonebook.sync.client.SharingBook;
 import com.nbos.phonebook.util.ImageInfo;
+import com.nbos.phonebook.util.Notify;
 import com.nbos.phonebook.value.PicData;
 
 public class Cloud {
@@ -77,7 +78,7 @@ public class Cloud {
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
     	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	BASE_URL = "http://10.9.8.172:8080/phonebook",
+    	BASE_URL = "http://10.9.8.29:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
@@ -111,7 +112,7 @@ public class Cloud {
         List<Contact> contacts =  (List<Contact>) update[0];
         List<Group> groups = (List<Group>) update[1];
         List<Group> sharedBooks = getSharedBooks();
-        
+        notify(contacts, groups, sharedBooks);
         if(contacts.size() > 0 || groups.size() > 0 || sharedBooks.size() > 0)
         {
         	serverPicData = getServerPicData();
@@ -128,6 +129,35 @@ public class Cloud {
 		sendFriendUpdates(false);
 	}*/
 	
+	private void notify(List<Contact> contacts, List<Group> groups,
+			List<Group> sharedBooks) {
+		if(contacts.size() == 0 
+		&& groups.size() == 0 
+		&& sharedBooks.size() == 0)
+			return;
+		
+		StringBuffer note = new StringBuffer("");
+		if(newOnly)
+		{
+			if(contacts.size() > 0)
+				note.append(contacts.size()+" new contacts.\n");
+			if(groups.size() > 0)
+				note.append(groups.size()+" new groups.\n");
+			if(sharedBooks.size() > 0)
+				note.append(sharedBooks.size()+" new shared books.\n");
+		}
+		else
+		{
+			if(contacts.size() > 0)
+				note.append("Synced "+contacts.size()+" contacts.\n");
+			if(groups.size() > 0)
+				note.append("Synced "+groups.size()+" groups.\n");
+			if(sharedBooks.size() > 0)
+				note.append("Synced "+sharedBooks.size()+" shared books.\n");
+		}
+		Notify.show("Phonebook: "+accountName, note.toString(), "Phonebook update", context);
+	}
+
 	private List<Group> getSharedBooks() throws ClientProtocolException, JSONException, IOException {
         List<NameValuePair> params = getAuthParams();
         if(lastUpdated != null)

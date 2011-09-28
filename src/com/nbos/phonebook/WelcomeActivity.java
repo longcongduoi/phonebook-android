@@ -56,8 +56,6 @@ public class WelcomeActivity extends ListActivity {
 		requestWindowFeature(Window.FEATURE_LEFT_ICON);
 		setContentView(R.layout.main);
 		setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.icon);
-		Notify.show("Title", "This is the text", getApplicationContext());
-		Notify.show("Second", "This is the second note", getApplicationContext());
 		testContentProvider();
 		populateGroups();
 		getListView().setTextFilterEnabled(true);
