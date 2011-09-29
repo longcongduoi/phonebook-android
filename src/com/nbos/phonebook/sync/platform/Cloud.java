@@ -45,6 +45,7 @@ import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 
 import com.nbos.phonebook.Db;
@@ -77,8 +78,8 @@ public class Cloud {
     	PARAM_VALIDATION_CODE = "valid",
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
-    	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	BASE_URL = "http://10.9.8.29:8080/phonebook",
+    	BASE_URL = "http://phonebook.nbostech.com/phonebook",
+    	// BASE_URL = "http://10.9.8.29:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
@@ -138,22 +139,22 @@ public class Cloud {
 		
 		StringBuffer note = new StringBuffer("");
 		if(newOnly)
-		{
-			if(contacts.size() > 0)
-				note.append(contacts.size()+" new contacts.\n");
-			if(groups.size() > 0)
-				note.append(groups.size()+" new groups.\n");
-			if(sharedBooks.size() > 0)
-				note.append(sharedBooks.size()+" new shared books.\n");
-		}
+			note.append("Updated ");
 		else
+			note.append("Synced ");
+		if(contacts.size() > 0)
+			note.append(contacts.size()+" contacts");
+		if(groups.size() > 0)
 		{
 			if(contacts.size() > 0)
-				note.append("Synced "+contacts.size()+" contacts.\n");
-			if(groups.size() > 0)
-				note.append("Synced "+groups.size()+" groups.\n");
-			if(sharedBooks.size() > 0)
-				note.append("Synced "+sharedBooks.size()+" shared books.\n");
+				note.append(", ");
+			note.append(groups.size()+" groups");
+		}
+		if(sharedBooks.size() > 0)
+		{
+			if(contacts.size() > 0 || groups.size() > 0)
+				note.append(", ");
+			note.append(sharedBooks.size()+" shared books");
 		}
 		Notify.show("Phonebook: "+accountName, note.toString(), "Phonebook update", context);
 	}
@@ -262,12 +263,12 @@ public class Cloud {
 	    	photosDataCursor = context.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
 	    		// null,
 	    	    new String[] {
-	    			ContactsContract.Contacts._ID, 
-	    			ContactsContract.Data.CONTACT_ID,
-	    			ContactsContract.Data.RAW_CONTACT_ID,
-	    			ContactsContract.RawContacts._ID,
-	    			ContactsContract.Contacts.DISPLAY_NAME,
-	    			ContactsContract.CommonDataKinds.Photo.PHOTO,
+	    			Contacts._ID, 
+	    			Data.CONTACT_ID,
+	    			Data.RAW_CONTACT_ID,
+	    			RawContacts._ID,
+	    			Contacts.DISPLAY_NAME,
+	    			Photo.PHOTO,
 	    			Data.MIMETYPE, Data.DATA1,
 	    		},
 	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null ",
