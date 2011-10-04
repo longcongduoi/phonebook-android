@@ -298,11 +298,11 @@ public class SyncManager {
     	groupCursor.close();
 	}
 
-	void deleteContactFromGroup(String contactId, String groupId) {
-		Log.i(tag, "Deleting contact from group: "+groupId+", contactId: "+contactId);
+	void deleteContactFromGroup(String rawContactId, String groupId) {
+		Log.i(tag, "Deleting contact from group: "+groupId+", contactId: "+rawContactId);
 	    ContentValues values = new ContentValues();
-	    values.put(ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID,
-	            contactId);
+	    values.put(ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID,
+	            rawContactId);
 	    values.put(
 	            ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID,
 	            groupId);
@@ -311,9 +311,9 @@ public class SyncManager {
 	    		addCallerIsSyncAdapterParameter(ContactsContract.Data.CONTENT_URI), 
 	            ContactsContract.CommonDataKinds.GroupMembership.GROUP_ROW_ID
 	            + " = ? and "
-	            + ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID
+	            + ContactsContract.CommonDataKinds.GroupMembership.RAW_CONTACT_ID
 	            +" = ?",
-	            new String[] {groupId, contactId});	
+	            new String[] {groupId, rawContactId});	
 		
 	}
 
