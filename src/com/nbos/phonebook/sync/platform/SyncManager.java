@@ -22,10 +22,13 @@ import android.provider.ContactsContract.Data;
 import android.util.Log;
 
 import com.nbos.phonebook.Db;
+import com.nbos.phonebook.contentprovider.Provider;
+import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.client.PhoneContact;
+import com.nbos.phonebook.sync.client.SharingBook;
 import com.nbos.phonebook.sync.client.contact.Email;
 import com.nbos.phonebook.sync.client.contact.Phone;
 import com.nbos.phonebook.util.ImageInfo;
@@ -37,26 +40,27 @@ public class SyncManager {
 	Db db;
     String account; 
     List<PhoneContact> allContacts; 
-    Cursor dataCursor, serverDataCursor, rawContactsCursor, dataPicsCursor;
+    Cursor dataCursor, serverDataCursor, 
+    	rawContactsCursor, dataPicsCursor;
+	List<SharingBook> sharingBooks;
     Set<String> syncedContactServerIds, syncedGroupServerIds,
     	unchangedPicsRawContactIds;
     List<PicData> serverPicData;
 	public SyncManager(Context context, String account, 
-			List<Contact> contacts, List<Group> groups, 
-			List<Group> sharedBooks, List<PicData> serverPicData, 
-			Set<String> unchangedPicsRawContactIds, Set<String> syncedContactServerIds, Set<String> syncedGroupServerIds) {
+		List<Contact> contacts, List<Group> groups, 
+		List<Group> sharedBooks, List<PicData> serverPicData, 
+		Set<String> unchangedPicsRawContactIds, Set<String> syncedContactServerIds, 
+		Set<String> syncedGroupServerIds) 
+	{
 		super();
 		this.context = context;
 		this.serverPicData = serverPicData;
-		db = new Db(context);
 		this.account = account;
-		this.allContacts = db.getContacts(false);
-		this.dataCursor = db.getData();
-		this.serverDataCursor = db.getProfileData();
-		rawContactsCursor = db.getRawContactsCursor(false);
 		this.unchangedPicsRawContactIds = unchangedPicsRawContactIds;
 		this.syncedContactServerIds = syncedContactServerIds;
 		this.syncedGroupServerIds = syncedGroupServerIds;
+
+		getDataCursors();
         syncContacts(contacts);
         syncGroups(groups, false);
         syncGroups(sharedBooks, true);
@@ -64,6 +68,15 @@ public class SyncManager {
         closeCursors();
 	}
 	
+	private void getDataCursors() {
+		db = new Db(context);
+		allContacts = db.getContacts(false);
+		dataCursor = db.getData();
+		serverDataCursor = db.getProfileData();
+		rawContactsCursor = db.getRawContactsCursor(false);
+		sharingBooks = db.getSharingBooks(false);
+	}
+
 	private void closeCursors() {
 		dataCursor.close();
 		serverDataCursor.close();
@@ -296,6 +309,34 @@ public class SyncManager {
     	
     	cursor.close();
     	groupCursor.close();
+    	
+    	// update sharing book info
+    	if(isSharedBook) return;
+    	for(int i=0; i< g.sharingWithContactIds.size(); i++) 
+    	{
+    		String serverId = g.sharingWithContactIds.get(i).toString(),
+    			rawContactId = Db.getRawContactIdFromServerId(serverId, dataCursor);
+    		if(rawContactId == null) continue; // could not find the contact
+    		if(isExistsSharing(groupId, rawContactId)) continue;
+    		addSharingWith(groupId, rawContactId);
+    	}
+	}
+
+	private void addSharingWith(String groupId, String rawContactId) {
+        Uri URI = Uri.parse("content://"+Provider.AUTHORITY+"/"+Provider.BookContent.CONTENT_PATH);
+        ContentValues bookValues = new ContentValues();
+        bookValues.put(BookTable.BOOKID, groupId);
+        bookValues.put(BookTable.CONTACTID, rawContactId);
+        bookValues.put(BookTable.SERVERID, "0");
+        Uri cUri = context.getContentResolver().insert(URI, bookValues);
+	}
+
+	private boolean isExistsSharing(String groupId, String rawContactId) {
+		for(SharingBook sb : sharingBooks)
+			if(sb.groupId.equals(groupId)
+			&& sb.contactId.equals(rawContactId))
+				return true;
+		return false;
 	}
 
 	void deleteContactFromGroup(String rawContactId, String groupId) {

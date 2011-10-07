@@ -231,7 +231,7 @@ public class Db {
     				Log.i(tag, "added contact: "+rawContactId+", serverId: "+serverId);//+", "+contactNumber+", "+contactName);
     			}
 	    	} while(groupCursor.moveToNext());
-	        groups.add(new Group(groupId, groupSourceId, name, null, contacts));
+	        groups.add(new Group(groupId, groupSourceId, name, null, contacts, null));
 	        Log.i(tag, "dirty is "+dirty);
 	        Log.i(tag, "Added group["+groupId+"] "+name+" with "+contacts.size()+" contacts");
 	        groupCursor.close();
@@ -285,7 +285,6 @@ public class Db {
 		if(dataCursor.getCount() > 0)
 		do {
 			String mimeType = dataCursor.getString(dataCursor.getColumnIndex(Data.MIMETYPE)),
-				cId = dataCursor.getString(dataCursor.getColumnIndex(Data.CONTACT_ID)),
 				rawId = dataCursor.getString(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
 			if(!mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)
 			|| !rawId.equals(rawContactId))
@@ -515,5 +514,21 @@ public class Db {
     	return cr.query(Data.CONTENT_URI, PROJECTION, 
     			Data.MIMETYPE+"='"+PhonebookSyncAdapterColumns.MIME_PROFILE+"'", 
     			null, Data.CONTACT_ID);
+	}
+
+	public static String getRawContactIdFromServerId(String serverId, Cursor dataCursor) {
+		dataCursor.moveToFirst();
+		if(dataCursor.getCount() > 0)
+		do {
+			String mimeType = dataCursor.getString(dataCursor.getColumnIndex(Data.MIMETYPE)),
+				sourceId = dataCursor.getString(dataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
+			if(!mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)
+			|| !serverId.equals(sourceId))
+				continue;
+			String rawContactId = dataCursor.getString(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+			// Log.i(TAG, "getServerIdFromContactId returning serverId: "+serverId+" for contactId: "+contactId);
+			return rawContactId;
+		} while(dataCursor.moveToNext()); 
+		return null;
 	}
 }

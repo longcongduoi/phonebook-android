@@ -12,13 +12,16 @@ import android.util.Log;
 public class Group {
 	public String groupId, serverId, name, owner;
 	public List<Contact> contacts;
-	public Group(String groupId, String serverId, String name, String owner, List<Contact> contacts) {
+	public List<Long> sharingWithContactIds;
+	public Group(String groupId, String serverId, String name, String owner, 
+			List<Contact> contacts, List<Long> sharingWithContactIds) {
 		super();
 		this.groupId = groupId;
 		this.serverId = serverId;
 		this.name = name;
 		this.owner = owner;
 		this.contacts = contacts;
+		this.sharingWithContactIds = sharingWithContactIds;
 	}
 	
 	static String tag = "Group";
@@ -27,12 +30,18 @@ public class Group {
 		String name = group.getString("name"),
 			owner = group.getString("owner");;
 		Log.i(tag, "Id: "+id+", name: "+name+", owner: "+owner);
+		
 		List<Contact> contacts = new ArrayList<Contact>();
 		JSONArray contactsArray = group.getJSONArray("contacts");
 		for(int i=0; i< contactsArray.length(); i++)
 			contacts.add(Contact.valueOf(contactsArray.getJSONObject(i)));
 		Log.i(tag, "There are "+contacts.size()+" contacts in group "+name);
-		return new Group(new Integer(id).toString(), null, name, owner, contacts);
+		
+		JSONArray sharingWithContactIdsArray = group.getJSONArray("sharingWith");
+		List<Long> sharingWithContactIds = new ArrayList<Long>();
+		for(int i=0; i< sharingWithContactIdsArray.length(); i++)
+			sharingWithContactIds.add(sharingWithContactIdsArray.getLong(i));
+		return new Group(new Integer(id).toString(), null, name, owner, contacts, sharingWithContactIds);
 	}
 	
 }
