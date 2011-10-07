@@ -11,7 +11,6 @@ import android.app.ListActivity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.MatrixCursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.Contacts;
@@ -31,14 +30,14 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.nbos.phonebook.contentprovider.Provider;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.util.ImageCursorAdapter;
 import com.nbos.phonebook.value.ContactRow;
 
 public class SharingWithActivity extends ListActivity {
 
-	String tag = "SharingWithActivity", id, name,owner;
+	String tag = "SharingWithActivity", id, name,owner,
+		RAW_CONTACT_ID_COLUMN = "rawContactId";
 	List<String> ids;
 	Cursor rawContactsCursor;
 	ImageCursorAdapter adapter;
@@ -130,18 +129,6 @@ public class SharingWithActivity extends ListActivity {
 		dialog.show();
 	}
 
-	private void removeSharing(String contactId) {
-
-		try {
-
-			Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
-		} catch (Exception e) {
-			Log.v(tag, e.getMessage(), e);
-			Toast.makeText(this, tag + " Delete Failed", Toast.LENGTH_LONG)
-					.show();
-		}
-	}
-
 	public int getCheckedCount(ListView listview, int checkboxId) {
 
 		int checkedCount = 0;
@@ -156,32 +143,27 @@ public class SharingWithActivity extends ListActivity {
 	}
 
 	private void removeSharing() {
-		Toast.makeText(getApplicationContext(), "reomvesharing",
-				Toast.LENGTH_LONG).show();
-
-		for (int i = 0; i < listview.getChildCount(); i++) {
+		int numRemoved = 0;
+		for (int i = 0; i < listview.getChildCount(); i++) 
+		{
 			View v = (View) listview.getChildAt(i);
 			CheckBox check = (CheckBox) v.findViewById(R.id.check);
-			if (check.isChecked()) {
-				m_cursor.moveToPosition(i);
-				String contactId = m_cursor.getString(m_cursor
-						.getColumnIndex(ContactsContract.Contacts._ID)), name = m_cursor
-						.getString(m_cursor
-								.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-
-				Log.i(tag, "Id" + contactId + "name" + name);
-
-			}
-
+			if (!check.isChecked()) continue;
+			m_cursor.moveToPosition(i);
+			String contactId = m_cursor.getString(m_cursor.getColumnIndex(RAW_CONTACT_ID_COLUMN)); 
+			db.removeShareBook(id, contactId);
+			numRemoved++;
 		}
+		Toast.makeText(getApplicationContext(), 
+			"Removed "+numRemoved+" contacts from sharing",
+			Toast.LENGTH_LONG).show();
+		
 		finish();
 	}
      
 	
 	
 	private void addExtraButtons() {
-		
-		
 		LinearLayout mainLayout = (LinearLayout) findViewById(R.id.linearLayout1);
 		LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.extraLayout);
 	    Button stopSharing = new Button(this);		
@@ -215,20 +197,15 @@ public class SharingWithActivity extends ListActivity {
 		Cursor contactsCursor = Db.getContacts(this);
 		Log.i(tag, "There are " + contactsCursor.getCount() + " contacts");
 		Cursor bookCursor = Db.getBook(this, id);
-		Log.i(tag, "Book[" + id + "] has " + bookCursor.getCount()
+		Log.i(tag, "Book[" + id + "] is being shared with " + bookCursor.getCount()
 				+ " contacts");
 		ids = new ArrayList<String>();
 		while (bookCursor.moveToNext())
 			Log.i(tag,
-					"contactid: "
-							+ bookCursor.getString(bookCursor
-									.getColumnIndex(BookTable.CONTACTID))
-							+ " dirty: "
-							+ bookCursor.getString(bookCursor
-									.getColumnIndex(BookTable.DIRTY))
-							+ " serverId: "
-							+ bookCursor.getString(bookCursor
-									.getColumnIndex(BookTable.SERVERID)));
+			"bookId: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.BOOKID))
+			+" contactid: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.CONTACTID))
+			+ " dirty: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.DIRTY))
+			+ " serverId: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.SERVERID)));
 
 		Log.i(tag, "Sharing with " + bookCursor.getCount() + " contacts");
 		List<ContactRow> rows = new ArrayList<ContactRow>();
@@ -251,24 +228,13 @@ public class SharingWithActivity extends ListActivity {
 		 */
 
 		m_cursor = new MatrixCursor(new String[] {
-				ContactsContract.Contacts._ID,
-				ContactsContract.Contacts.DISPLAY_NAME }, 10);
+				Contacts._ID,
+				RAW_CONTACT_ID_COLUMN,
+				Contacts.DISPLAY_NAME }, 10);
 
-		/*
-		 * for (CursorJoiner.Result joinerResult : joiner) { String id; switch
-		 * (joinerResult) { case BOTH: // handle case where a row with the same
-		 * key is in both cursors id =
-		 * contactsCursor.getString(contactsCursor.getColumnIndex
-		 * (ContactsContract.Contacts._ID)); String name =
-		 * contactsCursor.getString
-		 * (contactsCursor.getColumnIndex(ContactsContract
-		 * .Contacts.DISPLAY_NAME)); Log.i(tag, "name: "+name+", id: "+id);
-		 * //m_cursor.addRow(new String[] {id, name}); if(name != null)
-		 * rows.add(new ContactRow(id, name)); break; } }
-		 */
 		Collections.sort(rows);
 		for (ContactRow row : rows) {
-			m_cursor.addRow(new String[] { row.id, row.name });
+			m_cursor.addRow(new String[] { row.id, row.rawContactId, row.name });
 			ids.add(row.id);
 		}
 
@@ -366,10 +332,8 @@ public class SharingWithActivity extends ListActivity {
 		String contactId = null;
 		if (rawContactsCursor.getCount() > 0)
 			do {
-				String rawId = rawContactsCursor.getString(rawContactsCursor
-						.getColumnIndex(RawContacts._ID)), cId = rawContactsCursor
-						.getString(rawContactsCursor
-								.getColumnIndex(RawContacts.CONTACT_ID));
+				String rawId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts._ID)), 
+					cId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.CONTACT_ID));
 				if (!rawContactId.equals(rawId))
 					continue;
 				contactId = cId;
@@ -388,7 +352,7 @@ public class SharingWithActivity extends ListActivity {
 						.getString(contactsCursor
 								.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 				if (name != null)
-					return new ContactRow(contactId, name);
+					return new ContactRow(contactId, rawContactId, name);
 			} while (contactsCursor.moveToNext());
 		return null;
 	}

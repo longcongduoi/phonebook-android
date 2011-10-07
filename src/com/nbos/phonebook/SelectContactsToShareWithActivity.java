@@ -140,7 +140,8 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 		if (contactsCursor.getCount() > 0)
 			do {
 				String contactId = contactsCursor.getString(contactsCursor
-						.getColumnIndex(Contacts._ID)), name = contactsCursor
+						.getColumnIndex(Contacts._ID)), 
+						name = contactsCursor
 						.getString(contactsCursor
 								.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 				if (!contactIds.contains(contactId))

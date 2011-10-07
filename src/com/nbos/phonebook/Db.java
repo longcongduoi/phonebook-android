@@ -531,4 +531,13 @@ public class Db {
 		} while(dataCursor.moveToNext()); 
 		return null;
 	}
+
+	public void removeShareBook(String bookId, String rawContactId) {
+		Log.i(tag, "Removing sharing for bookId: "+bookId+", rawContactId: "+rawContactId);
+		int num = cr.delete(Constants.SHARE_BOOK_URI, 
+				BookTable.BOOKID + " = ? and "+BookTable.CONTACTID+" = ? ", 
+				new String[] {bookId, rawContactId});
+		Log.i(tag, "Deleted "+num+" shared books");
+		Db.setGroupDirty(bookId, cr);
+	}
 }
