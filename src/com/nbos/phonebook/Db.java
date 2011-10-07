@@ -67,7 +67,7 @@ public class Db {
 				Contacts._ID);
 	}
 
-	public Cursor getBook(String id) {
+	public Cursor getFullBook(String id) {
     	return cr.query(
     			Constants.SHARE_BOOK_URI,
 	    		null,
@@ -75,10 +75,19 @@ public class Db {
 	    	    null, BookTable.CONTACTID);
 	}
 
+	public Cursor getBook(String id) {
+    	return cr.query(
+    			Constants.SHARE_BOOK_URI,
+	    		null,
+	    		BookTable.BOOKID + "=" +id
+	    		+" and "+BookTable.DELETED + " = 0 ",
+	    	    null, BookTable.CONTACTID);
+	}
+
 	public static Cursor getBooks(ContentResolver cr) {
     	return cr.query(
     			Constants.SHARE_BOOK_URI,
-	    		null, null, null, BookTable.BOOKID);
+	    		null, BookTable.DELETED + " = 0 ", null, BookTable.BOOKID);
 	}
 
 	public static void setGroupDirty(String groupId, ContentResolver cr) {

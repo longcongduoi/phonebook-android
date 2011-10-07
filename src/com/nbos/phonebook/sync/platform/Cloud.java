@@ -441,10 +441,17 @@ public class Cloud {
         	SharingBook book =  books.get(i);
         	params.add(new BasicNameValuePair("shareBookId_"+index, book.groupId));
         	params.add(new BasicNameValuePair("shareContactId_"+index, book.contactId));
+        	if(book.deleted)
+        		params.add(new BasicNameValuePair("shareContactDeleted_"+index, "true"));
+        	Log.i(tag, "Shared book["+book.groupId+"] deleted: "+book.deleted);
         }
         JSONArray bookUpdates = new JSONArray(post(SEND_SHARED_BOOK_UPDATES_URI, params));
         for (int i = 0; i < bookUpdates.length(); i++)
-        	ContactManager.updateBook(bookUpdates.getJSONObject(i), context);
+        {
+        	//Long deletedContactId = bookUpdates.getLong(i);
+        	// Log.i(tag, "Deleted contactId: ")
+        	// ContactManager.updateBook(bookUpdates.getJSONObject(i), context);
+        }
         if(books.size() > 0)
         	ContactManager.resetDirtySharedBooks(context);
 	}

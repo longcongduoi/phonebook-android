@@ -65,52 +65,6 @@ public class ContactManager {
      * @param allContacts All contacts
      * @param dataCursor 
      */
-    /*public static synchronized void syncContacts(Context context,
-        String account, List<User> users, List<User> allContacts, Cursor dataCursor) {
-        long rawContactId = 0;
-        final ContentResolver resolver = context.getContentResolver();
-        final BatchOperation batchOperation =
-            new BatchOperation(context, resolver);
-        
-        final Cursor rawContactsCursor =
-            resolver.query(RawContacts.CONTENT_URI, UserIdQuery.PROJECTION,
-                null, null, null);
-        Log.i(TAG, "There are "+rawContactsCursor.getCount()+" raw contacts, num columns: "+rawContactsCursor.getColumnCount());
-        Log.i(TAG, "There are "+allContacts.size()+" contacts");
-        // syncSharedBooks(context);
-        Log.d(TAG, "In SyncContacts");
-        for (final User user : users) {
-            // userId = Integer.parseInt(user.getUserId());
-            // Check to see if the contact needs to be inserted or updated
-            rawContactId = lookupRawContact(resolver, user, rawContactsCursor, allContacts);
-            boolean dirty = isDirtyContact(rawContactId, rawContactsCursor); 
-            Log.d(TAG, "Raw contact id is: "+rawContactId+", dirty: "+dirty);
-            if(dirty) continue;
-            if (rawContactId != 0) {
-                if (!user.isDeleted()) {
-                    // update contact
-                    updateContact(context, resolver, account, user,
-                        rawContactId, batchOperation, dataCursor);
-                } else {
-                    // delete contact
-                    deleteContact(context, rawContactId, batchOperation);
-                }
-            } else {
-                // add new contact
-                Log.d(TAG, "In addContact, user: "+user.getFirstName());
-                if (!user.isDeleted()) {
-                    addContact(context, account, user, batchOperation);
-                }
-            }
-            // A sync adapter should batch operations on multiple contacts,
-            // because it will make a dramatic performance difference.
-            if (batchOperation.size() >= 50) {
-                batchOperation.execute();
-            }
-        }
-        batchOperation.execute();
-    }*/
-
 	public static boolean isDirtyContact(long rawContactId, Cursor rawContactsCursor) {
 		if(rawContactsCursor.getCount() == 0) return false;
 		rawContactsCursor.moveToFirst();
@@ -404,15 +358,15 @@ public class ContactManager {
 
 	public static void resetDirtySharedBooks(Context ctx) {
 		ContentResolver cr = ctx.getContentResolver();
+		int num = cr.delete(Constants.SHARE_BOOK_URI, BookTable.DELETED + " = 1", null);
+		Log.i(TAG, "Deleted "+num+" contacts sharing with");
 	    ContentValues values = new ContentValues();
 	    values = new ContentValues();
 	    values.put(BookTable.DIRTY, "0");
-	    int num = cr.update(
+	    num = cr.update(
 	    		Constants.SHARE_BOOK_URI, values,
 	    		null, null);
 	    Log.i(TAG, "Updated "+num+" sharebooks to dirty = 0");
-
-	    
 	}
 
 	public static void resetDirtyGroups(Context ctx) {

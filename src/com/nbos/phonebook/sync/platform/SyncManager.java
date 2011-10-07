@@ -315,7 +315,7 @@ public class SyncManager {
 	}
 
 	private void updateSharingWithContacts(Group g, String groupId) {
-    	Cursor bookCursor = db.getBook(groupId);
+    	Cursor bookCursor = db.getFullBook(groupId);
     	Set<String> contactsToDelete = new HashSet<String>(),
     		existingContacts = new HashSet<String>(),
     		contactsToAdd = new HashSet<String>();

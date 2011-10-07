@@ -1,23 +1,13 @@
 package com.nbos.phonebook;
 
-import java.io.IOException;
 import java.util.List;
-
-import org.apache.http.ParseException;
-import org.apache.http.auth.AuthenticationException;
-import org.json.JSONException;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -32,14 +22,12 @@ import android.view.View;
 import android.view.Window;
 import android.widget.FilterQueryProvider;
 import android.widget.ListView;
-import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import com.nbos.phonebook.contentprovider.Provider;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
 import com.nbos.phonebook.sync.syncadapter.SyncAdapter;
-import com.nbos.phonebook.util.Notify;
 import com.nbos.phonebook.util.WelcomeActivityCursorAdapter;
 import com.nbos.phonebook.value.Contact;
 import com.nbos.phonebook.value.Group;
@@ -64,18 +52,6 @@ public class WelcomeActivity extends ListActivity {
 		String phoneNumber = getPhoneNumber();
 		Log.i(tag, "phone number: " + phoneNumber);
 
-		// Test.deleteContactsServerData(getApplicationContext());
-		// Test.getContactServerData(getApplicationContext());
-		// Log.i(tag, "WelcomeActivity");
-		// Test.getGroups(getApplicationContext());
-		// PhoneContact.getContacts(false, getApplicationContext());
-		// Test.resetDirtyContacts(getApplicationContext());
-		// Test.getRawContacts(getApplicationContext());
-		// Test.getPics(getApplicationContext());
-		// Test.getContacts(this.getApplicationContext());
-		// Test.getGroups(this.getApplicationContext());
-		// Test.getContacts(this.getApplicationContext());
-		// Test.telephony(this);
 		if (!hasAccount(Constants.ACCOUNT_TYPE)) {
 			final Intent intent = new Intent(getApplicationContext(),
 					AuthenticatorActivity.class);
@@ -225,56 +201,8 @@ public class WelcomeActivity extends ListActivity {
 
 	ListView mGroupList;
 
-	private Runnable mainUiThread = new Runnable() {
-		public void run() {
-			// createAGroup(getApplicationContext());
-
-			/*
-			 * m_phoneContacts = getPhoneContacts(); TextView note2 = (TextView)
-			 * findViewById(R.id.note2);
-			 * note2.setText("There are "+m_phoneContacts
-			 * .size()+" contacts in your phone"); m_ProgressDialog =
-			 * ProgressDialog.show(WelcomeActivity.this, "Please wait ...",
-			 * "Retrieving data ...", true); new
-			 * DownloadContactsTask().execute();
-			 */
-		}
-
-		boolean hasAccount(String name, String type) {
-			Account[] accounts = AccountManager.get(getApplicationContext())
-					.getAccounts();
-			Log.i(tag, "There are " + accounts.length + " accounts");
-			for (Account account : accounts)
-				if (account.name == name && account.type == type)
-					return true;
-			return false;
-		}
-
-		private void getAccounts() {
-			Account[] accounts = AccountManager.get(getApplicationContext())
-					.getAccounts();
-			Log.i(tag, "There are " + accounts.length + " accounts");
-			for (Account account : accounts) {
-				Log.i(tag, "account name: " + account.name);
-				Log.i(tag, "account type: " + account.type);
-		}
-
-		}
-	};
-
 	String m_exception = null;
 
-	private Runnable returnResults = new Runnable() {
-		public void run() {
-			/*
-			 * if(m_orders != null && m_orders.size() > 0){
-			 * m_adapter.notifyDataSetChanged(); for(int
-			 * i=0;i<m_orders.size();i++) m_adapter.add(m_orders.get(i)); }
-			 */
-
-			// m_adapter.notifyDataSetChanged();
-		}
-	};
 
 	private String getPhoneNumber() {
 		return ((TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE))

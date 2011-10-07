@@ -65,7 +65,7 @@ public class SharingWithActivity extends ListActivity {
 			layout = extras.getInt("layout");
 		}
 
-		setTitle("Group:" + " " + name + " " + "sharing with");
+		setTitle("Group: " + name + " sharing with");
 		populateContacts();
 		listview = getListView();
 		listview.setFastScrollEnabled(true);
@@ -213,8 +213,11 @@ public class SharingWithActivity extends ListActivity {
 		bookCursor.moveToFirst();
 		if (bookCursor.getCount() > 0)
 			do {
-				String rawContactId = bookCursor.getString(bookCursor
-						.getColumnIndex(BookTable.CONTACTID));
+				String rawContactId = bookCursor.getString(bookCursor.getColumnIndex(BookTable.CONTACTID));
+				String deleted = bookCursor.getString(bookCursor.getColumnIndex(BookTable.DELETED));
+				String dirty = bookCursor.getString(bookCursor.getColumnIndex(BookTable.DIRTY));
+				Log.i(tag, "deleted is: "+deleted+", dirty: "+dirty);
+				if(deleted.equals("1")) continue;
 				ContactRow row = getContactRow(rawContactId, contactsCursor,
 						contactIds);
 				if (row != null)
