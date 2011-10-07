@@ -1,7 +1,9 @@
 package com.nbos.phonebook.sync.client;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -12,9 +14,9 @@ import android.util.Log;
 public class Group {
 	public String groupId, serverId, name, owner;
 	public List<Contact> contacts;
-	public List<Long> sharingWithContactIds;
+	public Set<Long> sharingWithContactIds;
 	public Group(String groupId, String serverId, String name, String owner, 
-			List<Contact> contacts, List<Long> sharingWithContactIds) {
+			List<Contact> contacts, Set<Long> sharingWithContactIds) {
 		super();
 		this.groupId = groupId;
 		this.serverId = serverId;
@@ -38,7 +40,7 @@ public class Group {
 		Log.i(tag, "There are "+contacts.size()+" contacts in group "+name);
 		
 		JSONArray sharingWithContactIdsArray = group.getJSONArray("sharingWith");
-		List<Long> sharingWithContactIds = new ArrayList<Long>();
+		Set<Long> sharingWithContactIds = new HashSet<Long>();
 		for(int i=0; i< sharingWithContactIdsArray.length(); i++)
 			sharingWithContactIds.add(sharingWithContactIdsArray.getLong(i));
 		return new Group(new Integer(id).toString(), null, name, owner, contacts, sharingWithContactIds);

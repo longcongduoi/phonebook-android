@@ -151,7 +151,7 @@ public class SharingWithActivity extends ListActivity {
 			if (!check.isChecked()) continue;
 			m_cursor.moveToPosition(i);
 			String contactId = m_cursor.getString(m_cursor.getColumnIndex(RAW_CONTACT_ID_COLUMN)); 
-			db.removeShareBook(id, contactId);
+			db.setDeleteSharingWith(id, contactId);
 			numRemoved++;
 		}
 		Toast.makeText(getApplicationContext(), 
@@ -196,16 +196,16 @@ public class SharingWithActivity extends ListActivity {
 		rawContactsCursor = db.getRawContactsCursor(false);
 		Cursor contactsCursor = Db.getContacts(this);
 		Log.i(tag, "There are " + contactsCursor.getCount() + " contacts");
-		Cursor bookCursor = Db.getBook(this, id);
+		Cursor bookCursor = db.getBook(id);
 		Log.i(tag, "Book[" + id + "] is being shared with " + bookCursor.getCount()
 				+ " contacts");
 		ids = new ArrayList<String>();
 		while (bookCursor.moveToNext())
 			Log.i(tag,
 			"bookId: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.BOOKID))
-			+" contactid: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.CONTACTID))
-			+ " dirty: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.DIRTY))
-			+ " serverId: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.SERVERID)));
+			+", contactid: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.CONTACTID))
+			+ ", dirty: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.DIRTY))
+			+ ", deleted: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.DELETED)));
 
 		Log.i(tag, "Sharing with " + bookCursor.getCount() + " contacts");
 		List<ContactRow> rows = new ArrayList<ContactRow>();

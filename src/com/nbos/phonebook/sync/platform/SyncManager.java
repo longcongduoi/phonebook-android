@@ -42,7 +42,6 @@ public class SyncManager {
     List<PhoneContact> allContacts; 
     Cursor dataCursor, serverDataCursor, 
     	rawContactsCursor, dataPicsCursor;
-	List<SharingBook> sharingBooks;
     Set<String> syncedContactServerIds, syncedGroupServerIds,
     	unchangedPicsRawContactIds;
     List<PicData> serverPicData;
@@ -74,7 +73,6 @@ public class SyncManager {
 		dataCursor = db.getData();
 		serverDataCursor = db.getProfileData();
 		rawContactsCursor = db.getRawContactsCursor(false);
-		sharingBooks = db.getSharingBooks(false);
 	}
 
 	private void closeCursors() {
@@ -310,33 +308,44 @@ public class SyncManager {
     	cursor.close();
     	groupCursor.close();
     	
-    	// update sharing book info
+    	// update sharing with book info
     	if(isSharedBook) return;
-    	for(int i=0; i< g.sharingWithContactIds.size(); i++) 
-    	{
-    		String serverId = g.sharingWithContactIds.get(i).toString(),
-    			rawContactId = Db.getRawContactIdFromServerId(serverId, dataCursor);
-    		if(rawContactId == null) continue; // could not find the contact
-    		if(isExistsSharing(groupId, rawContactId)) continue;
-    		addSharingWith(groupId, rawContactId);
-    	}
+    	
+    	updateSharingWithContacts(g, groupId);
 	}
 
-	private void addSharingWith(String groupId, String rawContactId) {
-        Uri URI = Uri.parse("content://"+Provider.AUTHORITY+"/"+Provider.BookContent.CONTENT_PATH);
-        ContentValues bookValues = new ContentValues();
-        bookValues.put(BookTable.BOOKID, groupId);
-        bookValues.put(BookTable.CONTACTID, rawContactId);
-        bookValues.put(BookTable.SERVERID, "0");
-        Uri cUri = context.getContentResolver().insert(URI, bookValues);
-	}
-
-	private boolean isExistsSharing(String groupId, String rawContactId) {
-		for(SharingBook sb : sharingBooks)
-			if(sb.groupId.equals(groupId)
-			&& sb.contactId.equals(rawContactId))
-				return true;
-		return false;
+	private void updateSharingWithContacts(Group g, String groupId) {
+    	Cursor bookCursor = db.getBook(groupId);
+    	Set<String> contactsToDelete = new HashSet<String>(),
+    		existingContacts = new HashSet<String>(),
+    		contactsToAdd = new HashSet<String>();
+    	Log.i(tag, "Group sharing with contacts: "+g.sharingWithContactIds);
+		bookCursor.moveToFirst();
+		if(bookCursor.getCount() > 0)
+		do {
+			Long rawContactId = bookCursor.getLong(bookCursor.getColumnIndex(BookTable.CONTACTID));
+			String serverId = Db.getServerIdFromRawContactId(dataCursor, rawContactId.toString());
+			Log.i(tag, "server id: "+serverId+", for raw contactId: "+rawContactId);
+			if(serverId == null) continue;
+			if(!g.sharingWithContactIds.contains(Long.parseLong(serverId)))
+				contactsToDelete.add(rawContactId.toString());
+			else
+				existingContacts.add(rawContactId.toString());
+		} while(bookCursor.moveToNext());
+    	
+		for(Long serverId : g.sharingWithContactIds)
+		{
+			String rawContactId = Db.getRawContactIdFromServerId(serverId.toString(), dataCursor);
+			if(rawContactId == null) continue;
+			if(!existingContacts.contains(rawContactId))
+				contactsToAdd.add(rawContactId);
+		}
+		Log.i(tag, "sharing contacts to add: "+contactsToAdd+", delete: "+contactsToDelete+", existing: "+existingContacts);
+    	
+		for(String contact : contactsToAdd)
+			db.addSharingWith(groupId, contact);
+		for(String contact : contactsToDelete)
+			db.deleteSharingWith(groupId, contact);
 	}
 
 	void deleteContactFromGroup(String rawContactId, String groupId) {

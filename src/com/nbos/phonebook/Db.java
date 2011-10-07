@@ -67,9 +67,9 @@ public class Db {
 				Contacts._ID);
 	}
 
-	public static Cursor getBook(Activity activity, String id) {
-    	return activity.getContentResolver().query(
-    			Uri.parse("content://"+Provider.AUTHORITY+"/"+Provider.BookContent.CONTENT_PATH),
+	public Cursor getBook(String id) {
+    	return cr.query(
+    			Constants.SHARE_BOOK_URI,
 	    		null,
 	    		BookTable.BOOKID + "=" +id,
 	    	    null, BookTable.CONTACTID);
@@ -77,7 +77,7 @@ public class Db {
 
 	public static Cursor getBooks(ContentResolver cr) {
     	return cr.query(
-    			Uri.parse("content://"+Provider.AUTHORITY+"/"+Provider.BookContent.CONTENT_PATH),
+    			Constants.SHARE_BOOK_URI,
 	    		null, null, null, BookTable.BOOKID);
 	}
 
@@ -224,7 +224,7 @@ public class Db {
 	    	if(groupCursor.getCount() > 0)
 	    	do {
 	    		String rawContactId =  groupCursor.getString(groupCursor.getColumnIndex(Data.RAW_CONTACT_ID)),
-	    			serverId = getServerIdFromContactId(dataCursor, rawContactId);
+	    			serverId = getServerIdFromRawContactId(dataCursor, rawContactId);
     			if(serverId != null)
     			{
     				contacts.add(new Contact(serverId));
@@ -255,11 +255,12 @@ public class Db {
     	{
     		String groupSourceId = getSourceIdFromGroupId(groupsCursor, 
     				cursor.getString(cursor.getColumnIndex(BookTable.BOOKID))),
-    			contactServerId = getServerIdFromContactId(dataCursor, 
-    				cursor.getString(cursor.getColumnIndex(BookTable.CONTACTID)));
+    			contactServerId = getServerIdFromRawContactId(dataCursor, 
+    				cursor.getString(cursor.getColumnIndex(BookTable.CONTACTID))),
+    			deleted = cursor.getString(cursor.getColumnIndex(BookTable.DELETED));
     		Log.i(tag, "groupSourceId: "+groupSourceId+", contactSourceId: "+contactServerId);
     		if(groupSourceId != null && contactServerId != null)
-    			books.add(new SharingBook(groupSourceId, contactServerId));
+    			books.add(new SharingBook(groupSourceId, contactServerId, deleted.equals("1")));
     	}
     	cursor.close();
     	dataCursor.close();
@@ -280,7 +281,7 @@ public class Db {
 		return null;
 	}
 
-	public static String getServerIdFromContactId(Cursor dataCursor, String rawContactId) {
+	public static String getServerIdFromRawContactId(Cursor dataCursor, String rawContactId) {
 		dataCursor.moveToFirst();
 		if(dataCursor.getCount() > 0)
 		do {
@@ -532,7 +533,28 @@ public class Db {
 		return null;
 	}
 
-	public void removeShareBook(String bookId, String rawContactId) {
+	public void addSharingWith(String groupId, String rawContactId) {
+        ContentValues bookValues = new ContentValues();
+        bookValues.put(BookTable.BOOKID, groupId);
+        bookValues.put(BookTable.CONTACTID, rawContactId);
+        bookValues.put(BookTable.DELETED, "0");
+        Uri cUri = cr.insert(Constants.SHARE_BOOK_URI, bookValues);
+	}
+
+	public void setDeleteSharingWith(String bookId, String rawContactId) {
+		Log.i(tag, "Setting delete flag for bookId: "+bookId+", rawContactId: "+rawContactId);
+        ContentValues bookValues = new ContentValues();
+        bookValues.put(BookTable.DELETED, "1");
+        bookValues.put(BookTable.DIRTY, (String) null);
+
+		int num = cr.update(Constants.SHARE_BOOK_URI, bookValues, 
+				BookTable.BOOKID + " = ? and "+BookTable.CONTACTID+" = ? ", 
+				new String[] {bookId, rawContactId});
+		Log.i(tag, "Updated "+num+" shared books to deleted");
+		Db.setGroupDirty(bookId, cr);
+	}
+	
+	public void deleteSharingWith(String bookId, String rawContactId) {
 		Log.i(tag, "Removing sharing for bookId: "+bookId+", rawContactId: "+rawContactId);
 		int num = cr.delete(Constants.SHARE_BOOK_URI, 
 				BookTable.BOOKID + " = ? and "+BookTable.CONTACTID+" = ? ", 

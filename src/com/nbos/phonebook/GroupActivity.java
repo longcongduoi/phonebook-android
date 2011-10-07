@@ -43,6 +43,7 @@ public class GroupActivity extends ListActivity {
 	Cursor groupCursor;
 	ImageCursorAdapter adapter;
 	Cursor rawContactsCursor;
+	Db db;
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -52,6 +53,7 @@ public class GroupActivity extends ListActivity {
         setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.group);
 
 		// this.registerForContextMenu(getListView());
+        db = new Db(getApplicationContext());
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
 			id = extras.getString("id");
@@ -176,7 +178,7 @@ public class GroupActivity extends ListActivity {
 		Cursor contactsCursor = Db.getContacts(this);// getContacts();
 		Log.i(tag, "There are " + contactsCursor.getCount() + " contacts");
 		int numContacts = 0;
-		Cursor bookCursor = Db.getBook(this, id);
+		Cursor bookCursor = db.getBook(id);
 		Log.i(tag, "There are " + bookCursor.getCount()
 				+ " contacts sharing this group");
 		IntCursorJoiner joiner = new IntCursorJoiner(contactsCursor,

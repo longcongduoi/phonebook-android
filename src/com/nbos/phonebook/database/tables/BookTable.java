@@ -16,17 +16,17 @@ public interface BookTable {
 	String BOOKID = "bookid";
 	String CONTACTID = "contactid";
 	String DIRTY = "dirty";
-	String SERVERID = "serverid";
+	String DELETED = "deleted";
 
-	String[] ALL_COLUMNS = new String[]{ID, BOOKID, CONTACTID, DIRTY, SERVERID};
+	String[] ALL_COLUMNS = new String[]{ID, BOOKID, CONTACTID, DIRTY, DELETED};
 
 	String SQL_CREATE = "CREATE TABLE " + TABLE_NAME + " ( " + ID
 			+ " INTEGER PRIMARY KEY AUTOINCREMENT " + "," + BOOKID + " INTEGER"
 			+ "," + CONTACTID + " INTEGER" + "," + DIRTY + " NUMERIC" + ","
-			+ SERVERID + " INTEGER" + " )";
+			+ DELETED + " NUMERIC" + " )";
 
 	String SQL_INSERT = "INSERT INTO " + TABLE_NAME + " (" + BOOKID + ","
-			+ CONTACTID + "," + DIRTY + "," + SERVERID
+			+ CONTACTID + "," + DIRTY + "," + DELETED
 			+ ") VALUES ( ?, ?, ?, ? )";
 
 	String SQL_DROP = "DROP TABLE IF EXISTS " + TABLE_NAME;
