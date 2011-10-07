@@ -344,7 +344,9 @@ public class GroupActivity extends ListActivity {
 		case R.id.share_group:
 			showShareGroup();
 			break;
-
+		case R.id.stop_sharing:
+			showSharingContacts();
+			break;
 		}
 		return true;
 		/*
@@ -353,14 +355,25 @@ public class GroupActivity extends ListActivity {
 		 */
 	}
 
+	
+	
+	private void showSharingContacts(){
+		
+		Intent i=new Intent(GroupActivity.this,SharingWithActivity.class);
+		i.putExtra("id", id);
+		i.putExtra("name", name);
+		i.putExtra("layout", R.layout.sharing_contact_entry);
+		startActivityForResult(i, STOP_SHARING);
+	}
 	private void showShareGroup() {
 		Intent i = new Intent(GroupActivity.this, SharingWithActivity.class);
 		i.putExtra("id", id);
 		i.putExtra("name", name);
+		i.putExtra("layout",R.layout.contact_entry);
 		startActivityForResult(i, SHARE_GROUP);
 	}
 
-	static int ADD_CONTACTS = 1, SHARE_GROUP = 2;
+	static int ADD_CONTACTS = 1, SHARE_GROUP = 2,STOP_SHARING=3;
 
 	private void showAddContacts() {
 		Log.i(tag, "Add Contact activity");
@@ -372,6 +385,7 @@ public class GroupActivity extends ListActivity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		onAttachedToWindow();
 		queryGroup();
 	}
 
@@ -400,7 +414,7 @@ public class GroupActivity extends ListActivity {
 		try {
 			int b = getContentResolver().delete(
 					ContactsContract.Groups.CONTENT_URI, "_ID=?", args);
-
+			
 			Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
 			// notify registered observers that a row was updated
 			getContentResolver().notifyChange(

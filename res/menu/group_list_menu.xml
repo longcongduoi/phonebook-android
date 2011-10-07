@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu
   xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:title="@string/add_group" android:id="@+id/add_group"></item>
-    <item android:title="@string/sync" android:id="@+id/sync"></item>
+    <item android:title="@string/add_group" android:id="@+id/add_group" android:icon="@drawable/group"></item>
+    <item android:id="@+id/delete_group" android:title="@string/delete_group" android:icon="@drawable/android:ic_delete"></item>
+    <item android:title="@string/sync" android:id="@+id/sync" android:icon="@drawable/android:stat_notify_sync"></item>
 </menu>

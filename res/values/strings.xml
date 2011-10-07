@@ -110,7 +110,7 @@
     <string name="right_brace">)</string>
     <string name="no_contacts_to_add">There are no contacts to add to the group</string>
     <string name="not_sharing">You are not sharing this group with anybody</string>
-    <string name="add_contact_to_share_with">Select contacts to share with</string>
+    <string name="add_contact_to_share_with">Select Contacts</string>
     <string name="no_contacts_to_share_with">There are no contacts to share this group with</string>
     <string name="tel_number">Phone number</string>
     <string name="hello_widget">Hello this is my widget</string>
@@ -390,5 +390,7 @@
 
     <!-- String describing which account a contact came from when editing it -->
     <string name="from_account_format">from <xliff:g id="source" example="user@gmail.com">%1$s</xliff:g></string>
-    
+    <string name="add_selected_contacts">Add selected contacts</string>
+    <string name="stop_sharing">Stop sharing</string>
+    <string name="delete_selected_group">Delete selected</string>
 </resources>

@@ -13,4 +13,8 @@
 		android:layout_height="wrap_content" android:layout_width="fill_parent"
 		android:layout_toRightOf="@+id/contact_pic" ></TextView>
 		
+    <CheckBox 
+	android:id="@+id/check" 
+	android:layout_width="wrap_content" 
+	android:layout_height="wrap_content" android:layout_alignBottom="@+id/sharing_with_icon" android:layout_alignParentRight="true"></CheckBox>  
 </RelativeLayout>

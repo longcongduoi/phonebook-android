@@ -9,6 +9,7 @@ import org.json.JSONException;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -16,6 +17,7 @@ import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -92,6 +94,14 @@ public class WelcomeActivity extends ListActivity {
 		inflater.inflate(R.menu.group_list_menu, menu); 
 		return true;
 	}
+	
+	
+	@Override
+	public void onAttachedToWindow() {
+		super.onAttachedToWindow();
+		openOptionsMenu();
+	}
+
 	  
 	@Override 
 	public boolean onOptionsItemSelected(MenuItem item) { 
@@ -108,6 +118,12 @@ public class WelcomeActivity extends ListActivity {
 				e.printStackTrace();
 			} 
 		 	break;
+			case R.id.delete_group:{
+				Intent d=new Intent(WelcomeActivity.this, DeleteGroupActivity.class);
+				startActivityForResult(d, DELETE_GROUP);
+			break;
+				//showDeleteGroupDialog();
+			}
 
 		} 
 		return true;
@@ -124,7 +140,7 @@ public class WelcomeActivity extends ListActivity {
 				.show();
 	}
 
-	static int ADD_GROUP = 1, SHOW_GROUP = 2;
+	static int ADD_GROUP = 1, SHOW_GROUP = 2, DELETE_GROUP=3;
 
 	/*public boolean onClickAddGroup(View v) {
 
@@ -143,7 +159,8 @@ public class WelcomeActivity extends ListActivity {
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if ((requestCode == ADD_GROUP && resultCode == RESULT_OK)
-				|| (requestCode == SHOW_GROUP && resultCode == RESULT_OK))
+				|| (requestCode == SHOW_GROUP && resultCode == RESULT_OK) ||(requestCode == DELETE_GROUP && resultCode == RESULT_OK))
+		
 			refreshGroups();
 	}
 
@@ -301,4 +318,9 @@ public class WelcomeActivity extends ListActivity {
 				return account;
 		return null;
 	}
+	
+	
+	
+	
 }
+
