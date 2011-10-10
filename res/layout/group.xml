@@ -1,14 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:id="@+id/linearLayout1">
-    
-    <ListView android:id="@android:id/list" android:layout_height="wrap_content" android:layout_width="wrap_content" android:layout_gravity="top"></ListView>
-    
-    <TextView android:id="@android:id/empty" android:layout_height="wrap_content"
-     android:layout_width="wrap_content" android:text="@string/no_contacts"
-     android:textAppearance="?android:attr/textAppearanceLarge"></TextView>
+	android:orientation="vertical" android:layout_width="fill_parent"
+	android:layout_height="fill_parent" android:id="@+id/linearLayout1">
+
+	<LinearLayout android:id="@+id/linearLayout2" 
+	    android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:layout_weight="1"
+		android:orientation="vertical">
+
+		<ListView android:id="@android:id/list"
+			android:layout_height="wrap_content" android:layout_width="wrap_content"
+			android:layout_gravity="top"></ListView>
+
+		<TextView android:id="@android:id/empty"
+			android:layout_height="wrap_content" android:layout_width="wrap_content"
+			android:text="@string/no_contacts" android:textAppearance="?android:attr/textAppearanceLarge"></TextView>
+
+	</LinearLayout>
+	<LinearLayout android:id="@+id/extraLayout" 
+	    android:layout_width="fill_parent"
+	    android:layout_height="2dip"
+	    android:orientation="horizontal"
+		android:visibility="invisible">
+		<Button android:id="@+id/remove_contacts_button"
+			android:layout_width="fill_parent" android:layout_height="wrap_content"
+			android:text="@string/remove_selected_contacts" />
+
+	</LinearLayout>
 
 </LinearLayout>

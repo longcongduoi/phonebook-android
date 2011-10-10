@@ -19,10 +19,10 @@
  <LinearLayout android:orientation="horizontal" 
  android:layout_width="fill_parent"
  android:layout_height="wrap_content"
- android:id="@+id/deleteLayout" android:weightSum="1">
+ android:id="@+id/deleteLayout">
  
  <Button android:id="@+id/delete_group"
- android:text="@string/delete_selected_group" android:onClick="onClick" android:layout_width="147dp" android:layout_height="fill_parent" android:layout_weight="0.90"/>
+ android:text="@string/delete_selected_group" android:onClick="onClick" android:layout_width="150dp" android:layout_height="fill_parent" android:layout_weight="0.90"/>
 
  </LinearLayout>
 </LinearLayout>

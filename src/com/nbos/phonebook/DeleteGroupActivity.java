@@ -31,6 +31,7 @@ public class DeleteGroupActivity extends ListActivity {
 	    requestWindowFeature(Window.FEATURE_LEFT_ICON);
 		setContentView(R.layout.delete_group);
 		setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.icon);
+		setTitle("Phonebook: Selecte groups to delete");
 		populateGroups();
 		getListView().setTextFilterEnabled(true);
 		String phoneNumber = getPhoneNumber();
@@ -110,7 +111,6 @@ public class DeleteGroupActivity extends ListActivity {
 				m_cursor = getContentResolver().query(
 						ContactsContract.Groups.CONTENT_SUMMARY_URI,
 						null,
-						// "DISPLAY_NAME = '" + NAME + "'",
 						ContactsContract.Groups.DELETED + "=0" + " and "
 								+ ContactsContract.Groups.TITLE + " like '%"
 								+ partialItemName + "%'", null, null);

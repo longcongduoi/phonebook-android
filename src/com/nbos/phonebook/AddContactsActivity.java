@@ -87,7 +87,7 @@ public class AddContactsActivity extends ListActivity {
 				}
 			}
 			Toast.makeText(getApplicationContext(),
-					"Added " + numContacts + " new contacts", Toast.LENGTH_LONG)
+					"Added " + numContacts + " new contact(s)", Toast.LENGTH_LONG)
 					.show();
 			finish();
 		}

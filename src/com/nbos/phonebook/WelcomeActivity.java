@@ -110,7 +110,10 @@ public class WelcomeActivity extends ListActivity {
 		Account account = getAccount();
 		Log.i(tag, "Account is: "+account);//.name+", "+account.type);
 		if(account != null)
+		{
 			syncAdapter.onPerformSync(account, null, null, null, null);
+			populateGroups();
+		}
 		else
 			Toast.makeText(getApplicationContext(), "You have not added a phonebook account", Toast.LENGTH_LONG)
 				.show();
@@ -134,10 +137,11 @@ public class WelcomeActivity extends ListActivity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if ((requestCode == ADD_GROUP && resultCode == RESULT_OK)
-				|| (requestCode == SHOW_GROUP && resultCode == RESULT_OK) ||(requestCode == DELETE_GROUP && resultCode == RESULT_OK))
-		
+		//if ((requestCode == ADD_GROUP && resultCode == RESULT_OK)
+		//|| (requestCode == SHOW_GROUP && resultCode == RESULT_OK) 
+		//||(requestCode == DELETE_GROUP && resultCode == RESULT_OK))
 			refreshGroups();
+		    populateGroups();
 	}
 
 	private void refreshGroups() {
@@ -224,6 +228,7 @@ public class WelcomeActivity extends ListActivity {
 		i.putExtra("id", groupId);
 		i.putExtra("name", groupName);
 		i.putExtra("owner", groupOwner);
+		i.putExtra("layout", R.layout.contact_entry);
 		startActivityForResult(i, SHOW_GROUP);
 	}
 

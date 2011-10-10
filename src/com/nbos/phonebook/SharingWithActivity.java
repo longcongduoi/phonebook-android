@@ -43,7 +43,6 @@ public class SharingWithActivity extends ListActivity {
 	ImageCursorAdapter adapter;
 	MatrixCursor m_cursor;
 	Db db;
-	ListView listview;
 	int layout;
 
 	/** Called when the activity is first created. */
@@ -66,13 +65,9 @@ public class SharingWithActivity extends ListActivity {
 		}
 
 		setTitle("Group: " + name + " sharing with");
-		populateContacts();
+		populateContacts(layout);
 		listview = getListView();
 		listview.setFastScrollEnabled(true);
-		
-		if(layout==R.layout.sharing_contact_entry){
-		addExtraButtons();
-		}
 		
 	}
 
@@ -141,58 +136,54 @@ public class SharingWithActivity extends ListActivity {
 		}
 		return checkedCount;
 	}
-
+    
+	ListView listview;
+	
 	private void removeSharing() {
-		int numRemoved = 0;
-		for (int i = 0; i < listview.getChildCount(); i++) 
-		{
-			View v = (View) listview.getChildAt(i);
-			CheckBox check = (CheckBox) v.findViewById(R.id.check);
-			if (!check.isChecked()) continue;
-			m_cursor.moveToPosition(i);
-			String contactId = m_cursor.getString(m_cursor.getColumnIndex(RAW_CONTACT_ID_COLUMN)); 
-			db.setDeleteSharingWith(id, contactId);
-			numRemoved++;
-		}
-		Toast.makeText(getApplicationContext(), 
-			"Removed "+numRemoved+" contacts from sharing",
-			Toast.LENGTH_LONG).show();
-		
-		finish();
+		populateContacts(R.layout.sharing_contact_entry);
+		showButton();
 	}
      
 	
 	
-	private void addExtraButtons() {
-		LinearLayout mainLayout = (LinearLayout) findViewById(R.id.linearLayout1);
+	private void showButton() {
+		LinearLayout mainLayout = (LinearLayout) findViewById(R.id.sharing_with_layout);
 		LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.extraLayout);
-	    Button stopSharing = new Button(this);		
-		stopSharing.setId(R.id.stop_sharing);
-		stopSharing.setText("Stop sharing");
-		stopSharing.setWidth(500);
-		childLayout.addView(stopSharing);
+		childLayout.setVisibility(1);
+	    Button stopSharing = (Button)childLayout.findViewById(R.id.remove_contacts_button);
+		stopSharing.setOnClickListener(removeSharingContacts);
 
-		stopSharing.setOnClickListener(new Button.OnClickListener() {
-			public void onClick(View v) {
-				if (getCheckedCount(listview, R.id.check) > 0){
-					removeSharing();
-				}
-					
-				else {
-                       Toast.makeText(getApplicationContext(), "select contacts to stop sharing", Toast.LENGTH_LONG).show();
-				}
-			}
-		});
-	
-		
 	}
-
 	
 	
+	private Button.OnClickListener removeSharingContacts=new Button.OnClickListener() {
+		
+			public void onClick(View v) {
+				int numRemoved = 0;
+				LinearLayout mainLayout = (LinearLayout) findViewById(R.id.sharing_with_layout);
+				LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.extraLayout);
+				childLayout.setVisibility(1);
+				for (int i = 0; i < listview.getChildCount(); i++) 
+				{
+					View v1 = (View) listview.getChildAt(i);
+					CheckBox check = (CheckBox) v1.findViewById(R.id.check);
+					if (!check.isChecked()) continue;
+					m_cursor.moveToPosition(i);
+					String contactId = m_cursor.getString(m_cursor.getColumnIndex(RAW_CONTACT_ID_COLUMN)); 
+					db.setDeleteSharingWith(id, contactId);
+					numRemoved++;
+				}
+				Toast.makeText(getApplicationContext(), 
+					"Removed "+numRemoved+" contact(s) from sharing",
+					Toast.LENGTH_LONG).show();
+				populateContacts(layout);
+				childLayout.setVisibility(-1);
+				onAttachedToWindow();
+			}
+		};
 	
 	
-	
-	private void populateContacts() {
+	private void populateContacts(int layout) {
 		rawContactsCursor = db.getRawContactsCursor(false);
 		Cursor contactsCursor = Db.getContacts(this);
 		Log.i(tag, "There are " + contactsCursor.getCount() + " contacts");
@@ -294,7 +285,7 @@ public class SharingWithActivity extends ListActivity {
 		Intent addContactIntent = new Intent(
 				ContactsContract.Intents.Insert.ACTION);
 		addContactIntent.setType(ContactsContract.Contacts.CONTENT_TYPE);
-		startActivity(addContactIntent);
+		startActivityForResult(addContactIntent,INSERT_CONTACT_REQUEST);
 		/*
 		 * Intent i = new Intent(SharingWithActivity.this,
 		 * EditContactActivity.class); //
@@ -323,7 +314,7 @@ public class SharingWithActivity extends ListActivity {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (requestCode == SHARE_WITH)
 			onAttachedToWindow();
-		populateContacts();
+		    populateContacts(layout);
 		if (requestCode == INSERT_CONTACT_REQUEST)
 			onAttachedToWindow();
 		Log.i(tag, "Inserted contact");

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
@@ -19,13 +20,18 @@ import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.FilterQueryProvider;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -44,27 +50,31 @@ public class GroupActivity extends ListActivity {
 	ImageCursorAdapter adapter;
 	Cursor rawContactsCursor;
 	Db db;
+	int layout;
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_LEFT_ICON);
+		requestWindowFeature(Window.FEATURE_LEFT_ICON);
 		setContentView(R.layout.group);
-        setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.group);
+		setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.group);
 
 		// this.registerForContextMenu(getListView());
-        db = new Db(getApplicationContext());
+		db = new Db(getApplicationContext());
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
 			id = extras.getString("id");
 			name = extras.getString("name");
 			owner = extras.getString("owner");
+			layout = extras.getInt("layout");
 			Log.i(tag, "Owner is: " + owner);
 		}
-		queryGroup();
+		queryGroup(layout);
 		registerForContextMenu(getListView());
+		listView = this.getListView();
 		getListView().setTextFilterEnabled(true);
-		
+
 	}
 
 	@Override
@@ -82,12 +92,14 @@ public class GroupActivity extends ListActivity {
 		// Get the info on which item was selected
 		AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
 		m_cursor.moveToPosition(info.position);
-		String contactName = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)),
-			contactId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Contacts._ID));
-		
+		String contactName = m_cursor.getString(m_cursor
+				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)), contactId = m_cursor
+				.getString(m_cursor
+						.getColumnIndex(ContactsContract.Contacts._ID));
+
 		menu.setHeaderTitle("Menu: " + contactName);
 		int order = 0;
-		if(getPhoneNumber(contactId) != null)
+		if (getPhoneNumber(contactId) != null)
 			menu.add(0, v.getId(), order++, "Call");
 		menu.add(0, v.getId(), order++, "Edit");
 		menu.add(0, v.getId(), order++, "Remove from group");
@@ -101,8 +113,8 @@ public class GroupActivity extends ListActivity {
 
 		m_cursor.moveToPosition(info.position);
 		String contactId = m_cursor.getString(m_cursor
-				.getColumnIndex(ContactsContract.Contacts._ID)), 
-			name = m_cursor.getString(m_cursor
+				.getColumnIndex(ContactsContract.Contacts._ID)), name = m_cursor
+				.getString(m_cursor
 						.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 
 		Log.i(tag, "position is: " + info.position + ", contactId: "
@@ -123,34 +135,42 @@ public class GroupActivity extends ListActivity {
 		}
 		return true;
 	}
+
 	int EDIT_CONTACT = 1;
+
 	private void showEdit(String contactId) {
 		// Intent i = new Intent(Intent.ACTION_EDIT);
 		Intent i = new Intent(GroupActivity.this, EditContactActivity.class);
-		i.setData(Uri.parse(ContactsContract.Contacts.CONTENT_URI + "/" + contactId));
+		i.setData(Uri.parse(ContactsContract.Contacts.CONTENT_URI + "/"
+				+ contactId));
 		startActivityForResult(i, EDIT_CONTACT);
 	}
 
 	private String getPhoneNumber(String contactId) {
-		Log.i(tag, "getPhoneNumber("+contactId+")");
+		Log.i(tag, "getPhoneNumber(" + contactId + ")");
 		Cursor phones = getContentResolver().query(
-				ContactsContract.CommonDataKinds.Phone.CONTENT_URI, 
-				new String [] {Phone.NUMBER, Phone.TYPE},
-				ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = " + contactId, 
-				null, null);
-		Log.i(tag, "There are "+phones.getCount()+" phone numbers");		
-		if(phones.getCount()==0) return null;
+				ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+				new String[] { Phone.NUMBER, Phone.TYPE },
+				ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = "
+						+ contactId, null, null);
+		Log.i(tag, "There are " + phones.getCount() + " phone numbers");
+		if (phones.getCount() == 0)
+			return null;
 		phones.moveToFirst();
-		String phoneNumber = phones.getString(phones.getColumnIndexOrThrow(Phone.NUMBER));
-		Log.i(tag, "contactId:" + contactId + ", phone number is: " + phoneNumber);
+		String phoneNumber = phones.getString(phones
+				.getColumnIndexOrThrow(Phone.NUMBER));
+		Log.i(tag, "contactId:" + contactId + ", phone number is: "
+				+ phoneNumber);
 		phones.close();
 		return phoneNumber;
 	}
-	
+
 	private void callFromGroup(String contactId) {
 		String phoneNumber = getPhoneNumber(contactId);
-		if(phoneNumber == null) return;
-		Log.i(tag, "Calling contactId:" + contactId + ", phone number is: " + phoneNumber);
+		if (phoneNumber == null)
+			return;
+		Log.i(tag, "Calling contactId:" + contactId + ", phone number is: "
+				+ phoneNumber);
 		Intent callIntent = new Intent(Intent.ACTION_CALL);
 		callIntent.setData(Uri.parse("tel:" + phoneNumber));
 		startActivity(callIntent);
@@ -165,13 +185,7 @@ public class GroupActivity extends ListActivity {
 								+ " and "
 								+ ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID
 								+ " = ? ", args);
-
-		Toast.makeText(this, "Removed", Toast.LENGTH_SHORT).show();
 		Db.setGroupDirty(id, getContentResolver());
-		// notify registered observers that a row was updated
-		getContentResolver().notifyChange(ContactsContract.Data.CONTENT_URI,
-				null);
-		queryGroup();
 	}
 
 	private int numContacts() {
@@ -204,22 +218,20 @@ public class GroupActivity extends ListActivity {
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.group_menu, menu);
 		Log.i(tag, "Menu Displayed");
-		return true;	
+		return true;
 
 	}
 
-	/*@Override
-	protected void onListItemClick(ListView l, View v, int position, long id) {
-		m_cursor.moveToPosition(position);
-		String contactId = m_cursor.getString(m_cursor
-				.getColumnIndex(ContactsContract.Contacts._ID));
-		Log.i(tag, "position is: " + position + ", contactId: " + contactId
-				+ ", name: " + name);
-		callFromGroup(contactId);
-	}*/
+	/*
+	 @Override protected void onListItemClick(ListView l, View v, int
+	 position, long id) { m_cursor.moveToPosition(position); String contactId
+	 = m_cursor.getString(m_cursor
+	 .getColumnIndex(ContactsContract.Contacts._ID)); Log.i(tag,
+	 "position is: " + position + ", contactId: " + contactId + ", name: " +
+	 name); callFromGroup(contactId); }
+	 */
 
-
-	private void queryGroup() {
+	private void queryGroup(int layout) {
 		if (owner == null) //
 			setTitle("Group: " + name + " (" + numContacts()
 					+ " contacts sharing with)");
@@ -228,8 +240,8 @@ public class GroupActivity extends ListActivity {
 		groupCursor = Db.getContactsInGroup(id, this.getContentResolver());
 		getContactsFromGroupCursor("");
 		String[] fields = new String[] { ContactsContract.Contacts.DISPLAY_NAME };
-		adapter = new ImageCursorAdapter(this, R.layout.contact_entry,
-				m_cursor, ids, fields, new int[] { R.id.contact_name });
+		adapter = new ImageCursorAdapter(this, layout, m_cursor, ids, fields,
+				new int[] { R.id.contact_name });
 
 		adapter.setStringConversionColumn(m_cursor
 				.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
@@ -279,41 +291,39 @@ public class GroupActivity extends ListActivity {
 						.getColumnIndex(ContactsContract.Contacts._ID));
 				String rawContactId = groupCursor.getString(groupCursor
 						.getColumnIndex(Data.RAW_CONTACT_ID));
-				
+
 				String name = contactsCursor
 						.getString(contactsCursor
 								.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-				Log.i(tag, "Contact id: " + contactId + ", rawContactId: "+rawContactId+", name: " + name);
+				Log.i(tag, "Contact id: " + contactId + ", rawContactId: "
+						+ rawContactId + ", name: " + name);
 
-				
-				/*byte[] photo = null;
-
-				Uri photoUri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, Long.parseLong(contactId));
-
-			    Bitmap photoBitmap;
-			    ContentResolver cr = getContentResolver();
-			    InputStream is = ContactsContract.Contacts.openContactPhotoInputStream(cr, photoUri);
-
-			    photoBitmap = BitmapFactory.decodeStream(is);
-				*/
-				/*Uri contactUri = ContentUris.withAppendedId(
-						Contacts.CONTENT_URI, Long.parseLong(contactId));
-				Uri photoUri = Uri.withAppendedPath(contactUri,
-						Contacts.Photo.CONTENT_DIRECTORY);
-				Cursor cursor = getContentResolver()
-						.query(photoUri,
-								new String[] { ContactsContract.CommonDataKinds.Photo.PHOTO },
-								null, null, null);
-				try {
-					if (cursor.moveToFirst()) {
-						photo = cursor.getBlob(0);
-						if (photo != null)
-							Log.i(tag, "name is: " + name + ", photo data is "
-									+ photo.length + " bytes");
-					}
-				} finally {
-					cursor.close();
-				}*/
+				/*
+				 byte[] photo = null;
+				 
+				 Uri photoUri =
+				 ContentUris.withAppendedId(ContactsContract.Contacts
+				 .CONTENT_URI, Long.parseLong(contactId));
+				 
+				 Bitmap photoBitmap; ContentResolver cr =
+				 getContentResolver(); InputStream is =
+				 ContactsContract.Contacts.openContactPhotoInputStream(cr,
+				 photoUri);
+				  
+				 photoBitmap = BitmapFactory.decodeStream(is);
+				 */
+				/*
+				 Uri contactUri = ContentUris.withAppendedId(
+				 Contacts.CONTENT_URI, Long.parseLong(contactId)); Uri
+				 photoUri = Uri.withAppendedPath(contactUri,
+				 Contacts.Photo.CONTENT_DIRECTORY); Cursor cursor =
+				 getContentResolver() .query(photoUri, new String[] {
+				 ContactsContract.CommonDataKinds.Photo.PHOTO }, null, null,
+				 null); try { if (cursor.moveToFirst()) { photo =
+				 cursor.getBlob(0); if (photo != null) Log.i(tag, "name is: "
+				 + name + ", photo data is " + photo.length + " bytes"); } }
+				 finally { cursor.close(); }
+				 */
 				if (name != null)
 					rows.add(new ContactRow(contactId, name));
 				break;
@@ -349,33 +359,88 @@ public class GroupActivity extends ListActivity {
 		case R.id.stop_sharing:
 			showSharingContacts();
 			break;
+		case R.id.remove_contacts:
+			removeContacts();
+			break;
 		}
 		return true;
 		/*
-		 * case R.id.help: showHelp(); return true; default: return
-		 * super.onOptionsItemSelected(item);
+		  case R.id.help: showHelp(); return true; default: return
+		  super.onOptionsItemSelected(item);
 		 */
 	}
 
+	ListView listView;
+
+	private void removeContacts() {
+		queryGroup(R.layout.remove_contacts_entry);
+		showButton();
+	}
+
+	private void showButton() {
+		LinearLayout mainLayout = (LinearLayout) findViewById(R.id.linearLayout1);
+		LinearLayout childLayout = (LinearLayout) mainLayout
+				.findViewById(R.id.extraLayout);
+		childLayout.setVisibility(1);
+		LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.FILL_PARENT,
+				LinearLayout.LayoutParams.WRAP_CONTENT);
+		childLayout.setLayoutParams(params);
+		Button extraButton = (Button) childLayout
+				.findViewById(R.id.remove_contacts_button);
+		extraButton.setOnClickListener(removeContacts);
+	}
+
+	private Button.OnClickListener removeContacts = new OnClickListener() {
+
+		public void onClick(View v) {
+			int numRemoved = 0;
+			LinearLayout mainLayout = (LinearLayout) findViewById(R.id.linearLayout1);
+			LinearLayout childLayout = (LinearLayout) mainLayout
+					.findViewById(R.id.extraLayout);
+
+			Log.i(tag, "Number of items: " + listView.getChildCount());
+			for (int i = 0; i < listView.getChildCount(); i++) {
+				View childView = listView.getChildAt(i);
+				CheckBox check = (CheckBox) childView.findViewById(R.id.check);
+				if (check.isChecked()) {
+					numRemoved++;
+					m_cursor.moveToPosition(i);
+					String contactId = m_cursor.getString(m_cursor
+							.getColumnIndex(ContactsContract.Contacts._ID));
+					Log.i(tag, "Contact id is: " + contactId);
+					removeFromGroup(contactId);
+				}
+			}
+			childLayout.setVisibility(-1);
+			getContentResolver().notifyChange(
+					ContactsContract.Data.CONTENT_URI, null);
+			queryGroup(layout);
+			Toast.makeText(getApplicationContext(),
+					"Deleted " + numRemoved + " contact(s)", Toast.LENGTH_LONG)
+					.show();
+			onAttachedToWindow();
+		}
+	};
 	
-	
-	private void showSharingContacts(){
-		
-		Intent i=new Intent(GroupActivity.this,SharingWithActivity.class);
+	private void showSharingContacts() {
+
+		Intent i = new Intent(GroupActivity.this, SharingWithActivity.class);
 		i.putExtra("id", id);
 		i.putExtra("name", name);
 		i.putExtra("layout", R.layout.sharing_contact_entry);
 		startActivityForResult(i, STOP_SHARING);
 	}
+
 	private void showShareGroup() {
 		Intent i = new Intent(GroupActivity.this, SharingWithActivity.class);
 		i.putExtra("id", id);
 		i.putExtra("name", name);
-		i.putExtra("layout",R.layout.contact_entry);
+		i.putExtra("layout", R.layout.contact_entry);
 		startActivityForResult(i, SHARE_GROUP);
 	}
 
-	static int ADD_CONTACTS = 1, SHARE_GROUP = 2,STOP_SHARING=3;
+	static int ADD_CONTACTS = 1, SHARE_GROUP = 2, STOP_SHARING = 3;
 
 	private void showAddContacts() {
 		Log.i(tag, "Add Contact activity");
@@ -388,7 +453,7 @@ public class GroupActivity extends ListActivity {
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		onAttachedToWindow();
-		queryGroup();
+		queryGroup(layout);
 	}
 
 	private void showDeleteGroupDialog() {
@@ -416,7 +481,7 @@ public class GroupActivity extends ListActivity {
 		try {
 			int b = getContentResolver().delete(
 					ContactsContract.Groups.CONTENT_URI, "_ID=?", args);
-			
+
 			Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
 			// notify registered observers that a row was updated
 			getContentResolver().notifyChange(

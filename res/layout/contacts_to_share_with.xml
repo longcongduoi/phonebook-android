@@ -23,6 +23,6 @@
 		android:layout_height="wrap_content" android:orientation="horizontal">
 		<Button android:id="@+id/add_contact_button"
 			android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:text="@string/add_selected_contacts" />
+			android:text="@string/add_selected_contacts_to_share_with" />
 	</LinearLayout>
 </LinearLayout>

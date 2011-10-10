@@ -48,7 +48,7 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 			name = extras.getString("name");
 		}
 
-		setTitle("Select contacts to share " + name + "with");
+		setTitle("Select contacts to share " + name + " with");
 		populateContacts();
 		getListView().setTextFilterEnabled(true);
 		Button addContactsButton = (Button) findViewById(R.id.add_contact_button);
@@ -81,7 +81,7 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 				}
 			}
 			Toast.makeText(getApplicationContext(),
-					"Sharing with " + numContacts + " new contacts",
+					"Sharing with " + numContacts + " new contact(s)",
 					Toast.LENGTH_LONG).show();
 			finish();
 		}
