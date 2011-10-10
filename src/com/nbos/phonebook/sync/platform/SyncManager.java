@@ -448,7 +448,7 @@ public class SyncManager {
 		return 0;
 	}
 
-    private static Uri addCallerIsSyncAdapterParameter(Uri uri) {
+    public static Uri addCallerIsSyncAdapterParameter(Uri uri) {
         return uri.buildUpon().appendQueryParameter(
             ContactsContract.CALLER_IS_SYNCADAPTER, "true").build();
     }

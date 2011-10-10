@@ -213,7 +213,7 @@ public class Cloud {
 	    	if(isInOtherSharedBook) continue;
 	    	Log.i(tag, "Delete the contact");
 	    	int numDelete = context.getContentResolver()
-	    		.delete(RawContacts.CONTENT_URI, 
+	    		.delete(SyncManager.addCallerIsSyncAdapterParameter(RawContacts.CONTENT_URI), 
 	    				RawContacts._ID + " = ? ", 
 	    				new String[] { rawContactId });
 	    	Log.i(tag, "deleted "+numDelete+" contact");
@@ -228,8 +228,9 @@ public class Cloud {
 	    groupCursor.close();
 	    
 	    int numDelete = context.getContentResolver().delete(
-				ContactsContract.Groups.CONTENT_URI, Groups._ID + " = ? ", 
-				new String[] { groupId} );
+	    	SyncManager.addCallerIsSyncAdapterParameter(ContactsContract.Groups.CONTENT_URI), 
+	    	Groups._ID + " = ? ", 
+			new String[] { groupId} );
 
 	}
 
