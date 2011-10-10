@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.Groups;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
@@ -183,14 +184,14 @@ public class DeleteGroupActivity extends ListActivity {
 			Log.i(tag, i+" is checked");
 			m_cursor.moveToPosition(i);
 			String groupId = m_cursor.getString(m_cursor
-					.getColumnIndex(ContactsContract.Groups._ID)), groupName = m_cursor
+					.getColumnIndex(Groups._ID)), groupName = m_cursor
 					.getString(m_cursor
 							.getColumnIndex(ContactsContract.Groups.TITLE));
 			
 			System.out.println("delete group: " + groupId + ", " + groupName);
 			String[] args = { groupId };
 			int b = getContentResolver().delete(
-					ContactsContract.Groups.CONTENT_URI, "_ID=?", args);
+					Groups.CONTENT_URI, "_ID=?", args);
 			numDeleted++;
 			// notify registered observers that a row was updated
 			

@@ -113,11 +113,11 @@ public class Db {
 	}
 
 	public static Cursor getContactsInGroup(String groupId, ContentResolver cr) {
-	    return cr.query(Data.CONTENT_URI,
+	    return cr.query(Data.CONTENT_URI,	
 	    		// null,
 	    	    new String[] {
 	    			Data.CONTACT_ID,
-	    			Data.RAW_CONTACT_ID,
+	    			Data.RAW_CONTACT_ID
 	    		},
 	    	    GroupMembership.GROUP_ROW_ID+" =  ? "
 	    	    +"and "+Data.MIMETYPE+" = ? ",

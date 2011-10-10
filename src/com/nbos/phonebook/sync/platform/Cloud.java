@@ -42,9 +42,11 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.Groups;
 import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 
@@ -87,6 +89,7 @@ public class Cloud {
     	CHECK_VALID_ACCOUNT_URI = BASE_URL + "/mobile/valid",
     	GET_CONTACT_UPDATES_URI = BASE_URL + "/mobile/contacts",
     	GET_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/sharedBooks",
+    	GET_SHARED_BOOK_ID_UPDATES_URI = BASE_URL + "/mobile/sharedBookIds",
         SEND_CONTACT_UPDATES_URI = BASE_URL + "/mobile/updateContacts",
         SEND_GROUP_UPDATES_URI = BASE_URL + "/mobile/updateGroups",
         TIMESTAMP_URI = BASE_URL + "/mobile/timestamp",
@@ -122,6 +125,8 @@ public class Cloud {
         			serverPicData, unchangedPicsRawContactIds, 
         			syncedContactServerIds, syncedGroupServerIds);
         }
+
+        getSharedBookIds();
         
         sendUpdates();
         return getTimestamp();
@@ -131,6 +136,126 @@ public class Cloud {
 		sendFriendUpdates(false);
 	}*/
 	
+	private void getSharedBookIds() throws ClientProtocolException, JSONException, IOException {
+        List<NameValuePair> params = getAuthParams();
+        if(lastUpdated != null)
+        	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
+        final JSONArray sharedBookUpdateIds = new JSONArray(post(GET_SHARED_BOOK_ID_UPDATES_URI, params));
+        Set<String> sharedBookIds = new HashSet<String>();
+        for (int i = 0; i < sharedBookUpdateIds.length(); i++)  
+        	sharedBookIds.add(new Long(sharedBookUpdateIds.getLong(i)).toString());
+        deleteSharedBooksNotIn(sharedBookIds);
+	}
+
+	private void deleteSharedBooksNotIn(Set<String> sharedBookSourceIds) {
+	    Cursor sharedGroupsCursor = context.getContentResolver()
+	    	.query(Groups.CONTENT_URI, null,
+	    		Groups.SYNC1+" is not null"
+	    		+" and "+Groups.ACCOUNT_NAME+" = ? "
+	    		+" and "+Groups.ACCOUNT_TYPE+" = ? ", 
+	    		new String[]{accountName, Constants.ACCOUNT_TYPE}, null),
+	    		
+	    	groupItemsCursor = context.getContentResolver()
+	    		.query(Data.CONTENT_URI, 
+	    				new String[] {
+	    					GroupMembership.GROUP_ROW_ID,
+	    					GroupMembership.RAW_CONTACT_ID
+	    				}, 
+	    				GroupMembership.MIMETYPE+" = ? ", 
+	    				new String[] {GroupMembership.CONTENT_ITEM_TYPE}, 
+	    				GroupMembership.RAW_CONTACT_ID);
+	    
+	    Log.i(tag, "There are "+sharedGroupsCursor.getCount()+" shared groups");
+	    Log.i(tag, "There are "+groupItemsCursor.getCount()+" grouped contacts");
+	    
+	    Set<String> sharedBookIds = new HashSet<String>();
+	    sharedGroupsCursor.moveToFirst();
+	    if(sharedGroupsCursor.getCount() > 0)
+	    do {
+	    	String groupId = sharedGroupsCursor.getString(sharedGroupsCursor.getColumnIndex(Groups._ID)),
+	    		sourceId = sharedGroupsCursor.getString(sharedGroupsCursor.getColumnIndex(Groups.SOURCE_ID));
+	    	if(sharedBookSourceIds.contains(sourceId))
+	    		sharedBookIds.add(groupId);
+	    } while(sharedGroupsCursor.moveToNext());
+
+	    sharedGroupsCursor.moveToFirst();
+	    if(sharedGroupsCursor.getCount() > 0)
+	    do {
+	    	String groupId = sharedGroupsCursor.getString(sharedGroupsCursor.getColumnIndex(Groups._ID)),
+	    		sourceId = sharedGroupsCursor.getString(sharedGroupsCursor.getColumnIndex(Groups.SOURCE_ID));
+	    	if(!sharedBookSourceIds.contains(sourceId))
+	    		deleteGroup(groupId, sharedBookIds, groupItemsCursor);
+	    } while(sharedGroupsCursor.moveToNext());
+	    sharedGroupsCursor.close();
+	    groupItemsCursor.close();
+	}
+
+	private void deleteGroup(String groupId, Set<String> sharedBookIds, Cursor groupItemsCursor) {
+		// delete contacts in group
+		Cursor groupCursor = Db.getContactsInGroup(groupId, context.getContentResolver());
+		groupCursor.moveToFirst();
+	    if(groupCursor.getCount() > 0)
+	    do {
+	    	String rawContactId = groupCursor.getString(groupCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+	    	Set<String> groupIds = getGroupIds(rawContactId, groupItemsCursor);
+	    	Log.i(tag, "Raw contact: "+rawContactId+" is in "+groupIds.size()+" groups");
+	    	boolean isInOtherSharedBook = false;
+	    	for(String gId : groupIds)
+	    	{
+	    		if(!gId.equals(groupId)
+	    		&& sharedBookIds.contains(gId))
+	    		{
+	    			Log.i(tag, "Contact is another shared book");
+	    			isInOtherSharedBook = true;
+	    			break;
+	    		}
+	    	}
+	    	if(isInOtherSharedBook) continue;
+	    	Log.i(tag, "Delete the contact");
+	    	int numDelete = context.getContentResolver()
+	    		.delete(RawContacts.CONTENT_URI, 
+	    				RawContacts._ID + " = ? ", 
+	    				new String[] { rawContactId });
+	    	Log.i(tag, "deleted "+numDelete+" contact");
+	    			
+
+    		// check if contact is in other shared books	
+		    /*values.put(GroupMembership.RAW_CONTACT_ID, rawContactId);
+		    values.put(GroupMembership.GROUP_ROW_ID, groupId);
+		    values.put(GroupMembership.MIMETYPE, GroupMembership.CONTENT_ITEM_TYPE);
+		    */
+	    } while(groupCursor.moveToNext());
+	    groupCursor.close();
+	    
+	    int numDelete = context.getContentResolver().delete(
+				ContactsContract.Groups.CONTENT_URI, Groups._ID + " = ? ", 
+				new String[] { groupId} );
+
+	}
+
+	private Set<String> getGroupIds(String rawContactId, Cursor groupItemsCursor) {
+		Set<String> groupIds = new HashSet<String>();
+		
+		groupItemsCursor.moveToFirst();
+	    if(groupItemsCursor.getCount() > 0)
+	    do {
+	    	String rawCId = groupItemsCursor.getString(groupItemsCursor.getColumnIndex(GroupMembership.RAW_CONTACT_ID));
+	    	if(Long.parseLong(rawCId) < Long.parseLong(rawContactId))
+	    		continue;
+	    	if(Long.parseLong(rawCId) > Long.parseLong(rawContactId))
+	    		break;
+	    	String gId = groupItemsCursor.getString(groupItemsCursor.getColumnIndex(GroupMembership.GROUP_ROW_ID));	    	
+	    	groupIds.add(gId);
+    		// check if contact is in other shared books	
+		    /*values.put(GroupMembership.RAW_CONTACT_ID, rawContactId);
+		    values.put(GroupMembership.GROUP_ROW_ID, groupId);
+		    values.put(GroupMembership.MIMETYPE, GroupMembership.CONTENT_ITEM_TYPE);
+		    */
+	    } while(groupItemsCursor.moveToNext());
+		
+		return groupIds;
+	}
+
 	private void notify(List<Contact> contacts, List<Group> groups,
 			List<Group> sharedBooks) {
 		if(contacts.size() == 0 

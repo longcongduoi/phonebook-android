@@ -216,12 +216,9 @@ public class WelcomeActivity extends ListActivity {
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		m_cursor.moveToPosition(position);
-		String groupId = m_cursor.getString(m_cursor
-				.getColumnIndex(ContactsContract.Groups._ID)), groupName = m_cursor
-				.getString(m_cursor
-						.getColumnIndex(ContactsContract.Groups.TITLE)), groupOwner = m_cursor
-				.getString(m_cursor
-						.getColumnIndex(ContactsContract.Groups.SYNC1));
+		String groupId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Groups._ID)), 
+			groupName = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Groups.TITLE)), 
+			groupOwner = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Groups.SYNC1));
 
 		Log.i(tag, "Group id: " + groupId + ", name: " + groupName);
 		Intent i = new Intent(WelcomeActivity.this, GroupActivity.class);
