@@ -11,6 +11,7 @@ import android.app.ListActivity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.MatrixCursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.Contacts;
@@ -53,7 +54,7 @@ public class SharingWithActivity extends ListActivity {
 		requestWindowFeature(Window.FEATURE_LEFT_ICON);
 		setContentView(R.layout.sharing_with);
 		setFeatureDrawableResource(Window.FEATURE_LEFT_ICON,
-				android.R.drawable.ic_menu_share);
+				R.drawable.share_64x64);
 
 		registerForContextMenu(getListView());
 
@@ -127,7 +128,8 @@ public class SharingWithActivity extends ListActivity {
 	public int getCheckedCount(ListView listview, int checkboxId) {
 
 		int checkedCount = 0;
-		for (int i = 0; i < listview.getChildCount(); i++) {
+		for (int i = 0; i < listview.getChildCount(); i++) 
+		{
 			View v = (View) listview.getChildAt(i);
 			CheckBox checked = (CheckBox) v.findViewById(checkboxId);
 			if (checked.isChecked()) {
@@ -253,7 +255,6 @@ public class SharingWithActivity extends ListActivity {
 
 	@Override
 	public void onAttachedToWindow() {
-
 		super.onAttachedToWindow();
 		openOptionsMenu();
 	}
@@ -274,7 +275,8 @@ public class SharingWithActivity extends ListActivity {
 		}
 		return true;
 	}
-
+	Cursor main_cursor;
+	ArrayList<String> list1=new ArrayList<String>();
 	private void showCreateNewContact() {
 		/*
 		 * Intent intent = new
@@ -282,6 +284,15 @@ public class SharingWithActivity extends ListActivity {
 		 * intent.setData(ContactsContract.Contacts.CONTENT_URI);
 		 * intent.putExtra(ContactsContract.Intents.EXTRA_FORCE_CREATE, true);
 		 */
+		main_cursor=Db.getContacts(this);
+		main_cursor.moveToFirst();
+		if (main_cursor.getCount() > 0){
+			do {
+			      list1.add(main_cursor.getString(main_cursor.getColumnIndex(Contacts._ID)));
+		       }while(main_cursor.moveToNext());
+		}
+		
+		Log.i(tag,"count"+list1.size());
 		Intent addContactIntent = new Intent(
 				ContactsContract.Intents.Insert.ACTION);
 		addContactIntent.setType(ContactsContract.Contacts.CONTENT_TYPE);
@@ -312,12 +323,17 @@ public class SharingWithActivity extends ListActivity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (requestCode == SHARE_WITH)
-			onAttachedToWindow();
-		    populateContacts(layout);
-		if (requestCode == INSERT_CONTACT_REQUEST)
-			onAttachedToWindow();
-		Log.i(tag, "Inserted contact");
+		if (requestCode == SHARE_WITH) { }
+		if (requestCode == INSERT_CONTACT_REQUEST && resultCode == RESULT_OK)
+		{
+			Uri contactUri = data.getData();
+			String contactId = contactUri.getLastPathSegment();
+			Log.i(tag, "Contact uri: "+contactUri+", contactId: "+contactId);
+			rawContactsCursor.requery();
+			shareGroupWithContact(contactId);
+		}
+		onAttachedToWindow();
+	    populateContacts(layout);
 	}
 
 	private ContactRow getContactRow(String rawContactId,
@@ -349,6 +365,17 @@ public class SharingWithActivity extends ListActivity {
 					return new ContactRow(contactId, rawContactId, name);
 			} while (contactsCursor.moveToNext());
 		return null;
+	}
+	
+	
+	
+	private void shareGroupWithContact(String contactId) {
+		List<String> rawContactIds = Db.getRawContactIds(contactId, rawContactsCursor);
+		for (String rawContactId : rawContactIds) 
+		{
+			db.addSharingWith(id, rawContactId);
+			Log.i(tag, "Sharing " + name + " with rawContact: " + rawContactId);
+		}
 	}
 
 }

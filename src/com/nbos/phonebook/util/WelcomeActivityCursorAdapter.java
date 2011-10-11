@@ -35,6 +35,10 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 		ImageView image=(ImageView) v.findViewById(R.id.sharing_with_icon);
 		c.moveToPosition(position);
 		int groupId = c.getInt(c.getColumnIndex(ContactsContract.Groups._ID));
+		String accountType=c.getString(c.getColumnIndex(ContactsContract.Groups.ACCOUNT_TYPE));
+		if(accountType.equals("com.nbos.phonebook")){
+			Log.i(tag,"groupName:"+c.getString(c.getColumnIndex(ContactsContract.Groups.ACCOUNT_NAME)));
+		}
 		int numSharingWith = getNumSharingWith(groupId);
 		if(numSharingWith > 0)
 		{
@@ -64,6 +68,5 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 		return numSharingWith;
 	}
 
-
-	
+   
 }

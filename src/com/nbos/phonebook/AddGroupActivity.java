@@ -4,12 +4,14 @@ import java.util.ArrayList;
 
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -63,11 +65,8 @@ public class AddGroupActivity extends Activity {
 			 Toast.makeText(getApplicationContext(),
 					 "enter another name to create group", Toast.LENGTH_LONG) .show();
 		}
-		/*
-		  InputMethodManager inputMgr =
-		  (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-		  inputMgr.toggleSoftInput(0, 0);
-		 */
+		/*InputMethodManager mgr = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+		mgr.hideSoftInputFromWindow(findViewById(R.layout.add_group).getWindowToken(), 0);*/
 
 		// doLogin(userName.getEditableText().toString(),
 		// password.getEditableText().toString());

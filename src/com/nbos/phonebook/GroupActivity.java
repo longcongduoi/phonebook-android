@@ -1,5 +1,6 @@
 package com.nbos.phonebook;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,7 @@ import android.widget.CheckBox;
 import android.widget.FilterQueryProvider;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.PopupWindow;
 import android.widget.Toast;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
@@ -50,7 +52,7 @@ public class GroupActivity extends ListActivity {
 	ImageCursorAdapter adapter;
 	Cursor rawContactsCursor;
 	Db db;
-	int layout;
+	int layout,keyValue;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -102,7 +104,7 @@ public class GroupActivity extends ListActivity {
 		if (getPhoneNumber(contactId) != null)
 			menu.add(0, v.getId(), order++, "Call");
 		menu.add(0, v.getId(), order++, "Edit");
-		menu.add(0, v.getId(), order++, "Remove from group");
+		//menu.add(0, v.getId(), order++, "Remove from group");
 	}
 
 	@Override
@@ -374,6 +376,7 @@ public class GroupActivity extends ListActivity {
 
 	private void removeContacts() {
 		queryGroup(R.layout.remove_contacts_entry);
+		keyValue=1;
 		showButton();
 	}
 
@@ -398,7 +401,6 @@ public class GroupActivity extends ListActivity {
 			LinearLayout mainLayout = (LinearLayout) findViewById(R.id.linearLayout1);
 			LinearLayout childLayout = (LinearLayout) mainLayout
 					.findViewById(R.id.extraLayout);
-
 			Log.i(tag, "Number of items: " + listView.getChildCount());
 			for (int i = 0; i < listView.getChildCount(); i++) {
 				View childView = listView.getChildAt(i);
@@ -423,6 +425,25 @@ public class GroupActivity extends ListActivity {
 		}
 	};
 	
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		
+	    if (keyCode == KeyEvent.KEYCODE_BACK && keyValue==1){
+	    	
+	    	LinearLayout mainLayout = (LinearLayout) findViewById(R.id.linearLayout1);
+			LinearLayout childLayout = (LinearLayout) mainLayout
+					.findViewById(R.id.extraLayout);
+			childLayout.setVisibility(-1);
+	    	queryGroup(layout);
+	    	keyValue=0;
+	    	onAttachedToWindow();
+	    }
+	    else{
+	    	return super.onKeyDown(keyCode, event);
+	    }
+	    return true;
+	}
+
 	private void showSharingContacts() {
 
 		Intent i = new Intent(GroupActivity.this, SharingWithActivity.class);
