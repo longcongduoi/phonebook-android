@@ -231,6 +231,7 @@ public class Cloud {
 	    	SyncManager.addCallerIsSyncAdapterParameter(ContactsContract.Groups.CONTENT_URI), 
 	    	Groups._ID + " = ? ", 
 			new String[] { groupId} );
+	    Log.i(tag, "Deleted "+numDelete+" group for id: "+groupId);
 
 	}
 

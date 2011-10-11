@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import com.nbos.phonebook.R;
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.sync.Constants;
 
 public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 	static String tag = "WelcomeActivityCursorAdapter";
@@ -32,12 +33,15 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 	public View getView(int position, View inView, ViewGroup parent) {
 		View v = super.getView(position, inView, parent);
 		TextView sharedText = (TextView) v.findViewById(R.id.sharing_with);
-		ImageView image=(ImageView) v.findViewById(R.id.sharing_with_icon);
+		ImageView image = (ImageView) v.findViewById(R.id.sharing_with_icon);
 		c.moveToPosition(position);
 		int groupId = c.getInt(c.getColumnIndex(ContactsContract.Groups._ID));
-		String accountType=c.getString(c.getColumnIndex(ContactsContract.Groups.ACCOUNT_TYPE));
-		if(accountType.equals("com.nbos.phonebook")){
-			Log.i(tag,"groupName:"+c.getString(c.getColumnIndex(ContactsContract.Groups.ACCOUNT_NAME)));
+		String accountType = c.getString(c.getColumnIndex(ContactsContract.Groups.ACCOUNT_TYPE));
+		if(accountType.equals(Constants.ACCOUNT_TYPE))
+		{
+			String owner = c.getString(c.getColumnIndex(ContactsContract.Groups.SYNC1));
+			TextView ownerTextView = (TextView) v.findViewById(R.id.groupOwner);
+			ownerTextView.setText(owner);
 		}
 		int numSharingWith = getNumSharingWith(groupId);
 		if(numSharingWith > 0)

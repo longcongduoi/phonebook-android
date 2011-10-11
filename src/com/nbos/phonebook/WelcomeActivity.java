@@ -167,13 +167,11 @@ public class WelcomeActivity extends ListActivity {
 				ContactsContract.Groups.TITLE);
 
 		String[] fields = new String[] { ContactsContract.Groups.TITLE,
-				ContactsContract.Groups.SUMMARY_COUNT,
-				ContactsContract.Groups.SYNC1 };
+				ContactsContract.Groups.SUMMARY_COUNT };
 		Cursor sharedBooksCursor = Db.getBooks(cr);
 		WelcomeActivityCursorAdapter adapter = new WelcomeActivityCursorAdapter(
 				this, R.layout.group_entry, m_cursor, sharedBooksCursor,
-				fields, new int[] { R.id.groupName, R.id.groupCount,
-						R.id.groupOwner });
+				fields, new int[] { R.id.groupName, R.id.groupCount });
 
 		adapter.setStringConversionColumn(m_cursor
 				.getColumnIndexOrThrow(ContactsContract.Groups.TITLE));
