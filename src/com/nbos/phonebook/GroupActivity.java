@@ -1,11 +1,9 @@
 package com.nbos.phonebook;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
@@ -16,8 +14,9 @@ import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
+import android.provider.ContactsContract.Contacts;
+import android.provider.ContactsContract.Data;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -34,17 +33,17 @@ import android.widget.CheckBox;
 import android.widget.FilterQueryProvider;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.PopupWindow;
 import android.widget.Toast;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.sync.client.BookPermission;
 import com.nbos.phonebook.util.ImageCursorAdapter;
 import com.nbos.phonebook.value.ContactRow;
 
 public class GroupActivity extends ListActivity {
 
-	String id, name, owner;
+	String id, name, owner, permission;
 	static String tag = "GroupActivity";
 	MatrixCursor m_cursor;
 	List<String> ids;
@@ -69,8 +68,9 @@ public class GroupActivity extends ListActivity {
 			id = extras.getString("id");
 			name = extras.getString("name");
 			owner = extras.getString("owner");
+			permission = extras.getString("permission");
 			layout = extras.getInt("layout");
-			Log.i(tag, "Owner is: " + owner);
+			Log.i(tag, "Owner is: " + owner + ", permission is: "+permission);
 		}
 		queryGroup(layout);
 		registerForContextMenu(getListView());
@@ -86,25 +86,30 @@ public class GroupActivity extends ListActivity {
 	}
 
 	@Override
-	public void onCreateContextMenu(ContextMenu menu, View v,
-			ContextMenuInfo menuInfo) {
-		// if (owner != null) return;
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 		Log.i(tag, "Create context menu");
-		super.onCreateContextMenu(menu, v, menuInfo);
+		boolean hasNumber = false, hasEdit = false;
 		// Get the info on which item was selected
 		AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
 		m_cursor.moveToPosition(info.position);
-		String contactName = m_cursor.getString(m_cursor
-				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)), contactId = m_cursor
-				.getString(m_cursor
-						.getColumnIndex(ContactsContract.Contacts._ID));
+		String contactName = m_cursor.getString(m_cursor.getColumnIndex(Contacts.DISPLAY_NAME)), 
+			contactId = m_cursor.getString(m_cursor.getColumnIndex(Contacts._ID)),
+			phoneNumber = getPhoneNumber(contactId);
+		if(phoneNumber != null)
+			hasNumber = true;
+		if (owner == null 
+		||(owner != null && Integer.parseInt(permission) >= BookPermission.EDIT_CONTACTS.ordinal()))
+			hasEdit = true;
+		if(!hasNumber && !hasEdit)
+			return;
 
+		super.onCreateContextMenu(menu, v, menuInfo);
 		menu.setHeaderTitle("Menu: " + contactName);
 		int order = 0;
-		if (getPhoneNumber(contactId) != null)
+		if (hasNumber)
 			menu.add(0, v.getId(), order++, "Call");
-		menu.add(0, v.getId(), order++, "Edit");
-		//menu.add(0, v.getId(), order++, "Remove from group");
+		if(hasEdit)
+			menu.add(0, v.getId(), order++, "Edit");
 	}
 
 	@Override
@@ -215,13 +220,18 @@ public class GroupActivity extends ListActivity {
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		if (owner != null)
+		if (owner != null 
+		&& Integer.parseInt(permission) < BookPermission.ADD_CONTACTS.ordinal()) 
 			return false;
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.group_menu, menu);
-		Log.i(tag, "Menu Displayed");
+		if(owner != null)
+		{
+			menu.findItem(R.id.share_group).setVisible(false);
+			if(Integer.parseInt(permission) < BookPermission.ADD_REMOVE_CONTACTS.ordinal())
+				menu.findItem(R.id.remove_contacts).setVisible(false);
+		}
 		return true;
-
 	}
 
 	/*

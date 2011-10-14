@@ -13,6 +13,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.Groups;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Menu;
@@ -214,15 +215,17 @@ public class WelcomeActivity extends ListActivity {
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		m_cursor.moveToPosition(position);
-		String groupId = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Groups._ID)), 
-			groupName = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Groups.TITLE)), 
-			groupOwner = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Groups.SYNC1));
+		String groupId = m_cursor.getString(m_cursor.getColumnIndex(Groups._ID)), 
+			groupName = m_cursor.getString(m_cursor.getColumnIndex(Groups.TITLE)), 
+			groupOwner = m_cursor.getString(m_cursor.getColumnIndex(Groups.SYNC1)),
+			groupPermission = m_cursor.getString(m_cursor.getColumnIndex(Groups.SYNC2));
 
 		Log.i(tag, "Group id: " + groupId + ", name: " + groupName);
 		Intent i = new Intent(WelcomeActivity.this, GroupActivity.class);
 		i.putExtra("id", groupId);
 		i.putExtra("name", groupName);
 		i.putExtra("owner", groupOwner);
+		i.putExtra("permission", groupPermission);
 		i.putExtra("layout", R.layout.contact_entry);
 		startActivityForResult(i, SHOW_GROUP);
 	}

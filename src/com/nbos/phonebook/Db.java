@@ -148,7 +148,7 @@ public class Db {
         return null;
 	}
 
-    public static void createAGroup(Context context, String groupName, String owner, String accountName, int id) {
+    public static void createAGroup(Context context, String groupName, String owner, Integer permission, String accountName, int id) {
     	// if(owner == null) owner = accountName;
         final BatchOperation batchOperation = new BatchOperation(context);
     	
@@ -168,6 +168,7 @@ public class Db {
 		builder.withValue(Groups.TITLE, groupName);
 		builder.withValue(Groups.SOURCE_ID, id);
 		builder.withValue(Groups.SYNC1, owner); // using sync1 for the owner of the shared book
+		builder.withValue(Groups.SYNC2, permission); // using sync2 for the owner of the shared book
 		builder.withValue(Groups.GROUP_VISIBLE, 1);
 		batchOperation.add(builder.build());
 		batchOperation.execute();
@@ -570,5 +571,15 @@ public class Db {
 				new String[] {bookId, rawContactId});
 		Log.i(tag, "Deleted "+num+" shared books");
 		Db.setGroupDirty(bookId, cr);
+	}
+
+	public void updateGroupPermission(String groupId, Integer permission) {
+        ContentValues bookValues = new ContentValues();
+        bookValues.put(Groups.SYNC2, permission.toString());
+
+		int num = cr.update(Groups.CONTENT_URI, bookValues, 
+				Groups._ID + " = ? ", 
+				new String[] {groupId});
+		Log.i(tag, "Updated "+num+" shared book permission");
 	}
 }

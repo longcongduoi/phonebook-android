@@ -276,7 +276,7 @@ public class SyncManager {
 	    	Log.i(tag, "New group: "+account+", "+g.name+", owner: "+g.owner+", sourceId: "+g.groupId);
 	    	// create a group with the share book name
 	    	//DatabaseHelper.createAGroup(ctx, sharedBook.name, sharedBook.owner, accountName, id);
-	    	Db.createAGroup(context, g.name, isSharedBook ? g.owner : null , account, Integer.parseInt(id));
+	    	Db.createAGroup(context, g.name, isSharedBook ? g.owner : null, isSharedBook ? g.permission : null, account, Integer.parseInt(id));
 	    	cursor.requery();
 	    	Log.i(tag, "cursor has "+cursor.getCount()+" rows");
 	    }
@@ -290,6 +290,8 @@ public class SyncManager {
 	    	return;
 	    }
 	    syncedGroupServerIds.add(id);
+	    if(isSharedBook)
+	    	db.updateGroupPermission(groupId, g.permission);
 	    Cursor groupCursor = Db.getContactsInGroup(groupId, context.getContentResolver());	    
     	Log.i(tag, "Update group: "+g.name+", id: "+groupId+", contacts: "+g.contacts+", group cursor size: "+groupCursor.getCount());
     	syncContacts(g.contacts);

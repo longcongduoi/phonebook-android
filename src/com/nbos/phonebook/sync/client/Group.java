@@ -13,6 +13,7 @@ import android.util.Log;
 
 public class Group {
 	public String groupId, serverId, name, owner;
+	public int permission;
 	public List<Contact> contacts;
 	public Set<Long> sharingWithContactIds;
 	public Group(String groupId, String serverId, String name, String owner, 
@@ -30,8 +31,9 @@ public class Group {
 	public static Group valueOf(JSONObject group) throws JSONException {
 		int id = group.getInt("id");
 		String name = group.getString("name"),
-			owner = group.getString("owner");;
-		Log.i(tag, "Id: "+id+", name: "+name+", owner: "+owner);
+			owner = group.getString("owner");
+		int permission = group.getInt("perm");
+		Log.i(tag, "Id: "+id+", name: "+name+", owner: "+owner+", permission: "+permission);
 		
 		List<Contact> contacts = new ArrayList<Contact>();
 		JSONArray contactsArray = group.getJSONArray("contacts");
@@ -39,11 +41,17 @@ public class Group {
 			contacts.add(Contact.valueOf(contactsArray.getJSONObject(i)));
 		Log.i(tag, "There are "+contacts.size()+" contacts in group "+name);
 		
-		JSONArray sharingWithContactIdsArray = group.getJSONArray("sharingWith");
+		
 		Set<Long> sharingWithContactIds = new HashSet<Long>();
-		for(int i=0; i< sharingWithContactIdsArray.length(); i++)
-			sharingWithContactIds.add(sharingWithContactIdsArray.getLong(i));
-		return new Group(new Integer(id).toString(), null, name, owner, contacts, sharingWithContactIds);
+		try { // shared books wont have this data
+			JSONArray sharingWithContactIdsArray = group.getJSONArray("sharingWith");		
+			for(int i=0; i< sharingWithContactIdsArray.length(); i++)
+				sharingWithContactIds.add(sharingWithContactIdsArray.getLong(i));
+		} catch(Exception e) {}
+		Group g = new Group(new Integer(id).toString(), null, name, owner, contacts, sharingWithContactIds);
+		
+		g.permission = permission;
+		return g;
 	}
 	
 }
