@@ -4,10 +4,12 @@ import java.util.List;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -21,7 +23,9 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
+import android.widget.CheckBox;
 import android.widget.FilterQueryProvider;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -38,6 +42,7 @@ public class WelcomeActivity extends ListActivity {
 	List<Contact> m_contacts = null;
 	List<Contact> m_phoneContacts = null;
 	ProgressDialog m_ProgressDialog = null;
+	int layout=R.layout.group_entry;
 
 	/** Called when the activity is first created. */
 
@@ -48,7 +53,8 @@ public class WelcomeActivity extends ListActivity {
 		setContentView(R.layout.main);
 		setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.icon);
 		testContentProvider();
-		populateGroups();
+		populateGroups(layout);
+		listView=this.getListView();
 		getListView().setTextFilterEnabled(true);
 		String phoneNumber = getPhoneNumber();
 		Log.i(tag, "phone number: " + phoneNumber);
@@ -64,6 +70,16 @@ public class WelcomeActivity extends ListActivity {
 
 	}
 
+	
+	public boolean onClick(View v) {
+		switch (v.getId()) 
+		{ 
+			case R.id.delete_group: 
+			showDeleteGroupDialog();
+			break;
+		} 
+		return true;
+	}
 
 	@Override 
 	public boolean onCreateOptionsMenu(Menu menu) { 
@@ -96,8 +112,13 @@ public class WelcomeActivity extends ListActivity {
 			} 
 		 	break;
 			case R.id.delete_group:{
-				Intent d=new Intent(WelcomeActivity.this, DeleteGroupActivity.class);
-				startActivityForResult(d, DELETE_GROUP);
+				LinearLayout mainLayout=(LinearLayout)findViewById(R.id.mainlinearLayout);
+				LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.deleteLayout);
+				childLayout.setVisibility(1);
+				populateGroups(R.layout.delete_group_entry);
+				
+				/*Intent d=new Intent(WelcomeActivity.this, DeleteGroupActivity.class);
+				startActivityForResult(d, DELETE_GROUP);*/
 			break;
 				//showDeleteGroupDialog();
 			}
@@ -113,7 +134,7 @@ public class WelcomeActivity extends ListActivity {
 		if(account != null)
 		{
 			syncAdapter.onPerformSync(account, null, null, null, null);
-			populateGroups();
+			populateGroups(layout);
 		}
 		else
 			Toast.makeText(getApplicationContext(), "You have not added a phonebook account", Toast.LENGTH_LONG)
@@ -142,7 +163,7 @@ public class WelcomeActivity extends ListActivity {
 		//|| (requestCode == SHOW_GROUP && resultCode == RESULT_OK) 
 		//||(requestCode == DELETE_GROUP && resultCode == RESULT_OK))
 			refreshGroups();
-		    populateGroups();
+		    populateGroups(layout);
 	}
 
 	private void refreshGroups() {
@@ -161,7 +182,7 @@ public class WelcomeActivity extends ListActivity {
 
 	Cursor m_cursor;
 
-	private void populateGroups() {
+	private void populateGroups(int layout) {
 		ContentResolver cr = getContentResolver();
 		m_cursor = cr.query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
 				ContactsContract.Groups.DELETED + "=0", null,
@@ -171,7 +192,7 @@ public class WelcomeActivity extends ListActivity {
 				ContactsContract.Groups.SUMMARY_COUNT };
 		Cursor sharedBooksCursor = Db.getBooks(cr);
 		WelcomeActivityCursorAdapter adapter = new WelcomeActivityCursorAdapter(
-				this, R.layout.group_entry, m_cursor, sharedBooksCursor,
+				this, layout, m_cursor, sharedBooksCursor,
 				fields, new int[] { R.id.groupName, R.id.groupCount });
 
 		adapter.setStringConversionColumn(m_cursor
@@ -236,7 +257,10 @@ public class WelcomeActivity extends ListActivity {
 		Log.i(tag, "There are " + accounts.length + " accounts");
 		for (Account account : accounts)
 			if (account.type.equals(type))
+			{
+				setTitle(" Phonebook: "+account.name);
 				return true;
+			}
 		return false;
 	}
 	
@@ -251,6 +275,81 @@ public class WelcomeActivity extends ListActivity {
 	}
 	
 	
+	private void showDeleteGroupDialog() {
+		 
+		int delete_group_count=0;
+		
+		for(int i=0;i<listView.getChildCount();i++){
+			View childView = listView.getChildAt(i);
+    		CheckBox check =(CheckBox)childView.findViewById(R.id.check);
+    		
+    		if(check.isChecked()){
+    			delete_group_count++;
+    		}
+		}
+		Log.i(tag,"selected group count"+delete_group_count);
+		if(delete_group_count>0)
+		{
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage("Are you sure you want to delete selected group(s)?")
+				.setCancelable(false)
+				.setPositiveButton("Yes",
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int id) {
+								deleteGroups();
+							}
+						})
+				.setNegativeButton("No", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						dialog.cancel();
+					}
+				});
+		AlertDialog alert = builder.create();
+		alert.show();
+		}
+		
+		else
+		{
+			deleteGroups();
+	    }
+		
+	}
+
+	
+	ListView listView;
+	private void deleteGroups() {
+		int numDeleted = 0;
+		LinearLayout mainLayout=(LinearLayout)findViewById(R.id.mainlinearLayout);
+		LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.deleteLayout);
+		
+		for(int i=0;i<listView.getChildCount();i++) 
+		{
+			View childView = (View)listView.getChildAt(i);
+    		CheckBox check =(CheckBox)childView.findViewById(R.id.check);
+    		
+    		if(!check.isChecked()) continue; 
+			Log.i(tag, i+" is checked");
+			m_cursor.moveToPosition(i);
+			String groupId = m_cursor.getString(m_cursor
+					.getColumnIndex(Groups._ID)), groupName = m_cursor
+					.getString(m_cursor
+							.getColumnIndex(ContactsContract.Groups.TITLE));
+			
+			System.out.println("delete group: " + groupId + ", " + groupName);
+			String[] args = { groupId };
+			int b = getContentResolver().delete(
+					Groups.CONTENT_URI, "_ID=?", args);
+			numDeleted++;
+			// notify registered observers that a row was updated
+			
+    	}
+		
+		Toast.makeText(this, "Deleted "+numDeleted+" group(s)", Toast.LENGTH_LONG).show();
+		getContentResolver().notifyChange(
+				ContactsContract.Groups.CONTENT_URI, null);
+		childLayout.setVisibility(-1);
+		populateGroups(layout);
+    }
 	
 	
 }
