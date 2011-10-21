@@ -16,6 +16,8 @@
 
 package com.nbos.phonebook.sync.authenticator;
 
+import org.json.JSONObject;
+
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
@@ -25,6 +27,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.ContactsContract;
@@ -34,7 +37,13 @@ import android.view.View;
 import android.view.Window;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.facebook.android.DialogError;
+import com.facebook.android.Facebook;
+import com.facebook.android.FacebookError;
+import com.facebook.android.Util;
+import com.facebook.android.Facebook.DialogListener;
 import com.nbos.phonebook.Db;
 import com.nbos.phonebook.R;
 import com.nbos.phonebook.sync.Constants;
@@ -54,7 +63,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
     private Thread mAuthThread;
     private String mAuthtoken;
     private String mAuthtokenType;
-
+    Facebook facebook = new Facebook("206032716132433");
     /**
      * If set we are just checking that the user knows their credentials; this
      * doesn't cause the user's password to be changed on the device.
@@ -72,6 +81,9 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
 
     private String mUsername;
     private EditText mUsernameEdit;
+    private String tag="Facebook";
+    String FILENAME = "Androidphonebook_data";
+    private SharedPreferences mPrefs;
 
     /**
      * {@inheritDoc}
@@ -131,7 +143,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         });
         return dialog;
     }
-
+    
     /**
      * Handles onClick event on the Submit button. Sends username/password to
      * the server for authentication.
@@ -315,4 +327,63 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
     protected void showProgress() {
         showDialog(0);
     }
+    public void registerAsFbUser(View v){
+    	facebook.authorize(this, new DialogListener() {
+            public void onComplete(Bundle values) {
+            	
+            }
+
+            public void onFacebookError(FacebookError error) {}
+
+            public void onError(DialogError e) {}
+
+            public void onCancel() {}
+        });
+    }
+    
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+         facebook.authorizeCallback(requestCode, resultCode, data);
+         View v=(View)findViewById(R.id.login_layout);
+         createAccountWithFbId(v);
+       
+    }
+    public void createAccountWithFbId(View v){
+   	 mPrefs = getPreferences(MODE_PRIVATE);
+   	 SharedPreferences.Editor editor = mPrefs.edit();
+     	editor.putString("access_token", facebook.getAccessToken());
+        editor.putLong("access_expires", facebook.getAccessExpires());
+        editor.commit();
+        String access_token = mPrefs.getString("access_token", null);
+        long expires = mPrefs.getLong("access_expires", 0);
+        if(access_token != null) {
+            facebook.setAccessToken(access_token);
+        }
+        if(expires != 0) {
+            facebook.setAccessExpires(expires);
+        }
+        
+        /*
+         * Only call authorize if the access_token has expired.
+         */
+        if(facebook.isSessionValid()) {
+        	Log.i(tag, "Session is valid");
+        	JSONObject json;
+			try {
+				json = Util.parseJson(facebook.request("me", new Bundle()));
+				String userId = json.getString("id"),
+				userName=json.getString("username");
+				mUsernameEdit.setText(userName);
+				mPasswordEdit.setText(userId);
+				handleRegister(v);
+				Log.i(tag, "userName: "+userName);
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			} catch (FacebookError e) {
+				e.printStackTrace();
+			}
+        }
+        
+   }
 }

@@ -46,7 +46,7 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 		int numSharingWith = getNumSharingWith(groupId);
 		if(numSharingWith > 0)
 		{
-			image.setImageResource(android.R.drawable.ic_menu_share);
+			image.setImageResource(R.drawable.share);
 			sharedText.setText(new Integer(numSharingWith).toString());
 		}
 		else

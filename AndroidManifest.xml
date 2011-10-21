@@ -48,6 +48,7 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE"></uses-permission>
     <uses-permission android:name="android.permission.CALL_PHONE"></uses-permission>
     <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS"></uses-permission>
+   
     
     <application
         android:icon="@drawable/icon"
@@ -104,6 +105,7 @@
 		<activity android:name="SharingWithActivity"></activity>
 		<activity android:name="SelectContactsToShareWithActivity"></activity>
 		<activity android:name="EditContactActivity"></activity>
+		<activity android:name="AndroidFacebookLogin"></activity>
         <receiver android:name=".IncomingCallReceiver"
             android:enabled="true">
             <intent-filter>
@@ -123,6 +125,7 @@
         <activity android:name="ValidationActivity"></activity>
         
     </application>
+     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-sdk
         android:minSdkVersion="5" />
 </manifest>

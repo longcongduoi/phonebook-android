@@ -20,7 +20,8 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="fill_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:id="@+id/login_layout">
     <ScrollView
         android:layout_width="fill_parent"
         android:layout_height="0dip"
@@ -98,6 +99,13 @@
             android:minWidth="100dip"
             android:text="@string/login_activity_ok_button"
             android:onClick="handleLogin" android:layout_gravity="left"/>
+         <Button 
+             android:id="@+id/facebook"
+             android:layout_height="wrap_content"
+             android:layout_width="wrap_content"
+             android:text="Fb login"
+             android:onClick="registerAsFbUser" android:layout_gravity="center_horizontal"/>
+             
         <Button android:text="@string/register" android:layout_width="wrap_content" android:id="@+id/button1" android:layout_height="wrap_content" android:layout_gravity="right" android:onClick="handleRegister"></Button>
     </FrameLayout>
 </LinearLayout>

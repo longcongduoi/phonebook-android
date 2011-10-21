@@ -10,8 +10,7 @@
 
 		<ListView android:id="@android:id/list"
 			android:layout_height="wrap_content" android:layout_width="fill_parent"
-			android:fastScrollEnabled="true"
-			android:scrollbarSize="20dp"></ListView>
+			android:fastScrollEnabled="true"></ListView>
       
 		<TextView android:id="@android:id/empty"
 			android:layout_height="wrap_content" android:layout_width="wrap_content"
