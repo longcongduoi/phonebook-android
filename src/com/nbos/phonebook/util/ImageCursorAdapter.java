@@ -1,21 +1,19 @@
 package com.nbos.phonebook.util;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.provider.ContactsContract;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AlphabetIndexer;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
-import android.widget.RelativeLayout;
 import android.widget.SectionIndexer;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
@@ -39,7 +37,10 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements SectionIn
 		this.context = context;
 		this.ids = ids;
 		this.layout = layout;
-		alphaIndexer=new AlphabetIndexer(c, c.getColumnIndex(ContactsContract.Data.DISPLAY_NAME), " ABCDEFGHIJKLMNOPQRSTUVWXYZ"); 
+		alphaIndexer=new AlphabetIndexer(c, c.getColumnIndex(ContactsContract.Data.DISPLAY_NAME), " ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+		for (int i = 0; i < this.getCount(); i++) {
+	        itemChecked.add(i, false); // initializes all items value with false
+	    }
 	}
 
 	public void setCursor(Cursor c) {
@@ -51,10 +52,9 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements SectionIn
 	}
 	
 	
-	
-
+	private ArrayList<Boolean> itemChecked = new ArrayList<Boolean>();
 	@Override
-	public View getView(int pos, View inView, ViewGroup parent) {
+	public View getView(final int position, View inView, ViewGroup parent) {
 		View v = inView;
 		
 		if (v == null) {
@@ -62,31 +62,34 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements SectionIn
 					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 			v = inflater.inflate(layout, null);
 		}
-		this.c.moveToPosition(pos);
+		this.c.moveToPosition(position);
 		
-		
-		// ContactsContract.Contacts._ID,
-		// ContactsContract.Contacts.DISPLAY_NAME,
-		// ContactsContract.CommonDataKinds.Photo.PHOTO}, 10);
 		String contactName = this.c.getString(this.c
 				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 		
 		// byte[] pic = images.get(pos);// this.c.getBlob(this.c.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
 		ImageView iv = (ImageView) v.findViewById(R.id.contact_pic);
-		iv.setImageBitmap(Db.getPhoto(context.getContentResolver(), ids.get(pos)));
+		iv.setImageBitmap(Db.getPhoto(context.getContentResolver(), ids.get(position)));
 		iv.setScaleType(ScaleType.FIT_XY);
-	
-		/*if (pic == null) 
-			iv.setImageBitmap(null);
-		else
-		{
-			iv.setImageBitmap(BitmapFactory.decodeByteArray(pic, 0, pic.length));
-			iv.setScaleType(ScaleType.FIT_XY);
-		}*/
 		TextView cName = (TextView) v.findViewById(R.id.contact_name);
 		cName.setText(contactName);
-		
-		return v;
+
+	   final CheckBox checkBox = (CheckBox) v.findViewById(R.id.check); // your
+	   if(checkBox != null)
+	   {
+		   checkBox.setOnClickListener(new OnClickListener() {
+			   public void onClick(View v) {
+				   CheckBox cb = (CheckBox) v.findViewById(R.id.check);
+				   if (cb.isChecked()) {
+					   itemChecked.set(position, true);
+				   } else if (!cb.isChecked()) {
+					   itemChecked.set(position, false);
+				   }
+			   }
+		   });
+		   checkBox.setChecked(itemChecked.get(position));
+	   }
+	   return v;
 	}
 
 	public int getPositionForSection(int section) {
