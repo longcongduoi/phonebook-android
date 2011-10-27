@@ -582,4 +582,22 @@ public class Db {
 				new String[] {groupId});
 		Log.i(tag, "Updated "+num+" shared book permission");
 	}
+
+	public String getContactId(String rawContactId, Cursor rawContactsCursor) {
+		Log.i(tag, "getContactId("+rawContactId+"), rawContactsCursor size: "+rawContactsCursor.getCount());
+		if(rawContactId == null || rawContactsCursor.getCount() == 0) return null;
+		rawContactsCursor.moveToFirst();
+		do {
+			String cId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.CONTACT_ID));
+			String rawId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts._ID));
+			// Log.i(TAG, "checking: contactID: "+cId+", rawContactId: "+rawContactId);
+			if(rawId.equals(rawContactId))
+			{
+				Log.i(tag, "getContactId("+rawContactId+") = "+cId);
+				return cId;
+			}
+		} while(rawContactsCursor.moveToNext());
+		Log.i(tag, "returning null");
+		return null;
+	}
 }

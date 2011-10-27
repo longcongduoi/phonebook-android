@@ -158,21 +158,24 @@ public class SharingWithActivity extends ListActivity {
 	}
 	
 	
-	private Button.OnClickListener removeSharingContacts=new Button.OnClickListener() {
+	private Button.OnClickListener removeSharingContacts = new Button.OnClickListener() {
 		
 			public void onClick(View v) {
 				int numRemoved = 0;
 				LinearLayout mainLayout = (LinearLayout) findViewById(R.id.sharing_with_layout);
 				LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.extraLayout);
 				childLayout.setVisibility(1);
-				for (int i = 0; i < listview.getChildCount(); i++) 
+				List<Boolean> checkedItems = adapter.getCheckedItems();
+				for (int i = 0; i < listview.getCount(); i++) 
 				{
-					View v1 = (View) listview.getChildAt(i);
-					CheckBox check = (CheckBox) v1.findViewById(R.id.check);
-					if (!check.isChecked()) continue;
+					if (!checkedItems.get(i)) continue;
 					m_cursor.moveToPosition(i);
-					String contactId = m_cursor.getString(m_cursor.getColumnIndex(RAW_CONTACT_ID_COLUMN)); 
-					db.setDeleteSharingWith(id, contactId);
+					String rawContactId = m_cursor.getString(m_cursor.getColumnIndex(RAW_CONTACT_ID_COLUMN));
+					String contactId = db.getContactId(rawContactId, rawContactsCursor);
+					// remove all raw contactIds which have the same contactId as this rawContactId
+					List<String> rawContactIds = db.getRawContactIds(contactId, rawContactsCursor);
+					for(String r : rawContactIds)
+						db.setDeleteSharingWith(id, r);
 					numRemoved++;
 				}
 				Toast.makeText(getApplicationContext(), 
@@ -217,12 +220,6 @@ public class SharingWithActivity extends ListActivity {
 					rows.add(row);
 			} while (bookCursor.moveToNext());
 
-		/*
-		 * IntCursorJoiner joiner = new IntCursorJoiner( contactsCursor, new
-		 * String[] {ContactsContract.Contacts._ID}, bookCursor, new String[]
-		 * {BookTable.CONTACTID} );
-		 */
-
 		m_cursor = new MatrixCursor(new String[] {
 				Contacts._ID,
 				RAW_CONTACT_ID_COLUMN,
@@ -233,6 +230,7 @@ public class SharingWithActivity extends ListActivity {
 			m_cursor.addRow(new String[] { row.id, row.rawContactId, row.name });
 			ids.add(row.id);
 		}
+		setTitle("Group: " + name + " sharing with ("+rows.size()+")");
 
 		String[] fields = new String[] { ContactsContract.Data.DISPLAY_NAME };
 

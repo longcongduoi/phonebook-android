@@ -23,12 +23,14 @@ import com.nbos.phonebook.R;
 
 public class ImageCursorAdapter extends SimpleCursorAdapter implements SectionIndexer{
 
-	private Cursor c;
-	private Context context;
+	Cursor c;
+	Context context;
 	List<String> ids;
 	int layout;
 	String tag="SelectContactsToShareWith";
-	AlphabetIndexer alphaIndexer; 
+	AlphabetIndexer alphaIndexer;
+	ArrayList<Boolean> checkedItems = new ArrayList<Boolean>();
+
 
 	public ImageCursorAdapter(Context context, int layout, Cursor c,
 			List<String> ids, String[] from, int[] to) {
@@ -38,11 +40,13 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements SectionIn
 		this.ids = ids;
 		this.layout = layout;
 		alphaIndexer=new AlphabetIndexer(c, c.getColumnIndex(ContactsContract.Data.DISPLAY_NAME), " ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-		for (int i = 0; i < this.getCount(); i++) {
-	        itemChecked.add(i, false); // initializes all items value with false
-	    }
+		for (int i = 0; i < this.getCount(); i++) 
+	        checkedItems.add(i, false); // initializes all items value with false
 	}
 
+	public List<Boolean> getCheckedItems() {
+		return checkedItems;
+	}
 	public void setCursor(Cursor c) {
 		this.c = c;
 	}
@@ -52,7 +56,6 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements SectionIn
 	}
 	
 	
-	private ArrayList<Boolean> itemChecked = new ArrayList<Boolean>();
 	@Override
 	public View getView(final int position, View inView, ViewGroup parent) {
 		View v = inView;
@@ -81,29 +84,26 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements SectionIn
 			   public void onClick(View v) {
 				   CheckBox cb = (CheckBox) v.findViewById(R.id.check);
 				   if (cb.isChecked()) {
-					   itemChecked.set(position, true);
+					   checkedItems.set(position, true);
 				   } else if (!cb.isChecked()) {
-					   itemChecked.set(position, false);
+					   checkedItems.set(position, false);
 				   }
 			   }
 		   });
-		   checkBox.setChecked(itemChecked.get(position));
+		   checkBox.setChecked(checkedItems.get(position));
 	   }
 	   return v;
 	}
 
 	public int getPositionForSection(int section) {
-		
 		return alphaIndexer.getPositionForSection(section);
 	}
 
 	public int getSectionForPosition(int position) {
-		
 		return alphaIndexer.getSectionForPosition(position); 
 	}
 
 	public Object[] getSections() {
-		
 		return alphaIndexer.getSections();
 	}
 

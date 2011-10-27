@@ -57,7 +57,6 @@ public class AddContactsActivity extends ListActivity {
 		addContactsButton.setOnClickListener(selectedContacts);
 		listView = this.getListView();
 		populateContacts();
-
 		getListView().setTextFilterEnabled(true);
 	}
 
@@ -66,11 +65,10 @@ public class AddContactsActivity extends ListActivity {
 	private Button.OnClickListener selectedContacts = new Button.OnClickListener() {
 		public void onClick(View v) {
 			int numContacts = 0;
+			List<Boolean> checkedItems = adapter.getCheckedItems();
 			Log.i(tag, "Number of items: " + listView.getChildCount());
 			for (int i = 0; i < listView.getChildCount(); i++) {
-				View childView = listView.getChildAt(i);
-				CheckBox check = (CheckBox) childView.findViewById(R.id.check);
-				if (check.isChecked()) {
+				if (checkedItems.get(i)) {
 					Log.i(tag, i + " is checked");
 					numContacts++;
 					m_cursor.moveToPosition(i);

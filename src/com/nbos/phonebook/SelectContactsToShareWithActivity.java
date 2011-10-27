@@ -17,7 +17,6 @@ import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.FilterQueryProvider;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -63,10 +62,9 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 		public void onClick(View v) {
 			int numContacts = 0;
 			Log.i(tag, "Number of items: " + listView.getChildCount());
-			for (int i = 0; i < listView.getChildCount(); i++) {
-				View childView = listView.getChildAt(i);
-				CheckBox check = (CheckBox) childView.findViewById(R.id.check);
-				if (check.isChecked()) {
+			List<Boolean> checkedItems = adapter.getCheckedItems();
+			for (int i = 0; i < listView.getCount(); i++) {
+				if (checkedItems.get(i)) {
 					Log.i(tag, i + " is checked");
 					numContacts++;
 					m_cursor.moveToPosition(i);
