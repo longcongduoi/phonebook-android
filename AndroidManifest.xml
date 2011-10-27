@@ -97,7 +97,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="DeleteGroupActivity"></activity>
         <activity android:name="StopSharingActivity"></activity>
         <activity android:name="AddGroupActivity"></activity>
 		<activity android:name="GroupActivity"></activity>

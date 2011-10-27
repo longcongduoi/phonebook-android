@@ -43,6 +43,7 @@ public class WelcomeActivity extends ListActivity {
 	List<Contact> m_phoneContacts = null;
 	ProgressDialog m_ProgressDialog = null;
 	int layout=R.layout.group_entry;
+	Db db;
 
 	/** Called when the activity is first created. */
 
@@ -53,12 +54,13 @@ public class WelcomeActivity extends ListActivity {
 		setContentView(R.layout.main);
 		setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.icon);
 		testContentProvider();
+		db = new Db(getApplicationContext());
 		populateGroups(layout);
 		listView=this.getListView();
 		getListView().setTextFilterEnabled(true);
 		String phoneNumber = getPhoneNumber();
 		Log.i(tag, "phone number: " + phoneNumber);
-
+		
 		if (!hasAccount(Constants.ACCOUNT_TYPE)) {
 			final Intent intent = new Intent(getApplicationContext(),
 					AuthenticatorActivity.class);
@@ -191,8 +193,9 @@ public class WelcomeActivity extends ListActivity {
 		String[] fields = new String[] { ContactsContract.Groups.TITLE,
 				ContactsContract.Groups.SUMMARY_COUNT };
 		Cursor sharedBooksCursor = Db.getBooks(cr);
+		Cursor rawContactsCursor = db.getRawContactsCursor(false);
 		WelcomeActivityCursorAdapter adapter = new WelcomeActivityCursorAdapter(
-				this, layout, m_cursor, sharedBooksCursor,
+				this, layout, m_cursor, sharedBooksCursor, rawContactsCursor,
 				fields, new int[] { R.id.groupName, R.id.groupCount });
 
 		adapter.setStringConversionColumn(m_cursor

@@ -1,9 +1,12 @@
 package com.nbos.phonebook.util;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.ContactsContract;
-import android.util.Log;
+import android.provider.ContactsContract.RawContacts;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -16,16 +19,17 @@ import com.nbos.phonebook.sync.Constants;
 
 public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 	static String tag = "WelcomeActivityCursorAdapter";
-	private Cursor c, sharedBooksCursor;
-	private Context context;
+	private Cursor c, sharedBooksCursor, rawContactsCursor;
+	private Context context; // this is required
 
 	public WelcomeActivityCursorAdapter(Context context, int layout, 
 			Cursor c, Cursor sharedBooksCursor,
-			String[] from, int[] to) {
+			Cursor rawContactsCursor, String[] from, int[] to) {
 		super(context, layout, c, from, to);
 		this.context = context;
 		this.c = c;
 		this.sharedBooksCursor = sharedBooksCursor;
+		this.rawContactsCursor = rawContactsCursor;
 	}
 	
 
@@ -59,17 +63,36 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 
 
 	private int getNumSharingWith(int groupId) {
-		int numSharingWith = 0;
 		sharedBooksCursor.moveToFirst();
+		Set<String> contactIds = new HashSet<String>();
 		if(sharedBooksCursor.getCount() > 0)
 		do {
 			int bookId = sharedBooksCursor.getInt(sharedBooksCursor.getColumnIndex(BookTable.BOOKID));
 			if(bookId > groupId) break;
 			if(bookId == groupId) 
-				numSharingWith++;
+			{
+				String rawId = sharedBooksCursor.getString(sharedBooksCursor.getColumnIndex(BookTable.CONTACTID)),
+					contactId = getContactId(rawId); 
+				if(contactId != null)
+					contactIds.add(contactId);
+			}
+				
 			
 		} while(sharedBooksCursor.moveToNext());
-		return numSharingWith;
+		return contactIds.size();
+	}
+
+
+	private String getContactId(String rawContactId) {
+		rawContactsCursor.moveToFirst();
+		if (rawContactsCursor.getCount() > 0)
+			do {
+				String rawId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts._ID)), 
+					cId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(RawContacts.CONTACT_ID));
+				if (!rawContactId.equals(rawId)) continue;
+				return cId;
+			} while (rawContactsCursor.moveToNext());
+		return null;
 	}
 
    
