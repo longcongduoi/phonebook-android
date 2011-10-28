@@ -600,4 +600,10 @@ public class Db {
 		Log.i(tag, "returning null");
 		return null;
 	}
+
+	public static void deleteServerData(Context applicationContext) {
+		int num = applicationContext.getContentResolver()
+			.delete(Data.CONTENT_URI, Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
+		Log.i(tag, "deleted "+num+" rows of server data");
+	}
 }

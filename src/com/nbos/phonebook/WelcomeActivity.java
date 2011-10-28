@@ -69,6 +69,9 @@ public class WelcomeActivity extends ListActivity {
 			startActivity(intent);
 		}
 		// startActivity(new Intent(Settings.ACTION_SYNC_SETTINGS));
+		//Test.getContacts(getApplicationContext());
+		Test.getServerDataTable(getApplicationContext());
+		Test.updateServerId(getApplicationContext());
 
 	}
 

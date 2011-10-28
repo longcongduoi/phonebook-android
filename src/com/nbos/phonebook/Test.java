@@ -1,5 +1,7 @@
 package com.nbos.phonebook;
 
+import java.util.List;
+
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -17,6 +19,7 @@ import android.util.Log;
 
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
+import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.platform.ContactManager;
 import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
 
@@ -201,6 +204,28 @@ public class Test {
     		Log.i(tag, "raw contactId: "+rawContactId+", contactId: "+contactId+", data1: "+serverId+", data2: "+data2+", mimeType: "+mimeType);
 		} while(c.moveToNext());
 	}
+
+	public static void getServerDataTable(Context applicationContext) {
+		Cursor c = new Db(applicationContext).getData();
+		if(c.getCount() == 0)
+		{
+			Log.i(tag, "There is no server data");
+			return;
+		}
+		int count = 0;
+		c.moveToFirst();
+		do {
+    		String rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID));
+    		String contactId = c.getString(c.getColumnIndex(Data.CONTACT_ID));
+    		String serverId = c.getString(c.getColumnIndex(Data.DATA1));
+    		String data2 = c.getString(c.getColumnIndex(Data.DATA2));
+    		String mimeType = c.getString(c.getColumnIndex(Data.MIMETYPE));
+    		if(!mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)) continue;
+    		count++;
+    		Log.i(tag, "raw contactId: "+rawContactId+", contactId: "+contactId+", data1: "+serverId+", data2: "+data2+", mimeType: "+mimeType);
+		} while(c.moveToNext());
+		Log.i(tag, "There are "+count+" server data rows");
+	}
 	
 	public static void getDataPicsTable(Context applicationContext) {
 		Cursor c = applicationContext.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
@@ -289,6 +314,19 @@ public class Test {
 	public static void deleteContactsServerData(Context applicationContext) {
 		int num = applicationContext.getContentResolver().delete(Data.CONTENT_URI, Data.MIMETYPE + "='" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
 		Log.i(tag, "deleted "+num+" rows");
+	}
+
+	public static void getContacts(Context ctx) {
+		List<PhoneContact> contacts = new Db(ctx).getContacts(false);
+		for(PhoneContact c : contacts) {
+			Log.i(tag, "-----\n"+c+"\n-----\n\n");
+		}
+		
+	}
+
+	public static void updateServerId(Context applicationContext) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

@@ -194,7 +194,7 @@ public class SharingWithActivity extends ListActivity {
 		Log.i(tag, "There are " + contactsCursor.getCount() + " contacts");
 		Cursor bookCursor = db.getBook(id);
 		Log.i(tag, "Book[" + id + "] is being shared with " + bookCursor.getCount()
-				+ " contacts");
+				+ " raw contacts");
 		ids = new ArrayList<String>();
 		while (bookCursor.moveToNext())
 			Log.i(tag,
@@ -203,7 +203,7 @@ public class SharingWithActivity extends ListActivity {
 			+ ", dirty: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.DIRTY))
 			+ ", deleted: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.DELETED)));
 
-		Log.i(tag, "Sharing with " + bookCursor.getCount() + " contacts");
+		Log.i(tag, "Sharing with " + bookCursor.getCount() + " raw contacts");
 		List<ContactRow> rows = new ArrayList<ContactRow>();
 		Set<String> contactIds = new HashSet<String>();
 		bookCursor.moveToFirst();

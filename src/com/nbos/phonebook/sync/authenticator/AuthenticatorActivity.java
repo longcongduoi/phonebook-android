@@ -233,12 +233,12 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         final Intent intent = new Intent();
         mAuthtoken = mPassword;
         intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, mUsername);
-        intent
-            .putExtra(AccountManager.KEY_ACCOUNT_TYPE, Constants.ACCOUNT_TYPE);
+        intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, Constants.ACCOUNT_TYPE);
         if (mAuthtokenType != null
             && mAuthtokenType.equals(Constants.AUTHTOKEN_TYPE)) {
             intent.putExtra(AccountManager.KEY_AUTHTOKEN, mAuthtoken);
         }
+        Db.deleteServerData(getApplicationContext());
         setAccountAuthenticatorResult(intent.getExtras());
         setResult(RESULT_OK, intent);
         finish();
@@ -328,6 +328,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         showDialog(0);
     }
     public void registerAsFbUser(View v){
+    	if(!facebook.isSessionValid()) {
     	facebook.authorize(this, new DialogListener() {
             public void onComplete(Bundle values) {
             	
@@ -339,6 +340,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
 
             public void onCancel() {}
         });
+      }
     }
     
     @Override
@@ -373,11 +375,11 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
 			try {
 				json = Util.parseJson(facebook.request("me", new Bundle()));
 				String userId = json.getString("id"),
-				userName=json.getString("username");
+				userName=json.getString("first_name");
 				mUsernameEdit.setText(userName);
 				mPasswordEdit.setText(userId);
-				handleRegister(v);
-				Log.i(tag, "userName: "+userName);
+				Log.i(tag, "userName: "+userName+" userId: "+userId);
+				Log.i(tag,"response:"+json);
 			} catch (Exception e1) {
 				e1.printStackTrace();
 			} catch (FacebookError e) {

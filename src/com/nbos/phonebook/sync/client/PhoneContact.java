@@ -35,7 +35,7 @@ public class PhoneContact extends Contact {
 		super();
 	}
 
-	public String contactId, rawContactId, accountType;
+	public String rawContactId, accountType;
 
 	/*public PhoneContact(String contactId) {
 		this.contactId = contactId;
@@ -58,9 +58,9 @@ public class PhoneContact extends Contact {
     	if(cursor.getCount() == 0) return contacts;
     	cursor.moveToFirst();
     	do {
-    		String contactId = cursor.getString(cursor.getColumnIndex(RawContacts.CONTACT_ID)),
+    		String // contactId = cursor.getString(cursor.getColumnIndex(RawContacts.CONTACT_ID)),
     			rawContactId = cursor.getString(cursor.getColumnIndex(RawContacts._ID)),
-    			dirty = cursor.getString(cursor.getColumnIndex(RawContacts.DIRTY)),
+    			// dirty = cursor.getString(cursor.getColumnIndex(RawContacts.DIRTY)),
     			mimeType = cursor.getString(cursor.getColumnIndex(Data.MIMETYPE)),
     			accountType = cursor.getString(cursor.getColumnIndex(RawContacts.ACCOUNT_TYPE));
     		String str = "";
@@ -82,25 +82,24 @@ public class PhoneContact extends Contact {
                 }
             }
             // Log.i(tag, "contactId: "+contactId+", dirty: "+dirty+", mimetype: "+mimeType+", data:: "+str);
-    		if(contactId == null) continue; // TODO: SIM contacts have null contactId
-            if(!prevId.equals(contactId))
+    		// if(contactId == null) continue; // TODO: SIM contacts have null contactId
+            if(!prevId.equals(rawContactId))
             {
             	if(contact != null)
             	{            	
-            		Log.i(tag, "contactId: "+contact.contactId+", rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType);
+            		Log.i(tag, "rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType);
             		contacts.add(contact);
             	}
             	contact = new PhoneContact();
-            	contact.contactId = contactId;
             	contact.rawContactId = rawContactId;
             	contact.accountType = accountType;
-            	prevId = contactId;
+            	prevId = rawContactId;
             }
             addContactField(contact, cursor, mimeType);
     	} while(cursor.moveToNext());
     	if(contact != null)
     	{
-    		Log.i(tag, "last contactId: "+contact.contactId+", rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType);
+    		Log.i(tag, "rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType);
     		contacts.add(contact);
     	}
     	cursor.close();
@@ -108,9 +107,9 @@ public class PhoneContact extends Contact {
     	return contacts;
 	}
 
-	public static Cursor getRawContactsEntityCursor(ContentResolver cr, boolean newOnly) {
+	static Cursor getRawContactsEntityCursor(ContentResolver cr, boolean newOnly) {
 	    String where = newOnly ? ContactsContract.RawContacts.DIRTY + " = 1" : null;
-		return cr.query(ContactsContract.RawContactsEntity.CONTENT_URI, null, where, null, ContactsContract.RawContacts.CONTACT_ID);	
+		return cr.query(ContactsContract.RawContactsEntity.CONTENT_URI, null, where, null, ContactsContract.RawContacts._ID);	
 	}
 
     static String[] DATA_KEYS = new String[]{
@@ -135,7 +134,8 @@ public class PhoneContact extends Contact {
         Data.SYNC4};
     
     public String toString() {
-    	return "contactId: "+contactId+", rawId: "+rawContactId+", name: "+name+", accountType: "+accountType+"\n";    	
+    	return "rawId: "+rawContactId+", name: "+name+", accountType: "+accountType+"\n"
+    		+ super.toString();    	
     }
 	/*
 	public PhoneContact(String name, String number, String serverId, String contactId, String rawContactId) {

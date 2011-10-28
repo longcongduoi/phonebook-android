@@ -372,6 +372,7 @@ public class GroupActivity extends ListActivity {
 			showSharingContacts();
 			break;
 		case R.id.remove_contacts:
+			if(m_cursor.getCount()>0)
 			removeContacts();
 			break;
 		}
