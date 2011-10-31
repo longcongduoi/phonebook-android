@@ -179,36 +179,15 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 		return contactIds;
 	}
 
-	private boolean isInBook(String contactId, Cursor bookCursor) {
-		bookCursor.moveToFirst();
-		if (bookCursor.getCount() > 0)
-			do {
-				String rawContactId = bookCursor.getString(bookCursor
-						.getColumnIndex(BookTable.CONTACTID));
-				rawContactsCursor.moveToFirst();
-				if (rawContactsCursor.getCount() > 0)
-				do {
-					String rawId = rawContactsCursor
-							.getString(rawContactsCursor
-									.getColumnIndex(RawContacts._ID)), cId = rawContactsCursor
-							.getString(rawContactsCursor
-									.getColumnIndex(RawContacts.CONTACT_ID));
-					if (rawId.equals(rawContactId) && cId.equals(contactId))
-						return true;
-				} while (rawContactsCursor.moveToNext());
-			} while (bookCursor.moveToNext());
-		return false;
-	}
-
 	protected void onListItemClick(ListView l, View v, int position, long id) {
-		int currentPosition = this.getListView().getFirstVisiblePosition();
+		/*int currentPosition = this.getListView().getFirstVisiblePosition();
 		m_cursor.moveToPosition(position);
 		String contactId = m_cursor.getString(m_cursor
 				.getColumnIndex(ContactsContract.Contacts._ID));
 		Log.i(tag, "Contact id is: " + contactId);// +", raw contact id: "+contactId+", lookup key: "+lookupKey);
 		shareGroupWithContact(contactId);
 		this.setSelection(currentPosition);
-
+		*/
 	}
 
 	private void shareGroupWithContact(String contactId) {
