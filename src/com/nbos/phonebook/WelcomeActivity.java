@@ -245,7 +245,8 @@ public class WelcomeActivity extends ListActivity {
 		String groupId = m_cursor.getString(m_cursor.getColumnIndex(Groups._ID)), 
 			groupName = m_cursor.getString(m_cursor.getColumnIndex(Groups.TITLE)), 
 			groupOwner = m_cursor.getString(m_cursor.getColumnIndex(Groups.SYNC1)),
-			groupPermission = m_cursor.getString(m_cursor.getColumnIndex(Groups.SYNC2));
+			groupPermission = m_cursor.getString(m_cursor.getColumnIndex(Groups.SYNC2)),
+			accountType = m_cursor.getString(m_cursor.getColumnIndex(Groups.ACCOUNT_TYPE));
 
 		Log.i(tag, "Group id: " + groupId + ", name: " + groupName);
 		Intent i = new Intent(WelcomeActivity.this, GroupActivity.class);
@@ -253,6 +254,7 @@ public class WelcomeActivity extends ListActivity {
 		i.putExtra("name", groupName);
 		i.putExtra("owner", groupOwner);
 		i.putExtra("permission", groupPermission);
+		i.putExtra("accountType", accountType);
 		i.putExtra("layout", R.layout.contact_entry);
 		startActivityForResult(i, SHOW_GROUP);
 	}

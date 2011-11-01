@@ -29,7 +29,6 @@ import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.FilterQueryProvider;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -37,13 +36,14 @@ import android.widget.Toast;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.BookPermission;
 import com.nbos.phonebook.util.ImageCursorAdapter;
 import com.nbos.phonebook.value.ContactRow;
 
 public class GroupActivity extends ListActivity {
 
-	String id, name, owner, permission;
+	String id, name, owner, permission, accountType;
 	static String tag = "GroupActivity";
 	MatrixCursor m_cursor;
 	List<String> ids;
@@ -69,6 +69,7 @@ public class GroupActivity extends ListActivity {
 			name = extras.getString("name");
 			owner = extras.getString("owner");
 			permission = extras.getString("permission");
+			accountType = extras.getString("accountType");
 			layout = extras.getInt("layout");
 			Log.i(tag, "Owner is: " + owner + ", permission is: "+permission);
 		}
@@ -98,7 +99,8 @@ public class GroupActivity extends ListActivity {
 		if(phoneNumber != null)
 			hasNumber = true;
 		if (owner == null 
-		||(owner != null && Integer.parseInt(permission) >= BookPermission.EDIT_CONTACTS.ordinal()))
+		||(owner != null && accountType.equals(Constants.ACCOUNT_TYPE) && Integer.parseInt(permission) >= BookPermission.EDIT_CONTACTS.ordinal())
+		||(owner != null && !accountType.equals(Constants.ACCOUNT_TYPE)))
 			hasEdit = true;
 		if(!hasNumber && !hasEdit)
 			return;
@@ -220,15 +222,23 @@ public class GroupActivity extends ListActivity {
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		if (owner != null 
-		&& Integer.parseInt(permission) < BookPermission.ADD_CONTACTS.ordinal()) 
-			return false;
 		MenuInflater inflater = getMenuInflater();
+		if(owner != null && !accountType.equals(Constants.ACCOUNT_TYPE))
+		{
+			inflater.inflate(R.menu.group_menu, menu);
+			return true;
+		}
+		
+		int perm = Integer.parseInt(permission);
+		if (owner != null && accountType.equals(Constants.ACCOUNT_TYPE) 
+		&& perm < BookPermission.ADD_CONTACTS.ordinal()) 
+			return false;
+
 		inflater.inflate(R.menu.group_menu, menu);
-		if(owner != null)
+		if(owner != null) // this is a shared group
 		{
 			menu.findItem(R.id.share_group).setVisible(false);
-			if(Integer.parseInt(permission) < BookPermission.ADD_REMOVE_CONTACTS.ordinal())
+			if(perm < BookPermission.ADD_REMOVE_CONTACTS.ordinal())
 				menu.findItem(R.id.remove_contacts).setVisible(false);
 		}
 		return true;
@@ -244,7 +254,7 @@ public class GroupActivity extends ListActivity {
 	 */
 
 	private void queryGroup(int layout) {
-		if (owner == null) //
+		if (owner == null || !accountType.equals(Constants.ACCOUNT_TYPE)) //
 			setTitle("Group: " + name + " (" + numContacts()
 					+ " contacts sharing with)");
 		else
@@ -409,14 +419,13 @@ public class GroupActivity extends ListActivity {
 
 		public void onClick(View v) {
 			int numRemoved = 0;
+			List<Boolean> checkedItems = adapter.getCheckedItems();
 			LinearLayout mainLayout = (LinearLayout) findViewById(R.id.linearLayout1);
 			LinearLayout childLayout = (LinearLayout) mainLayout
 					.findViewById(R.id.extraLayout);
 			Log.i(tag, "Number of items: " + listView.getChildCount());
-			for (int i = 0; i < listView.getChildCount(); i++) {
-				View childView = listView.getChildAt(i);
-				CheckBox check = (CheckBox) childView.findViewById(R.id.check);
-				if (check.isChecked()) {
+			for (int i = 0; i < listView.getCount(); i++) {
+				if (checkedItems.get(i)) {
 					numRemoved++;
 					m_cursor.moveToPosition(i);
 					String contactId = m_cursor.getString(m_cursor
