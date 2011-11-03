@@ -25,7 +25,7 @@ public class Contact {
 	static String tag = "Contact";
 	public String serverId, picId;
 		// name, number, email;
-	public boolean deleted;
+	public boolean deleted = false;
 	public Name name = new Name();
 	public List<Phone> phones = new ArrayList<Phone>();
 	public List<Email> emails = new ArrayList<Email>();
@@ -167,6 +167,8 @@ public class Contact {
         	Contact c = new Contact();
         	c.serverId = new Integer(user.getInt("id")).toString();
         	c.picId = user.has("pic") ? user.getString("pic") : null;
+        	c.deleted = user.has("dt") ? user.getBoolean("dt") : false;
+        	
         	if(user.has("name"))
         	c.name = Name.valueOf(user.getJSONObject("name"));
         	if(user.has("phones") )
