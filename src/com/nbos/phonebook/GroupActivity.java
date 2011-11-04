@@ -354,8 +354,8 @@ public class GroupActivity extends ListActivity {
 			if(m_cursor.getCount()>0)
 			removeContacts();
 			break;
-		case R.id.bump_contacts:
-			break;
+		//case R.id.bump_contacts:
+			//break;
 		}
 		return true;
 		/*
