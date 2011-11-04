@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import nbos.android.content.RawContact;
+
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
@@ -186,7 +188,8 @@ public class Db {
         		RawContacts.CONTACT_ID,
         		RawContacts.DIRTY,
         		RawContacts.ACCOUNT_NAME,
-        		RawContacts.ACCOUNT_TYPE
+        		RawContacts.ACCOUNT_TYPE,
+        		RawContacts.DELETED
         };
 		return cr.query(RawContacts.CONTENT_URI, PROJECTION, where, null, RawContacts.CONTACT_ID);	
 	}

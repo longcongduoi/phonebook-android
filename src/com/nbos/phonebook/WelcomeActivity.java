@@ -44,6 +44,7 @@ public class WelcomeActivity extends ListActivity {
 	ProgressDialog m_ProgressDialog = null;
 	int layout=R.layout.group_entry;
 	Db db;
+	WelcomeActivityCursorAdapter adapter ;
 
 	/** Called when the activity is first created. */
 
@@ -69,9 +70,9 @@ public class WelcomeActivity extends ListActivity {
 			startActivity(intent);
 		}
 		// startActivity(new Intent(Settings.ACTION_SYNC_SETTINGS));
-		//Test.getContacts(getApplicationContext());
-		Test.getServerDataTable(getApplicationContext());
-		Test.updateServerId(getApplicationContext());
+		Test.getContacts(getApplicationContext());
+		//Test.getServerDataTable(getApplicationContext());
+		//Test.updateServerId(getApplicationContext());
 
 	}
 
@@ -197,7 +198,7 @@ public class WelcomeActivity extends ListActivity {
 				ContactsContract.Groups.SUMMARY_COUNT };
 		Cursor sharedBooksCursor = Db.getBooks(cr);
 		Cursor rawContactsCursor = db.getRawContactsCursor(false);
-		WelcomeActivityCursorAdapter adapter = new WelcomeActivityCursorAdapter(
+		adapter = new WelcomeActivityCursorAdapter(
 				this, layout, m_cursor, sharedBooksCursor, rawContactsCursor,
 				fields, new int[] { R.id.groupName, R.id.groupCount });
 
@@ -252,10 +253,13 @@ public class WelcomeActivity extends ListActivity {
 		Intent i = new Intent(WelcomeActivity.this, GroupActivity.class);
 		i.putExtra("id", groupId);
 		i.putExtra("name", groupName);
-		i.putExtra("owner", groupOwner);
-		i.putExtra("permission", groupPermission);
-		i.putExtra("accountType", accountType);
 		i.putExtra("layout", R.layout.contact_entry);
+		if(accountType.equals(Constants.ACCOUNT_TYPE))
+		{
+			i.putExtra("owner", groupOwner);
+			i.putExtra("permission", groupPermission);
+		}
+		
 		startActivityForResult(i, SHOW_GROUP);
 	}
 
@@ -330,12 +334,10 @@ public class WelcomeActivity extends ListActivity {
 		LinearLayout mainLayout=(LinearLayout)findViewById(R.id.mainlinearLayout);
 		LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.deleteLayout);
 		
-		for(int i=0;i<listView.getChildCount();i++) 
+		List<Boolean> checkedItems = adapter.getCheckedItems();
+		for(int i=0;i<listView.getCount();i++) 
 		{
-			View childView = (View)listView.getChildAt(i);
-    		CheckBox check =(CheckBox)childView.findViewById(R.id.check);
-    		
-    		if(!check.isChecked()) continue; 
+    		if(!checkedItems.get(i)) continue; 
 			Log.i(tag, i+" is checked");
 			m_cursor.moveToPosition(i);
 			String groupId = m_cursor.getString(m_cursor

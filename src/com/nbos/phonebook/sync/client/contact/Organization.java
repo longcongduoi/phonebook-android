@@ -15,6 +15,7 @@ import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
 
 import com.nbos.phonebook.sync.client.Contact;
+import com.nbos.phonebook.util.Text;
 
 public class Organization {
 	public String company, title, type;
@@ -27,7 +28,8 @@ public class Organization {
 			o.type = c.getString(c.getColumnIndex(CommonDataKinds.Organization.DATA3));
 		else
 			o.type = getType(type);
-		contact.orgs.add(o);
+		if(!Text.isEmpty(o.company) || !Text.isEmpty(o.title))
+			contact.orgs.add(o);
 	}
 	private static String getType(int type) {
 		int id = ContactsContract.CommonDataKinds.Organization.getTypeLabelResource(type);

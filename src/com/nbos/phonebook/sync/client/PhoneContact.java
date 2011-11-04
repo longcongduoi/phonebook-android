@@ -44,6 +44,8 @@ public class PhoneContact extends Contact {
 		super.addParams(params, index);
     	params.add(new BasicNameValuePair("contactId_"+index, rawContactId));
     	params.add(new BasicNameValuePair("accountType_"+index, accountType));
+    	if(deleted)
+    		params.add(new BasicNameValuePair("deleted_"+index, "t"));
 	}
 
 	public static List<PhoneContact> getContacts(boolean newOnly, ContentResolver cr) {
@@ -53,16 +55,17 @@ public class PhoneContact extends Contact {
     	Log.i(tag, "There are "+cursor.getCount()+" entries, "+cursor.getColumnCount()+" columns.");
     	// for(String col : rawContactsCursor.getColumnNames())
     		// Log.i(tag, "col: "+col);
-    	String prevId = "";
+    	String prevId = "", dirty;
     	PhoneContact contact = null;
     	if(cursor.getCount() == 0) return contacts;
     	cursor.moveToFirst();
     	do {
     		String // contactId = cursor.getString(cursor.getColumnIndex(RawContacts.CONTACT_ID)),
     			rawContactId = cursor.getString(cursor.getColumnIndex(RawContacts._ID)),
-    			// dirty = cursor.getString(cursor.getColumnIndex(RawContacts.DIRTY)),
+    			deleted = cursor.getString(cursor.getColumnIndex(RawContacts.DELETED)),
     			mimeType = cursor.getString(cursor.getColumnIndex(Data.MIMETYPE)),
     			accountType = cursor.getString(cursor.getColumnIndex(RawContacts.ACCOUNT_TYPE));
+    		dirty = cursor.getString(cursor.getColumnIndex(RawContacts.DIRTY));
     		String str = "";
             for (String key : DATA_KEYS) 
             {
@@ -87,19 +90,20 @@ public class PhoneContact extends Contact {
             {
             	if(contact != null)
             	{            	
-            		Log.i(tag, "rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType);
+            		Log.i(tag, "rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType+", deleted: "+contact.deleted+", dirty: "+dirty);
             		contacts.add(contact);
             	}
             	contact = new PhoneContact();
             	contact.rawContactId = rawContactId;
             	contact.accountType = accountType;
+            	contact.deleted = deleted.equals("1");
             	prevId = rawContactId;
             }
             addContactField(contact, cursor, mimeType);
     	} while(cursor.moveToNext());
     	if(contact != null)
     	{
-    		Log.i(tag, "rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType);
+    		Log.i(tag, "rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType+", deleted: "+contact.deleted+", dirty: "+dirty);
     		contacts.add(contact);
     	}
     	cursor.close();
@@ -134,7 +138,7 @@ public class PhoneContact extends Contact {
         Data.SYNC4};
     
     public String toString() {
-    	return "rawId: "+rawContactId+", name: "+name+", accountType: "+accountType+"\n"
+    	return "raw: "+rawContactId+", name: "+name+", accountType: "+accountType+"\n"
     		+ super.toString();    	
     }
 	/*

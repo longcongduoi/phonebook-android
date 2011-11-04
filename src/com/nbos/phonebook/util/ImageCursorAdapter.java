@@ -39,7 +39,7 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements SectionIn
 		this.context = context;
 		this.ids = ids;
 		this.layout = layout;
-		alphaIndexer=new AlphabetIndexer(c, c.getColumnIndex(ContactsContract.Data.DISPLAY_NAME), " ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+		alphaIndexer=new AlphabetIndexer(c, c.getColumnIndex(ContactsContract.Data.DISPLAY_NAME), "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 		for (int i = 0; i < this.getCount(); i++) 
 	        checkedItems.add(i, false); // initializes all items value with false
 	}

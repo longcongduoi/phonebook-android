@@ -67,7 +67,7 @@ public class AddContactsActivity extends ListActivity {
 			int numContacts = 0;
 			List<Boolean> checkedItems = adapter.getCheckedItems();
 			Log.i(tag, "Number of items: " + listView.getChildCount());
-			for (int i = 0; i < listView.getChildCount(); i++) {
+			for (int i = 0; i < listView.getCount(); i++) {
 				if (checkedItems.get(i)) {
 					Log.i(tag, i + " is checked");
 					numContacts++;

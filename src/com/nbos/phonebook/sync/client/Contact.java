@@ -20,6 +20,7 @@ import com.nbos.phonebook.sync.client.contact.Name;
 import com.nbos.phonebook.sync.client.contact.Organization;
 import com.nbos.phonebook.sync.client.contact.Phone;
 import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
+import com.nbos.phonebook.util.Text;
 
 public class Contact {
 	static String tag = "Contact";
@@ -120,17 +121,20 @@ public class Contact {
 	
 	public static void addNote(Contact contact, Cursor c) {
 		String note = c.getString(c.getColumnIndex(CommonDataKinds.Note.NOTE));
-		contact.notes.add(note);
+		if(!Text.isEmpty(note))
+			contact.notes.add(note);
 	}
 
 	public static void addNickname(Contact contact, Cursor c) {
 		String nickname = c.getString(c.getColumnIndex(CommonDataKinds.Nickname.NAME));
-		contact.nicknames.add(nickname);
+		if(!Text.isEmpty(nickname))
+			contact.nicknames.add(nickname);
 	}
 
 	public static void addWebsite(Contact contact, Cursor c) {
 		String website = c.getString(c.getColumnIndex(CommonDataKinds.Website.URL));
-		contact.websites.add(website);
+		if(!Text.isEmpty(website))
+			contact.websites.add(website);
 	}
 	
 	static void addContactField(Contact contact, Cursor cursor, String mimeType) {

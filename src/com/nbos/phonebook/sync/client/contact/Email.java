@@ -15,6 +15,7 @@ import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
 
 import com.nbos.phonebook.sync.client.Contact;
+import com.nbos.phonebook.util.Text;
 
 public class Email {
 	public String address, type;
@@ -27,7 +28,8 @@ public class Email {
 			e.type = c.getString(c.getColumnIndex(CommonDataKinds.Email.DATA3));
 		else
 			e.type = getType(type);
-		contact.emails.add(e);
+		if(!Text.isEmpty(e.address))
+			contact.emails.add(e);
 	}
 	private static String getType(int type) {
 		int id = ContactsContract.CommonDataKinds.Email.getTypeLabelResource(type);

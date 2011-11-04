@@ -17,37 +17,11 @@
 package com.android.contacts;
 
 
-import com.android.contacts.model.ContactsSource;
-import com.android.contacts.util.Constants;
-
 import android.content.ContentResolver;
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.provider.ContactsContract.Contacts;
-import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
-import android.provider.ContactsContract.CommonDataKinds.Email;
-import android.provider.ContactsContract.CommonDataKinds.Im;
-import android.provider.ContactsContract.CommonDataKinds.Organization;
-import android.provider.ContactsContract.CommonDataKinds.Phone;
-import android.provider.ContactsContract.CommonDataKinds.Photo;
-import android.provider.ContactsContract.CommonDataKinds.StructuredPostal;
 import android.telephony.PhoneNumberUtils;
 import android.text.TextUtils;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
-
-import java.util.ArrayList;
 
 public class ContactsUtils {
     private static final String TAG = "ContactsUtils";

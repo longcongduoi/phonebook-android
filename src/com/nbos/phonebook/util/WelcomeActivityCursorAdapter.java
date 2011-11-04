@@ -1,14 +1,19 @@
 package com.nbos.phonebook.util;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.RawContacts;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.View.OnClickListener;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
@@ -21,7 +26,8 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 	static String tag = "WelcomeActivityCursorAdapter";
 	private Cursor c, sharedBooksCursor, rawContactsCursor;
 	private Context context; // this is required
-
+	ArrayList<Boolean> checkedItems = new ArrayList<Boolean>();
+	
 	public WelcomeActivityCursorAdapter(Context context, int layout, 
 			Cursor c, Cursor sharedBooksCursor,
 			Cursor rawContactsCursor, String[] from, int[] to) {
@@ -30,16 +36,23 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 		this.c = c;
 		this.sharedBooksCursor = sharedBooksCursor;
 		this.rawContactsCursor = rawContactsCursor;
+		for (int i = 0; i < this.getCount(); i++) 
+	        checkedItems.add(i, false);
 	}
 	
 
+	public List<Boolean> getCheckedItems() {
+		return checkedItems;
+	}
 	@Override
-	public View getView(int position, View inView, ViewGroup parent) {
+	public View getView(final int position, View inView, ViewGroup parent) {
 		View v = super.getView(position, inView, parent);
 		TextView sharedText = (TextView) v.findViewById(R.id.sharing_with);
 		ImageView image = (ImageView) v.findViewById(R.id.sharing_with_icon);
 		c.moveToPosition(position);
 		int groupId = c.getInt(c.getColumnIndex(ContactsContract.Groups._ID));
+		String groupName= c.getString(c.getColumnIndex(ContactsContract.Groups.TITLE));
+		Log.i(tag,"groupId: "+groupId+" groupName: "+groupName);
 		String accountType = c.getString(c.getColumnIndex(ContactsContract.Groups.ACCOUNT_TYPE));
 		if(accountType.equals(Constants.ACCOUNT_TYPE))
 		{
@@ -58,6 +71,21 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 			image.setImageDrawable(null);
 			sharedText.setText(null);
 		}
+		
+		CheckBox checkBox =(CheckBox) v.findViewById(R.id.check);
+		if(checkBox!=null){
+			 checkBox.setOnClickListener(new OnClickListener() {
+				   public void onClick(View v) {
+					   CheckBox cb = (CheckBox) v.findViewById(R.id.check);
+					   if (cb.isChecked()) {
+						   checkedItems.set(position, true);
+					   } else if (!cb.isChecked()) {
+						   checkedItems.set(position, false);
+					   }
+				   }
+			   });
+			 checkBox.setChecked(checkedItems.get(position));
+		 }
 		return v;
 	}
 

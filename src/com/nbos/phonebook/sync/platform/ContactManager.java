@@ -385,7 +385,13 @@ public class ContactManager {
 	    ContentValues values = new ContentValues();
 	    values.put(ContactsContract.RawContacts.DIRTY, 0);
 	    int num = cr.update(uri, values, null, null);
-	    Log.i("ContactManager", "Resetting "+num+" dirty on contacts");
+	    Log.i(TAG, "Resetting "+num+" dirty on contacts");
+	    
+	    // delete phonebook contacts that are marked deleted
+	    num = cr.delete(SyncManager.addCallerIsSyncAdapterParameter(uri), ContactsContract.RawContacts.DELETED + " = 1 "
+	    		+" and " + ContactsContract.RawContacts.ACCOUNT_TYPE + " = ? ", 
+	    		new String[] {Constants.ACCOUNT_TYPE});
+	    Log.i(TAG, "Deleted "+num+" phonebook contacts");
 	}
 
 	public static void setDirtyContacts(Context mContext) { // for testing

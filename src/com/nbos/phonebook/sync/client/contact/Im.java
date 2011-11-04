@@ -15,6 +15,7 @@ import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
 
 import com.nbos.phonebook.sync.client.Contact;
+import com.nbos.phonebook.util.Text;
 
 public class Im {
 	public String name, protocol;
@@ -26,6 +27,7 @@ public class Im {
 			im.protocol = c.getString(c.getColumnIndex(CommonDataKinds.Im.CUSTOM_PROTOCOL));
 		else
 			im.protocol = getType(protocol);
+		if(!Text.isEmpty(im.name))
 		contact.ims.add(im);
 	}
 	private static String getType(int type) {

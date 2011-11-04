@@ -223,24 +223,20 @@ public class GroupActivity extends ListActivity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
-		if(owner != null && !accountType.equals(Constants.ACCOUNT_TYPE))
+		if(owner == null)
 		{
 			inflater.inflate(R.menu.group_menu, menu);
 			return true;
 		}
-		
+		// this is a shared group
 		int perm = Integer.parseInt(permission);
-		if (owner != null && accountType.equals(Constants.ACCOUNT_TYPE) 
-		&& perm < BookPermission.ADD_CONTACTS.ordinal()) 
+		if (perm < BookPermission.ADD_CONTACTS.ordinal()) 
 			return false;
-
+		
 		inflater.inflate(R.menu.group_menu, menu);
-		if(owner != null) // this is a shared group
-		{
-			menu.findItem(R.id.share_group).setVisible(false);
-			if(perm < BookPermission.ADD_REMOVE_CONTACTS.ordinal())
-				menu.findItem(R.id.remove_contacts).setVisible(false);
-		}
+		menu.findItem(R.id.share_group).setVisible(false); // cannot share shared group
+		if(perm < BookPermission.ADD_REMOVE_CONTACTS.ordinal()) // no permission to remove
+			menu.findItem(R.id.remove_contacts).setVisible(false);
 		return true;
 	}
 
@@ -319,33 +315,6 @@ public class GroupActivity extends ListActivity {
 								.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 				Log.i(tag, "Contact id: " + contactId + ", rawContactId: "
 						+ rawContactId + ", name: " + name);
-
-				/*
-				 byte[] photo = null;
-				 
-				 Uri photoUri =
-				 ContentUris.withAppendedId(ContactsContract.Contacts
-				 .CONTENT_URI, Long.parseLong(contactId));
-				 
-				 Bitmap photoBitmap; ContentResolver cr =
-				 getContentResolver(); InputStream is =
-				 ContactsContract.Contacts.openContactPhotoInputStream(cr,
-				 photoUri);
-				  
-				 photoBitmap = BitmapFactory.decodeStream(is);
-				 */
-				/*
-				 Uri contactUri = ContentUris.withAppendedId(
-				 Contacts.CONTENT_URI, Long.parseLong(contactId)); Uri
-				 photoUri = Uri.withAppendedPath(contactUri,
-				 Contacts.Photo.CONTENT_DIRECTORY); Cursor cursor =
-				 getContentResolver() .query(photoUri, new String[] {
-				 ContactsContract.CommonDataKinds.Photo.PHOTO }, null, null,
-				 null); try { if (cursor.moveToFirst()) { photo =
-				 cursor.getBlob(0); if (photo != null) Log.i(tag, "name is: "
-				 + name + ", photo data is " + photo.length + " bytes"); } }
-				 finally { cursor.close(); }
-				 */
 				if (name != null)
 					rows.add(new ContactRow(contactId, name));
 				break;
@@ -384,6 +353,8 @@ public class GroupActivity extends ListActivity {
 		case R.id.remove_contacts:
 			if(m_cursor.getCount()>0)
 			removeContacts();
+			break;
+		case R.id.bump_contacts:
 			break;
 		}
 		return true;

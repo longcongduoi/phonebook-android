@@ -134,10 +134,11 @@ public class Test {
 			String cId = c.getString(c.getColumnIndex(RawContacts.CONTACT_ID)),
 				rawContactId = c.getString(c.getColumnIndex(RawContacts._ID)),
 				dirty = c.getString(c.getColumnIndex(RawContacts.DIRTY)),
+				deleted = c.getString(c.getColumnIndex(RawContacts.DELETED)),
 				accountName = c.getString(c.getColumnIndex(RawContacts.ACCOUNT_NAME)),
 				accountType = c.getString(c.getColumnIndex(RawContacts.ACCOUNT_TYPE));
 			//String serverId = c.getString(c.getColumnIndex(Constants.CONTACT_SERVER_ID));
-			Log.i(tag, "contactId: "+cId+", raw: "+rawContactId+", accountName: "+accountName+", accountType: "+accountType+", dirty: "+dirty);//+", serverId: "+serverId);
+			Log.i(tag, "contactId: "+cId+", raw: "+rawContactId+", deleted: "+deleted+", accountName: "+accountName+", accountType: "+accountType+", dirty: "+dirty);//+", serverId: "+serverId);
     	} while(c.moveToNext());
     	// DatabaseHelper.getSourceIdFromContactId(c, "793");
 	}
@@ -317,7 +318,7 @@ public class Test {
 	}
 
 	public static void getContacts(Context ctx) {
-		List<PhoneContact> contacts = new Db(ctx).getContacts(false);
+		List<PhoneContact> contacts = new Db(ctx).getContacts(true);
 		for(PhoneContact c : contacts) {
 			Log.i(tag, "-----\n"+c+"\n-----\n\n");
 		}
