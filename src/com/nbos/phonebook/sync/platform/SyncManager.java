@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,13 +23,11 @@ import android.provider.ContactsContract.Data;
 import android.util.Log;
 
 import com.nbos.phonebook.Db;
-import com.nbos.phonebook.contentprovider.Provider;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.client.PhoneContact;
-import com.nbos.phonebook.sync.client.SharingBook;
 import com.nbos.phonebook.sync.client.contact.Email;
 import com.nbos.phonebook.sync.client.contact.Phone;
 import com.nbos.phonebook.util.ImageInfo;
@@ -294,8 +293,16 @@ public class SyncManager {
 	    	db.updateGroupPermission(groupId, g.permission);
 	    Cursor groupCursor = Db.getContactsInGroup(groupId, context.getContentResolver());	    
     	Log.i(tag, "Update group: "+g.name+", id: "+groupId+", contacts: "+g.contacts+", group cursor size: "+groupCursor.getCount());
-    	syncContacts(g.contacts);
-    	syncPictures(g.contacts);
+    	List<Contact> contactsToSync = new ArrayList<Contact>();
+    	for(Contact c : g.contacts)
+    	{
+    		// if contact has a server id it would have been part of the contacts sync if it has been modified
+    		if(lookupRawContactFromServerId(c.serverId) == 0) 
+    			contactsToSync.add(c);
+    	}
+    	Log.i(tag, "Contacts to sync in this group: "+contactsToSync.size());
+    	syncContacts(contactsToSync);
+    	syncPictures(contactsToSync);
     	Set<String> rawContactIds = new HashSet<String>();
     	for(Contact u : g.contacts)
     		rawContactIds.add(updateGroupContact(u, groupId, groupCursor));
@@ -408,19 +415,26 @@ public class SyncManager {
 		return false;
 	}
 	
-	long lookupRawContact(Contact contact) {
+	long lookupRawContactFromServerId(String contactServerId) {
 		serverDataCursor.moveToFirst();
 		if(serverDataCursor.getCount() > 0)
 		do {
 			String mimeType = serverDataCursor.getString(serverDataCursor.getColumnIndex(Data.MIMETYPE));
 			String serverId = serverDataCursor.getString(serverDataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
 			if(!mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)
-			|| !serverId.equals(contact.serverId))
+			|| !serverId.equals(contactServerId))
 				continue;
 			long rawContactId = serverDataCursor.getLong(serverDataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
-			Log.i(tag, "lookupRawContact returning rawContactId: "+rawContactId+", for serverId: "+serverId);
+			Log.i(tag, "lookupRawContact from serverId returning rawContactId: "+rawContactId+", for serverId: "+serverId);
 			return rawContactId;
 		} while(serverDataCursor.moveToNext()); 
+		return 0;
+	}
+	
+	long lookupRawContact(Contact contact) {
+		long sId = lookupRawContactFromServerId(contact.serverId); 
+		if( sId != 0)
+			return sId;
 
 		// could not find the contact, do a phone number and email search		
 		for(PhoneContact u : allContacts) 
