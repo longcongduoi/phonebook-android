@@ -40,17 +40,25 @@ public class Provider extends ContentProvider {
 	public static final Uri BOOK_CONTENT_URI = Uri.withAppendedPath(
 			Provider.AUTHORITY_URI, BookContent.CONTENT_PATH);
 
+	public static final Uri CONTACT_CONTENT_URI = Uri.withAppendedPath(
+			Provider.AUTHORITY_URI, ContactContent.CONTENT_PATH);
+
 	private static final UriMatcher URI_MATCHER;
 
 	private Database db = null;
 
 	private static final int BOOK_DIR = 0;
 	private static final int BOOK_ID = 1;
+	private static final int CONTACT_DIR = 2;
+	private static final int CONTACT_ID = 3;
 
 	static {
 		URI_MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
 		URI_MATCHER.addURI(AUTHORITY, BookContent.CONTENT_PATH, BOOK_DIR);
 		URI_MATCHER.addURI(AUTHORITY, BookContent.CONTENT_PATH + "/#", BOOK_ID);
+		URI_MATCHER.addURI(AUTHORITY, ContactContent.CONTENT_PATH, CONTACT_DIR);
+		URI_MATCHER.addURI(AUTHORITY, ContactContent.CONTENT_PATH + "/#",
+				CONTACT_ID);
 	}
 
 	/**
@@ -81,6 +89,33 @@ public class Provider extends ContentProvider {
 	}
 
 	/**
+	 * Provides the content information of the ContactTable.
+	 * 
+	 * CONTENT_PATH: contact (String)
+	 * CONTENT_TYPE: vnd.android.cursor.dir/vnd.mdsdacp.contact (String)
+	 * CONTENT_ITEM_TYPE: vnd.android.cursor.item/vnd.mdsdacp.contact (String)
+	 * ALL_COLUMNS: Provides the same information as ContactTable.ALL_COLUMNS (String[])
+	 */
+	public static final class ContactContent implements BaseColumns {
+		/**
+		 * Specifies the content path of the ContactTable for the required uri
+		 * Exact URI: content://de.mdsdacp.provider.defaultname/contact
+		 */
+		public static final String CONTENT_PATH = "contact";
+
+		/**
+		 * Specifies the type for the folder and the single item of the ContactTable  
+		 */
+		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.mdsdacp.contact";
+		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.mdsdacp.contact";
+
+		/**
+		 * Contains all columns of the ContactTable
+		 */
+		public static final String[] ALL_COLUMNS = ContactTable.ALL_COLUMNS;
+	}
+
+	/**
 	 * Instantiate the database, when the content provider is created
 	 */
 	@Override
@@ -104,6 +139,10 @@ public class Provider extends ContentProvider {
 				return BookContent.CONTENT_TYPE;
 			case BOOK_ID :
 				return BookContent.CONTENT_ITEM_TYPE;
+			case CONTACT_DIR :
+				return ContactContent.CONTENT_TYPE;
+			case CONTACT_ID :
+				return ContactContent.CONTENT_ITEM_TYPE;
 			default :
 				throw new IllegalArgumentException("Unsupported URI:" + uri);
 		}
@@ -134,6 +173,16 @@ public class Provider extends ContentProvider {
 							null);
 					dbConnection.setTransactionSuccessful();
 					return newBook;
+				case CONTACT_DIR :
+				case CONTACT_ID :
+					final long contactid = dbConnection.insertOrThrow(
+							ContactTable.TABLE_NAME, null, values);
+					final Uri newContact = ContentUris.withAppendedId(
+							CONTACT_CONTENT_URI, contactid);
+					getContext().getContentResolver().notifyChange(newContact,
+							null);
+					dbConnection.setTransactionSuccessful();
+					return newContact;
 				default :
 					throw new IllegalArgumentException("Unsupported URI:" + uri);
 			}
@@ -178,6 +227,22 @@ public class Provider extends ContentProvider {
 								+ (TextUtils.isEmpty(selection) ? "" : " AND ("
 										+ selection + ")"), selectionArgs);
 				break;
+
+			case CONTACT_DIR :
+				count = dbConnection.update(ContactTable.TABLE_NAME, values,
+						selection, selectionArgs);
+				break;
+			case CONTACT_ID :
+				Long contactId = ContentUris.parseId(uri);
+				count = dbConnection.update(
+						ContactTable.TABLE_NAME,
+						values,
+						ContactTable.ID
+								+ "="
+								+ contactId
+								+ (TextUtils.isEmpty(selection) ? "" : " AND ("
+										+ selection + ")"), selectionArgs);
+				break;
 			default :
 				throw new IllegalArgumentException("Unsupported URI:" + uri);
 		}
@@ -212,6 +277,15 @@ public class Provider extends ContentProvider {
 				case BOOK_ID :
 					deleteCount = dbConnection.delete(BookTable.TABLE_NAME,
 							BookTable.WHERE_ID_EQUALS, new String[]{uri
+									.getPathSegments().get(1)});
+					break;
+				case CONTACT_DIR :
+					deleteCount = dbConnection.delete(ContactTable.TABLE_NAME,
+							selection, selectionArgs);
+					break;
+				case CONTACT_ID :
+					deleteCount = dbConnection.delete(ContactTable.TABLE_NAME,
+							ContactTable.WHERE_ID_EQUALS, new String[]{uri
 									.getPathSegments().get(1)});
 					break;
 
@@ -255,6 +329,12 @@ public class Provider extends ContentProvider {
 						+ uri.getPathSegments().get(1));
 			case BOOK_DIR :
 				queryBuilder.setTables(BookTable.TABLE_NAME);
+				break;
+			case CONTACT_ID :
+				queryBuilder.appendWhere(ContactTable.ID + "="
+						+ uri.getPathSegments().get(1));
+			case CONTACT_DIR :
+				queryBuilder.setTables(ContactTable.TABLE_NAME);
 				break;
 			default :
 				throw new IllegalArgumentException("Unsupported URI:" + uri);

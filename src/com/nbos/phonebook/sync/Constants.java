@@ -35,13 +35,14 @@ public class Constants {
         // "com.example.android.samplesync";
 
 	public static final String
-		PHONEBOOK_PROVIDER_URI = "content://" + Provider.AUTHORITY + "/" + Provider.BookContent.CONTENT_PATH,
+		PHONEBOOK_PROVIDER_URI = "content://" + Provider.AUTHORITY + "/" ,
 		// CONTACT_SERVER_ID = ContactsContract.RawContacts.SYNC1,
 		PHONE_NUMBER_KEY = "ph",
 		ACCOUNT_LAST_UPDATED = "lastUpdated",
 		ACCOUNT_LAST_UPDATE_STARTED = "updateStarted";
 	public static final Uri 
-		SHARE_BOOK_URI = Uri.parse(PHONEBOOK_PROVIDER_URI);
+		SHARE_BOOK_URI = Uri.parse(PHONEBOOK_PROVIDER_URI + Provider.BookContent.CONTENT_PATH),
+		CONTACT_URI = Uri.parse(PHONEBOOK_PROVIDER_URI + Provider.ContactContent.CONTENT_PATH);
 		// PIC_URI = Uri.parse(PHONEBOOK_PROVIDER_URI + "pic");
 
 

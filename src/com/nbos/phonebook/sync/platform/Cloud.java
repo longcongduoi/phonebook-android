@@ -51,6 +51,7 @@ import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 
 import com.nbos.phonebook.Db;
+import com.nbos.phonebook.database.tables.ContactTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.ContactPicture;
@@ -94,6 +95,8 @@ public class Cloud {
         SEND_GROUP_UPDATES_URI = BASE_URL + "/mobile/updateGroups",
         TIMESTAMP_URI = BASE_URL + "/mobile/timestamp",
     	SEND_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/updateSharedBooks",
+    	SEND_LINK_UPDATES_URI = BASE_URL + "/mobile/updateLinks",
+    	SEND_CHANGED_LINK_UPDATES_URI = BASE_URL + "/mobile/updateChangedLinks",
     	UPLOAD_CONTACT_PIC_URI = BASE_URL + "/fileUploader/process",
     	DOWNLOAD_CONTACT_PIC_URI = BASE_URL + "/download/index/",
     	GET_PIC_DATA_URI = BASE_URL + "/mobile/picData";
@@ -324,16 +327,169 @@ public class Cloud {
 		sendContactUpdates(contacts);
         sendGroupUpdates(db.getGroups(newOnly));
         sendSharedBookUpdates(db.getSharingBooks(newOnly));
+        sendLinkUpdates();
         uploadContactPictures();
         if(contacts.size() > 0)
         	ContactManager.resetDirtyContacts(context);
+	}
+
+	private void sendLinkUpdates() throws ClientProtocolException, JSONException, IOException {
+		Cursor serverDataCursor = db.getProfileData();
+		if(!newOnly) {
+			// send all the links
+			Map<String, Set<String>> linkedContacts = db.getLinkedContacts();
+			Object[] linkedContactsArray = db.getLinkedContacts().values().toArray();
+			Integer numLinks = new Integer(linkedContactsArray.length);
+			List<NameValuePair> params = getAuthParams();
+			params.add(new BasicNameValuePair("numLinks", numLinks.toString()));
+			for(int i=0; i< numLinks.intValue(); i++)
+			{
+				Log.i(tag, "Obj: "+linkedContactsArray[i]);
+				Object[] rawContactIds = ((Set<String>) linkedContactsArray[i]).toArray();
+				Log.i(tag, "num raw contacts: "+rawContactIds.length);
+				int numContacts = 0;
+				for(int j=0; j< rawContactIds.length; j++)
+				{
+					String serverId = getServerId(rawContactIds[j].toString(), serverDataCursor); 
+					Log.i(tag, "Raw #"+j+": "+rawContactIds[j]+", serverId: "+serverId);
+					if(serverId != null)
+						params.add(new BasicNameValuePair("link_"+i+"_"+numContacts++, 
+							serverId));
+				}
+				params.add(new BasicNameValuePair("link_"+i+"_count", 
+						new Integer(numContacts).toString()));
+				
+				
+			}
+			serverDataCursor.close();
+			JSONArray response = new JSONArray(post(SEND_LINK_UPDATES_URI, params));
+			
+			// delete old data and persist these links
+			db.storeLinkedContacts(linkedContacts);
+			return;
+		}
+		// send only the changed links
+		Map<String, Set<String>> linkedContacts = db.getLinkedContacts(),
+			storedLinkedContacts = db.getStoredLinkedContacts(), 
+			deletedLinks = new HashMap<String, Set<String>>(), 
+			newLinks = new HashMap<String, Set<String>>(); 
+		Set<String> linkedKeys = linkedContacts.keySet(),
+		storedKeys = storedLinkedContacts.keySet();
+		// compare the two sets of contacts
+		if(linkedKeys.equals(storedKeys))
+		{
+			Log.i(tag, "No links were added or deleted");
+			for(String k : linkedKeys)
+			{
+				if(!linkedContacts.get(k).equals(storedLinkedContacts.get(k)))
+				{
+					Log.i(tag, "Contacts changed for: "+k);
+					deletedLinks.put(k, storedLinkedContacts.get(k));
+					newLinks.put(k, linkedContacts.get(k));
+				}
+			}
+		}
+		else 
+		{
+			for(String k : linkedKeys)
+			{
+				if(!storedKeys.contains(k))
+				{
+					Log.i(tag, "Added link: "+k);
+					newLinks.put(k, linkedContacts.get(k));
+				}
+			}
+	
+			for(String k : storedKeys)
+			{
+				if(!linkedKeys.contains(k))
+				{
+					Log.i(tag, "Deleted link: "+k);
+					deletedLinks.put(k, storedLinkedContacts.get(k));
+				}
+			}
+		}
+		sendChangedLinkUpdates(newLinks, deletedLinks, serverDataCursor);
+		db.storeLinkedContacts(linkedContacts);
+	}
+
+	private void sendChangedLinkUpdates(Map<String, Set<String>> newLinks,
+			Map<String, Set<String>> deletedLinks, Cursor serverDataCursor) throws ClientProtocolException, JSONException, IOException {
+		if(newLinks.size() == 0 && deletedLinks.size() == 0)
+		{
+			Log.i(tag, "No changed links");
+			return;
+		}
+		
+		List<NameValuePair> params = getAuthParams();
+		if(newLinks.size() > 0)
+		{
+			Object[] linkedContactsArray = newLinks.values().toArray();
+			params.add(new BasicNameValuePair("numAddLinks", new Integer(newLinks.size()).toString()));
+			for(int i=0; i< newLinks.size(); i++)
+			{
+				Log.i(tag, "Obj: "+linkedContactsArray[i]);
+				Object[] rawContactIds = ((Set<String>) linkedContactsArray[i]).toArray();
+				Log.i(tag, "num raw contacts: "+rawContactIds.length);
+				int numContacts = 0;
+				for(int j=0; j< rawContactIds.length; j++)
+				{
+					String serverId = getServerId(rawContactIds[j].toString(), serverDataCursor); 
+					Log.i(tag, "Add raw #"+j+": "+rawContactIds[j]+", serverId: "+serverId);
+					if(serverId != null)
+						params.add(new BasicNameValuePair("add_link_"+i+"_"+numContacts++, 
+							serverId));
+				}
+				params.add(new BasicNameValuePair("add_link_"+i+"_count", 
+						new Integer(numContacts).toString()));
+			}
+		}
+		
+		if(deletedLinks.size() > 0)
+		{
+			Object[] linkedContactsArray = deletedLinks.values().toArray();
+			params.add(new BasicNameValuePair("numDeletedLinks", new Integer(deletedLinks.size()).toString()));
+			for(int i=0; i< deletedLinks.size(); i++)
+			{
+				Log.i(tag, "Obj: "+linkedContactsArray[i]);
+				Object[] rawContactIds = ((Set<String>) linkedContactsArray[i]).toArray();
+				Log.i(tag, "num raw contacts: "+rawContactIds.length);
+				int numContacts = 0;
+				for(int j=0; j< rawContactIds.length; j++)
+				{
+					String serverId = getServerId(rawContactIds[j].toString(), serverDataCursor); 
+					Log.i(tag, "Delete raw #"+j+": "+rawContactIds[j]+", serverId: "+serverId);
+					if(serverId != null)
+						params.add(new BasicNameValuePair("del_link_"+i+"_"+numContacts++, 
+							serverId));
+				}
+				params.add(new BasicNameValuePair("del_link_"+i+"_count", 
+						new Integer(numContacts).toString()));
+			}
+		}
+		JSONArray response = new JSONArray(post(SEND_CHANGED_LINK_UPDATES_URI, params));
+	}
+	
+	private String getServerId(String rawContactId, Cursor serverDataCursor) {
+		serverDataCursor.moveToFirst();
+		if(serverDataCursor.getCount() > 0)
+		do {
+			String mimeType = serverDataCursor.getString(serverDataCursor.getColumnIndex(Data.MIMETYPE)),
+				serverId = serverDataCursor.getString(serverDataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID)),
+				rawId = serverDataCursor.getString(serverDataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+			if(!mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)
+			|| !rawId.equals(rawContactId))
+				continue;
+			Log.i(tag, "getServerId("+rawContactId+") = "+serverId);
+			return serverId;
+		} while(serverDataCursor.moveToNext()); 
+		return null;
 	}
 
 	public String getTimestamp() throws ClientProtocolException, JSONException, IOException {
         JSONArray response = new JSONArray(post(TIMESTAMP_URI, getAuthParams()));
         Long timestamp = response.getLong(0);
         return timestamp.toString();
-		
 	}
 
 	private void sendContactUpdates(List<PhoneContact> contacts) throws ClientProtocolException, IOException, JSONException {

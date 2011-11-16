@@ -2,11 +2,11 @@ package com.nbos.phonebook;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-
-import nbos.android.content.RawContact;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -30,8 +30,8 @@ import android.provider.ContactsContract.RawContacts;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
-import com.nbos.phonebook.contentprovider.Provider;
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.database.tables.ContactTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.Group;
@@ -608,5 +608,94 @@ public class Db {
 		int num = applicationContext.getContentResolver()
 			.delete(Data.CONTENT_URI, Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
 		Log.i(tag, "deleted "+num+" rows of server data");
+	}
+	
+	static Map<String, Set<String>> getLinkedContacts(Cursor c, String contactIdColumn, String rawContactIdColumn) {
+		Map<String, Set<String>> linkedContacts = new HashMap<String, Set<String>>();
+		Log.i(tag, "There are "+c.getCount()+" rows");
+		if(c.getCount() == 0)
+			return linkedContacts;
+		c.moveToFirst();
+		String prevContactId = null, contactId;
+		Set<String> rawContactIds = new HashSet<String>();
+		do {
+			contactId = c.getString(c.getColumnIndex(contactIdColumn));
+			String rawContactId = c.getString(c.getColumnIndex(rawContactIdColumn));
+			Log.i(tag, "c: "+contactId+", raw: "+rawContactId);
+			if(prevContactId == null) prevContactId = contactId;
+			if(!prevContactId.equals(contactId))
+			{
+				if(rawContactIds.size() > 1)
+					linkedContacts.put(prevContactId, rawContactIds);
+				rawContactIds = new HashSet<String>();
+				prevContactId = contactId;
+			}
+			rawContactIds.add(rawContactId);
+		} while(c.moveToNext());
+		
+		if(rawContactIds.size() > 1)
+			linkedContacts.put(prevContactId, rawContactIds);
+		
+		Log.i(tag, "There are "+linkedContacts.size()+" linked contacts");
+		for(String ct : linkedContacts.keySet())
+		{
+			Log.i(tag, "Contact: "+ct);
+			for(String r : linkedContacts.get(ct))
+			{
+				Log.i(tag, "Raw contact: "+r);
+				// insert into contact table
+		        //ContentValues bookValues = new ContentValues();
+		        //bookValues.put(ContactTable.CONTACTID, ct);
+		        // bookValues.put(ContactTable.RAWCONTACTID, r);
+		        //Uri cUri = applicationContext.getContentResolver()
+		        	//.insert(Constants.CONTACT_URI, bookValues);
+		        // Log.i(tag, "inserted: "+cUri);
+			}
+		}
+		
+		return linkedContacts;
+		
+	}
+
+	public Map<String, Set<String>> getLinkedContacts() {
+		Cursor c = cr
+			.query(RawContacts.CONTENT_URI,  
+				new String[]{
+					RawContacts._ID,
+					RawContacts.CONTACT_ID
+				}, null, null, 
+				RawContacts.CONTACT_ID);
+		Map<String, Set<String>> linkedContacts = getLinkedContacts(c, RawContacts.CONTACT_ID, RawContacts._ID);
+		c.close();
+		return linkedContacts;
+	}
+
+	public Map<String, Set<String>> getStoredLinkedContacts() {
+		Cursor c = cr.query(Constants.CONTACT_URI,
+	    		null, null,null, 
+	    		ContactTable.CONTACTID);
+		Log.i(tag, "There are "+c.getCount()+" stored contact entries");
+		Map<String, Set<String>> storedLinkedContacts = getLinkedContacts(c, ContactTable.CONTACTID, ContactTable.RAWCONTACTID);
+		c.close();
+		return storedLinkedContacts;
+	}
+	
+	public void storeLinkedContacts(Map<String, Set<String>> linkedContacts) {
+		int num = cr.delete(Constants.CONTACT_URI, null, null);
+		Log.i(tag, "Deleted "+num+" links");
+		for(String ct : linkedContacts.keySet())
+		{
+			Log.i(tag, "Contact: "+ct);
+			for(String r : linkedContacts.get(ct))
+			{
+				Log.i(tag, "Raw contact: "+r);
+				// insert into contact table
+		        ContentValues bookValues = new ContentValues();
+		        bookValues.put(ContactTable.CONTACTID, ct);
+		        bookValues.put(ContactTable.RAWCONTACTID, r);
+		        Uri cUri = cr.insert(Constants.CONTACT_URI, bookValues);
+		        Log.i(tag, "inserted: "+cUri);
+			}
+		}
 	}
 }

@@ -1,6 +1,13 @@
 package com.nbos.phonebook;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
 
 import android.app.Activity;
 import android.content.ContentResolver;
@@ -8,6 +15,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Contacts;
@@ -18,6 +26,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.database.tables.ContactTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.platform.ContactManager;
@@ -318,16 +327,144 @@ public class Test {
 	}
 
 	public static void getContacts(Context ctx) {
-		List<PhoneContact> contacts = new Db(ctx).getContacts(true);
+		List<PhoneContact> contacts = new Db(ctx).getContacts(false);
 		for(PhoneContact c : contacts) {
 			Log.i(tag, "-----\n"+c+"\n-----\n\n");
 		}
 		
 	}
-
-	public static void updateServerId(Context applicationContext) {
-		// TODO Auto-generated method stub
+	
+	static Map<String, Set<String>> getLinkedContacts(Cursor c, String contactIdColumn, String rawContactIdColumn) {
+		Map<String, Set<String>> linkedContacts = new HashMap<String, Set<String>>();
+		Log.i(tag, "There are "+c.getCount()+" rows");
+		if(c.getCount() == 0)
+			return linkedContacts;
+		c.moveToFirst();
+		String prevContactId = null, contactId;
+		Set<String> rawContactIds = new HashSet<String>();
+		do {
+			contactId = c.getString(c.getColumnIndex(contactIdColumn));
+			String rawContactId = c.getString(c.getColumnIndex(rawContactIdColumn));
+			Log.i(tag, "c: "+contactId+", raw: "+rawContactId);
+			if(prevContactId == null) prevContactId = contactId;
+			if(!prevContactId.equals(contactId))
+			{
+				if(rawContactIds.size() > 1)
+					linkedContacts.put(prevContactId, rawContactIds);
+				rawContactIds = new HashSet<String>();
+				prevContactId = contactId;
+			}
+			rawContactIds.add(rawContactId);
+		} while(c.moveToNext());
 		
+		if(rawContactIds.size() > 1)
+			linkedContacts.put(prevContactId, rawContactIds);
+		
+		Log.i(tag, "There are "+linkedContacts.size()+" linked contacts");
+		for(String ct : linkedContacts.keySet())
+		{
+			Log.i(tag, "Contact: "+ct);
+			for(String r : linkedContacts.get(ct))
+			{
+				Log.i(tag, "Raw contact: "+r);
+				// insert into contact table
+		        //ContentValues bookValues = new ContentValues();
+		        //bookValues.put(ContactTable.CONTACTID, ct);
+		        // bookValues.put(ContactTable.RAWCONTACTID, r);
+		        //Uri cUri = applicationContext.getContentResolver()
+		        	//.insert(Constants.CONTACT_URI, bookValues);
+		        // Log.i(tag, "inserted: "+cUri);
+			}
+		}
+		
+		return linkedContacts;
+		
+	}
+	
+	public static void getContactLinks(Context applicationContext) {
+		Map<String, Set<String>> linkedContacts,
+			storedLinkedContacts, 
+			deletedLinks = new HashMap<String, Set<String>>(), 
+			newLinks = new HashMap<String, Set<String>>(); 
+		Cursor c = applicationContext.getContentResolver()
+			.query(RawContacts.CONTENT_URI,  
+					new String[]{
+						RawContacts._ID,
+						RawContacts.CONTACT_ID
+					}, null, null, 
+					RawContacts.CONTACT_ID);
+		linkedContacts = getLinkedContacts(c, RawContacts.CONTACT_ID, RawContacts._ID);
+		
+		c = applicationContext.getContentResolver()
+		.query(Constants.CONTACT_URI,
+	    		null, null,null, 
+	    		ContactTable.CONTACTID);
+		Log.i(tag, "There are "+c.getCount()+" stored contact entries");
+		storedLinkedContacts = getLinkedContacts(c, ContactTable.CONTACTID, ContactTable.RAWCONTACTID);
+		Set<String> linkedKeys = linkedContacts.keySet(),
+			storedKeys = storedLinkedContacts.keySet();
+		// compare the two sets of contacts
+		if(linkedKeys.equals(storedKeys))
+		{
+			Log.i(tag, "No links were added or deleted");
+			for(String k : linkedKeys)
+			{
+				if(!linkedContacts.get(k).equals(storedLinkedContacts.get(k)))
+				{
+					Log.i(tag, "Contacts changed for: "+k);
+					deletedLinks.put(k, storedLinkedContacts.get(k));
+					newLinks.put(k, linkedContacts.get(k));
+				}
+			}
+		}
+		else 
+		{
+			for(String k : linkedKeys)
+			{
+				if(!storedKeys.contains(k))
+				{
+					Log.i(tag, "Added link: "+k);
+					newLinks.put(k, linkedContacts.get(k));
+				}
+			}
+
+			for(String k : storedKeys)
+			{
+				if(!linkedKeys.contains(k))
+				{
+					Log.i(tag, "Deleted link: "+k);
+					deletedLinks.put(k, storedLinkedContacts.get(k));
+				}
+			}
+		}
+		sendLinkUpdates(linkedContacts);
+	}
+	
+	private static void sendLinkUpdates(Map<String, Set<String>> linkedContacts) {
+		// List<NameValuePair> params = getAuthParams();
+		// if(!newOnly) {
+			// send all the links
+			Object[] linkedContactsArray = linkedContacts.values().toArray();
+			Integer numLinks = new Integer(linkedContactsArray.length);
+			// params.add(new BasicNameValuePair("numLinks", numLinks.toString()));
+			for(int i=0; i< numLinks; i++)
+			{
+				Log.i(tag, "Obj: "+linkedContactsArray[i]);
+				Object[] rawContactIds = ((Set<String>) linkedContactsArray[i]).toArray();
+				// String [] rawContactIds = (String[]) ((Set<String>) linkedContactsArray[i]).toArray();
+				Log.i(tag, "num raw contacts: "+rawContactIds.length);
+				for(int j=0; j< rawContactIds.length; j++)
+				{
+					Log.i(tag, "Raw #"+j+": "+rawContactIds[j]);
+				}
+				// params.add(new BasicNameValuePair("link_"+i+"_count", rawContactId));
+				// params.add(new BasicNameValuePair("contactId_"+index, rawContactId));
+			}
+		// }
+	}
+
+	public static void getStoredContactLinks(Context applicationContext) {
+
 	}
 	
 }
