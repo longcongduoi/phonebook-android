@@ -466,5 +466,10 @@ public class Test {
 	public static void getStoredContactLinks(Context applicationContext) {
 
 	}
-	
+
+	public static void deleteContactLinkTable(Context applicationContext) {
+		int num = applicationContext.getContentResolver()
+			.delete(Constants.CONTACT_URI, null, null);
+		Log.i(tag, "Deleted "+num+" links");
+	}
 }

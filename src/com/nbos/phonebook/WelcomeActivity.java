@@ -73,6 +73,7 @@ public class WelcomeActivity extends ListActivity {
 		//Test.getContactLinks(getApplicationContext());
 		//Test.getStoredContactLinks(getApplicationContext());
 		// Test.getContacts(getApplicationContext());
+		// Test.deleteContactLinkTable(getApplicationContext());
 		//Test.getServerDataTable(getApplicationContext());
 		//Test.updateServerId(getApplicationContext());
 
