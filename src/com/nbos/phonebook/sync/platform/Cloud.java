@@ -81,8 +81,8 @@ public class Cloud {
     	PARAM_VALIDATION_CODE = "valid",
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
-    	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	BASE_URL = "http://10.9.8.29:8080/phonebook",
+    	BASE_URL = "http://phonebook.nbostech.com/phonebook",
+    	// BASE_URL = "http://10.9.8.29:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
@@ -335,9 +335,12 @@ public class Cloud {
 
 	private void sendLinkUpdates() throws ClientProtocolException, JSONException, IOException {
 		Cursor serverDataCursor = db.getProfileData();
-		if(!newOnly) {
-			// send all the links
-			Map<String, Set<String>> linkedContacts = db.getLinkedContacts();
+		Map<String, Set<String>> linkedContacts = db.getLinkedContacts(),
+			storedLinkedContacts = db.getStoredLinkedContacts(); 
+		
+		if(!newOnly 
+		|| (storedLinkedContacts.size() == 0 && linkedContacts.size() != 0)) // first time
+		{	// send all the links
 			Object[] linkedContactsArray = db.getLinkedContacts().values().toArray();
 			Integer numLinks = new Integer(linkedContactsArray.length);
 			List<NameValuePair> params = getAuthParams();
@@ -369,9 +372,7 @@ public class Cloud {
 			return;
 		}
 		// send only the changed links
-		Map<String, Set<String>> linkedContacts = db.getLinkedContacts(),
-			storedLinkedContacts = db.getStoredLinkedContacts(), 
-			deletedLinks = new HashMap<String, Set<String>>(), 
+		Map<String, Set<String>> deletedLinks = new HashMap<String, Set<String>>(), 
 			newLinks = new HashMap<String, Set<String>>(); 
 		Set<String> linkedKeys = linkedContacts.keySet(),
 		storedKeys = storedLinkedContacts.keySet();
