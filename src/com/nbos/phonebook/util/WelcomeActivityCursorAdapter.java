@@ -54,12 +54,14 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 		String groupName= c.getString(c.getColumnIndex(ContactsContract.Groups.TITLE));
 		Log.i(tag,"groupId: "+groupId+" groupName: "+groupName);
 		String accountType = c.getString(c.getColumnIndex(ContactsContract.Groups.ACCOUNT_TYPE));
+		TextView ownerTextView = (TextView) v.findViewById(R.id.groupOwner);
 		if(accountType.equals(Constants.ACCOUNT_TYPE))
 		{
 			String owner = c.getString(c.getColumnIndex(ContactsContract.Groups.SYNC1));
-			TextView ownerTextView = (TextView) v.findViewById(R.id.groupOwner);
 			ownerTextView.setText(owner);
 		}
+		else ownerTextView.setText(R.string.empty);
+
 		int numSharingWith = getNumSharingWith(groupId);
 		if(numSharingWith > 0)
 		{
