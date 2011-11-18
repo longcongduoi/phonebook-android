@@ -1,11 +1,5 @@
 package com.nbos.phonebook;
 
-import java.io.IOException;
-
-import org.apache.http.ParseException;
-import org.apache.http.auth.AuthenticationException;
-import org.json.JSONException;
-
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -20,9 +14,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
 import com.nbos.phonebook.sync.client.Net;
-import com.nbos.phonebook.sync.platform.Cloud;
 import com.nbos.phonebook.sync.syncadapter.SyncAdapter;
 
 public class ValidationActivity extends Activity {
