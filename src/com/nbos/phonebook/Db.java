@@ -384,7 +384,7 @@ public class Db {
 			.appendQueryParameter(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE)
 			.build();
 		Log.i(tag, "uri is: "+uri);*/
-		// contactOp.updateProfileAction(Integer.parseInt(serverId), uri);
+		//contactOp.updateProfileAction(Integer.parseInt(serverId), uri);
 		context.getContentResolver().update(Data.CONTENT_URI, values, 
 				Data.RAW_CONTACT_ID + " = " + rawContactId + " and " +
 				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
@@ -622,6 +622,7 @@ public class Db {
 			contactId = c.getString(c.getColumnIndex(contactIdColumn));
 			String rawContactId = c.getString(c.getColumnIndex(rawContactIdColumn));
 			Log.i(tag, "c: "+contactId+", raw: "+rawContactId);
+			if(contactId == null) continue;
 			if(prevContactId == null) prevContactId = contactId;
 			if(!prevContactId.equals(contactId))
 			{

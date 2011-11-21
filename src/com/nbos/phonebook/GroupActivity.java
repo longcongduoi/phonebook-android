@@ -2,7 +2,9 @@ package com.nbos.phonebook;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
@@ -36,14 +38,13 @@ import android.widget.Toast;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
-import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.BookPermission;
 import com.nbos.phonebook.util.ImageCursorAdapter;
 import com.nbos.phonebook.value.ContactRow;
 
 public class GroupActivity extends ListActivity {
 
-	String id, name, owner, permission, accountType;
+	String id, name, owner, permission;
 	static String tag = "GroupActivity";
 	MatrixCursor m_cursor;
 	List<String> ids;
@@ -69,7 +70,6 @@ public class GroupActivity extends ListActivity {
 			name = extras.getString("name");
 			owner = extras.getString("owner");
 			permission = extras.getString("permission");
-			accountType = extras.getString("accountType");
 			layout = extras.getInt("layout");
 			Log.i(tag, "Owner is: " + owner + ", permission is: "+permission);
 		}
@@ -99,8 +99,7 @@ public class GroupActivity extends ListActivity {
 		if(phoneNumber != null)
 			hasNumber = true;
 		if (owner == null 
-		||(owner != null && accountType.equals(Constants.ACCOUNT_TYPE) && Integer.parseInt(permission) >= BookPermission.EDIT_CONTACTS.ordinal())
-		||(owner != null && !accountType.equals(Constants.ACCOUNT_TYPE)))
+		||(owner != null  && Integer.parseInt(permission) >= BookPermission.EDIT_CONTACTS.ordinal()))
 			hasEdit = true;
 		if(!hasNumber && !hasEdit)
 			return;
@@ -198,26 +197,21 @@ public class GroupActivity extends ListActivity {
 	}
 
 	private int numContacts() {
-		Cursor contactsCursor = Db.getContacts(this);// getContacts();
+		Cursor contactsCursor = db.getRawContactsCursor(false);// getContacts();
 		Log.i(tag, "There are " + contactsCursor.getCount() + " contacts");
-		int numContacts = 0;
+		Set<String> contactIds = new HashSet<String>();
 		Cursor bookCursor = db.getBook(id);
 		Log.i(tag, "There are " + bookCursor.getCount()
 				+ " contacts sharing this group");
-		IntCursorJoiner joiner = new IntCursorJoiner(contactsCursor,
-				new String[] { ContactsContract.Contacts._ID }, bookCursor,
-				new String[] { BookTable.CONTACTID });
-
-		for (CursorJoiner.Result joinerResult : joiner) {
-			switch (joinerResult) {
-			case BOTH: // handle case where a row with the same key is in both
-						// cursors
-				numContacts++;
-				break;
-			}
-		}
-		Log.i(tag, "Sharing with " + numContacts + " contacts");
-		return numContacts;
+		bookCursor.moveToFirst();
+		if(bookCursor.getCount()>0) 
+		do {
+			String rawContactId = bookCursor.getString(bookCursor.getColumnIndex(BookTable.CONTACTID));
+			String contactId = db.getContactId(rawContactId, contactsCursor);
+			contactIds.add(contactId);
+		} while(bookCursor.moveToNext());
+		Log.i(tag, "Sharing with " + contactIds.size() + " contacts");
+		return contactIds.size();
 	}
 
 	@Override
@@ -250,7 +244,8 @@ public class GroupActivity extends ListActivity {
 	 */
 
 	private void queryGroup(int layout) {
-		if (owner == null || !accountType.equals(Constants.ACCOUNT_TYPE)) //
+		
+		if(owner == null) 
 			setTitle("Group: " + name + " (" + numContacts()
 					+ " contacts sharing with)");
 		else
