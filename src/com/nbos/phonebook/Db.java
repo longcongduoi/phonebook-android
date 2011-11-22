@@ -360,12 +360,12 @@ public class Db {
 		} while(serverDataCursor.moveToNext());
 		ContentValues values = new ContentValues();
 		if(insert) { // insert
-			Log.i(tag, "inserting");
-			//contactOp.addProfileAction(Integer.parseInt(serverId));
-            values.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
+			Log.i(tag, "inserting "+serverId);
+			contactOp.addProfileAction(Integer.parseInt(serverId));
+            /*values.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
             values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
             values.put(Data.RAW_CONTACT_ID, rawContactId);
-            context.getContentResolver().insert(Data.CONTENT_URI, values);
+            context.getContentResolver().insert(Data.CONTENT_URI, values);*/
 			return;
 		}
 		// update 
@@ -379,15 +379,15 @@ public class Db {
 			values.put(PhonebookSyncAdapterColumns.PIC_HASH, (String)null);
 		}
 		//
-		/*Uri uri = Data.CONTENT_URI.buildUpon()
+		Uri uri = Data.CONTENT_URI.buildUpon()
 			.appendQueryParameter(Data.RAW_CONTACT_ID, rawContactId)
 			.appendQueryParameter(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE)
 			.build();
-		Log.i(tag, "uri is: "+uri);*/
-		//contactOp.updateProfileAction(Integer.parseInt(serverId), uri);
-		context.getContentResolver().update(Data.CONTENT_URI, values, 
+		Log.i(tag, "update uri is: "+uri);
+		contactOp.updateProfileAction(Integer.parseInt(serverId), uri);
+		/*context.getContentResolver().update(Data.CONTENT_URI, values, 
 				Data.RAW_CONTACT_ID + " = " + rawContactId + " and " +
-				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
+				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);*/
 	}
 
 	
@@ -608,6 +608,9 @@ public class Db {
 		int num = applicationContext.getContentResolver()
 			.delete(Data.CONTENT_URI, Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
 		Log.i(tag, "deleted "+num+" rows of server data");
+		num = applicationContext.getContentResolver()
+			.delete(Constants.CONTACT_URI, null, null);
+		Log.i(tag, "deleted "+num+" rows of contact link data");
 	}
 	
 	static Map<String, Set<String>> getLinkedContacts(Cursor c, String contactIdColumn, String rawContactIdColumn) {
