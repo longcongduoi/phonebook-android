@@ -494,9 +494,34 @@ public class Cloud {
 	}
 
 	private void sendContactUpdates(List<PhoneContact> contacts) throws ClientProtocolException, IOException, JSONException {
-        List<NameValuePair> params = getAuthParams();
-        int numContacts = 0;
-        for(int i=0; i< contacts.size(); i++)
+        int batchSize = 30;
+        Cursor serverDataCursor = Db.getContactServerData(context);
+		for(int b = 0; b < contacts.size();  b = b + batchSize)
+		{
+			Log.i(tag, "Sending batch #"+b);
+			int numContacts = 0;
+	        List<NameValuePair> params = getAuthParams();
+			for(int i = b; i < b + batchSize && i < contacts.size(); i++)
+			{
+				//System.out.print(i+", ");
+	        	PhoneContact contact =  contacts.get(i);
+	        	if(contact.serverId != null // this server id has already been synced in the pull 
+	        	&& syncedContactServerIds.contains(contact.serverId))
+	        		continue; 
+	        	contact.addParams(params, new Integer(numContacts).toString());
+	        	numContacts++;
+			}
+			Log.i(tag, "num contacts: "+numContacts);
+	        params.add(new BasicNameValuePair("numContacts", new Integer(numContacts).toString()));
+	        if(lastUpdated != null)
+	        	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
+			
+	        JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
+	        updateServerData(contactUpdates, serverDataCursor);
+		}
+
+        
+        /*for(int i=0; i< contacts.size(); i++)
         {
         	PhoneContact contact =  contacts.get(i);
         	if(contact.serverId != null // this server id has already been synced in the pull 
@@ -511,7 +536,10 @@ public class Cloud {
         	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
 		
         JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
-        Cursor serverDataCursor = Db.getContactServerData(context);
+        updateServerData(contactUpdates);*/
+	}
+	
+	private void updateServerData(JSONArray contactUpdates, Cursor serverDataCursor) throws JSONException {
         final BatchOperation batchOperation = new BatchOperation(context);
         for (int i = 0; i < contactUpdates.length(); i++)
         {
@@ -521,7 +549,7 @@ public class Cloud {
         }
         batchOperation.execute();
 	}
-	
+
 	private List<PicData> getServerPicData() throws ClientProtocolException, JSONException, IOException {
 		List<PicData> picData = new ArrayList<PicData>();
 		JSONArray picsJson = new JSONArray(post(GET_PIC_DATA_URI, getAuthParams()));
