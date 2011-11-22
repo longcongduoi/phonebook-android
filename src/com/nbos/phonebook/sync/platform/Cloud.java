@@ -740,6 +740,7 @@ public class Cloud {
         	numGroups++;
         }
         params.add(new BasicNameValuePair("numBooks", new Integer(numGroups).toString()));
+        if(numGroups == 0) return;
         JSONArray groupUpdates = new JSONArray(post(SEND_GROUP_UPDATES_URI, params));
         for (int i = 0; i < groupUpdates.length(); i++)
         	ContactManager.updateGroup(groupUpdates.getJSONObject(i), context);
@@ -749,6 +750,7 @@ public class Cloud {
 	}
 	
 	private void sendSharedBookUpdates(List<SharingBook> books) throws ClientProtocolException, IOException, JSONException {
+		if(books.size() == 0) return;
         List<NameValuePair> params = getAuthParams();
         params.add(new BasicNameValuePair("numShareBooks", new Integer(books.size()).toString()));
         for(int i=0; i< books.size(); i++)
@@ -762,12 +764,6 @@ public class Cloud {
         	Log.i(tag, "Shared book["+book.groupId+"] deleted: "+book.deleted);
         }
         JSONArray bookUpdates = new JSONArray(post(SEND_SHARED_BOOK_UPDATES_URI, params));
-        for (int i = 0; i < bookUpdates.length(); i++)
-        {
-        	//Long deletedContactId = bookUpdates.getLong(i);
-        	// Log.i(tag, "Deleted contactId: ")
-        	// ContactManager.updateBook(bookUpdates.getJSONObject(i), context);
-        }
         if(books.size() > 0)
         	ContactManager.resetDirtySharedBooks(context);
 	}
