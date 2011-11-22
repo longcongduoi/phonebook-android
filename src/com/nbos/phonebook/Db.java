@@ -624,7 +624,7 @@ public class Db {
 		do {
 			contactId = c.getString(c.getColumnIndex(contactIdColumn));
 			String rawContactId = c.getString(c.getColumnIndex(rawContactIdColumn));
-			Log.i(tag, "c: "+contactId+", raw: "+rawContactId);
+			// Log.i(tag, "c: "+contactId+", raw: "+rawContactId);
 			if(contactId == null) continue;
 			if(prevContactId == null) prevContactId = contactId;
 			if(!prevContactId.equals(contactId))

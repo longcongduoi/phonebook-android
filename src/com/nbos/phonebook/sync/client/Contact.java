@@ -174,7 +174,7 @@ public class Contact {
         	c.deleted = user.has("dt") ? user.getBoolean("dt") : false;
         	
         	if(user.has("name"))
-        	c.name = Name.valueOf(user.getJSONObject("name"));
+        		c.name = Name.valueOf(user.getJSONObject("name"));
         	if(user.has("phones") )
         		c.phones = Phone.valueOf(user.getJSONArray("phones"));
         	if(user.has("emails"))

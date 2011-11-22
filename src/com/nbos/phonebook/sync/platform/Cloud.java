@@ -81,8 +81,8 @@ public class Cloud {
     	PARAM_VALIDATION_CODE = "valid",
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
-    	BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	// BASE_URL = "http://10.9.8.29:8080/phonebook",
+    	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
+    	BASE_URL = "http://10.9.8.29:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
@@ -315,7 +315,7 @@ public class Cloud {
         for (int i = 0; i < contacts.length(); i++) 
             contactsList.add(Contact.valueOf(contacts.getJSONObject(i)));
         
-        Log.i(tag, "Contacts: "+contactsList);
+        // Log.i(tag, "Contacts: "+contactsList);
         for (int i = 0; i < groups.length(); i++) 
             groupsList.add(Group.valueOf(groups.getJSONObject(i)));
         
@@ -545,8 +545,12 @@ public class Cloud {
         {
         	ContactManager.updateContact(contactUpdates.getJSONObject(i), context, serverDataCursor, batchOperation);
         	if(batchOperation.size() > 50)
+        	{
+        		Log.i(tag, "Executing batch");
         		batchOperation.execute();
+        	}
         }
+        Log.i(tag, "Executing last batch");
         batchOperation.execute();
 	}
 
@@ -839,13 +843,13 @@ public class Cloud {
 		
 		//connection.setInstanceFollowRedirects(true);
 		// HttpURLConnection.setFollowRedirects(true);
-		Log.i(tag, "Follow redirects: "+connection.getInstanceFollowRedirects());
+		// Log.i(tag, "Follow redirects: "+connection.getInstanceFollowRedirects());
 
 		outputStream = new DataOutputStream( connection.getOutputStream() );
 		for (Map.Entry<String, String> entry : params.entrySet()) {
 		    String name = entry.getKey();
 		    String value = entry.getValue();
-		    Log.i(tag, "param: "+name+", value: "+value);
+		    // Log.i(tag, "param: "+name+", value: "+value);
 		    if(value == null) continue;
 		    outputStream.writeBytes(twoHyphens + boundary + lineEnd);
 		    outputStream.writeBytes("Content-Disposition: form-data; name=\""+name+"\"" + lineEnd);
@@ -868,7 +872,7 @@ public class Cloud {
 		int serverResponseCode = connection.getResponseCode();
 		String serverResponseMessage = connection.getResponseMessage();
 		String location = connection.getHeaderField("Location");
-		Log.i(tag, "response code: "+serverResponseCode+", message: "+serverResponseMessage+", location: "+location);
+		// Log.i(tag, "response code: "+serverResponseCode+", message: "+serverResponseMessage+", location: "+location);
 		if(serverResponseCode == 302)
 		{
 			url = new URL(location);
