@@ -347,9 +347,9 @@ public class Cloud {
 			params.add(new BasicNameValuePair("numLinks", numLinks.toString()));
 			for(int i=0; i< numLinks.intValue(); i++)
 			{
-				Log.i(tag, "Obj: "+linkedContactsArray[i]);
+				// Log.i(tag, "Obj: "+linkedContactsArray[i]);
 				Object[] rawContactIds = ((Set<String>) linkedContactsArray[i]).toArray();
-				Log.i(tag, "num raw contacts: "+rawContactIds.length);
+				// Log.i(tag, "num raw contacts: "+rawContactIds.length);
 				int numContacts = 0;
 				for(int j=0; j< rawContactIds.length; j++)
 				{
@@ -811,7 +811,7 @@ public class Cloud {
 	}
 	
 	JSONObject upload(String uploadUrl, byte[] data, String contentType, Map<String, String> params) {
-		Log.i(tag, "Uploading to "+uploadUrl);
+		// Log.i(tag, "Uploading to "+uploadUrl);
 		HttpURLConnection connection = null;
 		DataOutputStream outputStream = null;
 

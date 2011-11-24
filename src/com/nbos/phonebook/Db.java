@@ -361,11 +361,11 @@ public class Db {
 		ContentValues values = new ContentValues();
 		if(insert) { // insert
 			Log.i(tag, "inserting "+serverId);
-			contactOp.addProfileAction(Integer.parseInt(serverId));
-            /*values.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
+			// contactOp.addProfileAction(Integer.parseInt(serverId));
+            values.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
             values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
             values.put(Data.RAW_CONTACT_ID, rawContactId);
-            context.getContentResolver().insert(Data.CONTENT_URI, values);*/
+            context.getContentResolver().insert(Data.CONTENT_URI, values);
 			return;
 		}
 		// update 
@@ -384,10 +384,10 @@ public class Db {
 			.appendQueryParameter(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE)
 			.build();
 		Log.i(tag, "update uri is: "+uri);
-		contactOp.updateProfileAction(Integer.parseInt(serverId), uri);
-		/*context.getContentResolver().update(Data.CONTENT_URI, values, 
+		//contactOp.updateProfileAction(Integer.parseInt(serverId), uri);
+		context.getContentResolver().update(Data.CONTENT_URI, values, 
 				Data.RAW_CONTACT_ID + " = " + rawContactId + " and " +
-				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);*/
+				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
 	}
 
 	
