@@ -52,6 +52,7 @@ import com.nbos.phonebook.Db;
 import com.nbos.phonebook.R;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Net;
+import com.nbos.phonebook.sync.platform.Cloud;
 
 /**
  * Activity which displays login screen to the user.
@@ -61,7 +62,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     public static final String PARAM_USERNAME = "username";
     public static final String PARAM_AUTHTOKEN_TYPE = "authtokenType";
 
-    private static final String TAG = "AuthenticatorActivity";
+    private static final String tag = "AuthenticatorActivity";
 
     private AccountManager mAccountManager;
     private Thread mAuthThread;
@@ -85,7 +86,6 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 
     private String mUsername;
     private EditText mUsernameEdit;
-    private String tag="Facebook";
     String FILENAME = "Androidphonebook_data";
     private SharedPreferences mPrefs;
 
@@ -94,10 +94,10 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
      */
     @Override
     public void onCreate(Bundle icicle) {
-        Log.i(TAG, "onCreate(" + icicle + ")");
+        Log.i(tag, "onCreate(" + icicle + ")");
         super.onCreate(icicle);
         mAccountManager = AccountManager.get(this);
-        Log.i(TAG, "loading data from Intent");
+        Log.i(tag, "loading data from Intent");
         final Intent intent = getIntent();
         mUsername = intent.getStringExtra(PARAM_USERNAME);
         mAuthtokenType = intent.getStringExtra(PARAM_AUTHTOKEN_TYPE);
@@ -105,7 +105,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         mConfirmCredentials =
             intent.getBooleanExtra(PARAM_CONFIRMCREDENTIALS, false);
 
-        Log.i(TAG, "request new: " + mRequestNewAccount);
+        Log.i(tag, "request new: " + mRequestNewAccount);
         requestWindowFeature(Window.FEATURE_LEFT_ICON);
         setContentView(R.layout.login_activity);
         getWindow().setFeatureDrawableResource(Window.FEATURE_LEFT_ICON,
@@ -144,7 +144,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         dialog.setCancelable(true);
         dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
             public void onCancel(DialogInterface dialog) {
-                Log.i(TAG, "dialog cancel has been invoked");
+                Log.i(tag, "dialog cancel has been invoked");
                 if (mAuthThread != null) {
                     mAuthThread.interrupt();
                     finish();
@@ -178,20 +178,20 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     }
 
     public void handleRegister(View view) {
-    	Log.i(TAG, "handleRegister()");
+    	Log.i(tag, "handleRegister()");
         if (mRequestNewAccount) {
             mUsername = mUsernameEdit.getText().toString();
         }
         mPassword = mPasswordEdit.getText().toString();
         mPhone = mPhoneEdit.getText().toString();
-        Log.i(TAG, "usename: "+mUsername+", password: "+mPassword+", mPhone: "+mPhone);
+        Log.i(tag, "usename: "+mUsername+", password: "+mPassword+", mPhone: "+mPhone);
         if (TextUtils.isEmpty(mUsername) || TextUtils.isEmpty(mPassword) || TextUtils.isEmpty(mPhone)) {
-        	Log.i(TAG, "Empty field");
+        	Log.i(tag, "Empty field");
             mMessage.setText(getMessage());
         } else {
             showProgress();
             // Start authenticating...
-            Log.i(TAG, "attempting register");
+            Log.i(tag, "attempting register");
             mAuthThread =
                 Net.attemptRegister(mUsername, mPassword, mPhone, mHandler,
                     AuthenticatorActivity.this);
@@ -206,7 +206,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
      * @param the confirmCredentials result.
      */
     protected void finishConfirmCredentials(boolean result) {
-        Log.i(TAG, "finishConfirmCredentials()");
+        Log.i(tag, "finishConfirmCredentials()");
         final Account account = new Account(mUsername, Constants.ACCOUNT_TYPE);
         mAccountManager.setPassword(account, mPassword);
         mAccountManager.setUserData(account, Constants.PHONE_NUMBER_KEY, mPhone);
@@ -228,7 +228,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
      */
 
     protected void finishLogin() {
-        Log.i(TAG, "finishLogin()");
+        Log.i(tag, "finishLogin()");
         final Account account = new Account(mUsername, Constants.ACCOUNT_TYPE);
 
         if (mRequestNewAccount) {
@@ -245,9 +245,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, mUsername);
         intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, Constants.ACCOUNT_TYPE);
         if (mAuthtokenType != null
-            && mAuthtokenType.equals(Constants.AUTHTOKEN_TYPE)) {
+        && mAuthtokenType.equals(Constants.AUTHTOKEN_TYPE)) 
             intent.putExtra(AccountManager.KEY_AUTHTOKEN, mAuthtoken);
-        }
         Db.deleteServerData(getApplicationContext());
         setAccountAuthenticatorResult(intent.getExtras());
         setResult(RESULT_OK, intent);
@@ -265,7 +264,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
      * Called when the authentication process completes (see attemptLogin()).
      */
     public void onAuthenticationResult(boolean result, String message) {
-        Log.i(TAG, "onAuthenticationResult(" + result + ")");
+        Log.i(tag, "onAuthenticationResult(" + result + ")");
         // Hide the progress dialog
         hideProgress();
         if (result) {
@@ -274,26 +273,9 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
             } else {
                 finishConfirmCredentials(true);
             }
-            /*try {
-            	Log.i(TAG, "Sending all contacts");
-            	// Db.refreshAccount(getApplicationContext(), mUsername);
-				// Net.sendAllContacts(mUsername, this.mAuthtoken, getApplicationContext());
-                final Runnable runnable = new Runnable() {
-                    public void run() {
-                    	try {
-							new Cloud(getApplicationContext(), mUsername, mAuthtoken).sendAllContacts();
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-                    }
-                };
-                Net.performOnBackgroundThread(runnable);				
-			} catch (Exception e) {
-				e.printStackTrace();
-			}*/
-            Log.i(TAG, "finish authentication");
+            Log.i(tag, "finish authentication");
         } else {
-            Log.e(TAG, "onAuthenticationResult: failed to authenticate - "+message);
+            Log.e(tag, "onAuthenticationResult: failed to authenticate - "+message);
             mMessage.setText(message);
             /*if (mRequestNewAccount) {
                 // "Please enter a valid username/password.
@@ -324,7 +306,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
             return getText(R.string.login_activity_loginfail_text_pwmissing);
         }
         if (TextUtils.isEmpty(mPhone)) {
-            // We have an account but no password
+            // We have an account but no phone
             return getText(R.string.login_activity_loginfail_text_phmissing);
         }
 
@@ -337,33 +319,36 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     protected void showProgress() {
         showDialog(0);
     }
+    
     public void registerAsFbUser(View v){
+        mPhone = mPhoneEdit.getText().toString();
+        if (TextUtils.isEmpty(mPhone)) {
+            mMessage.setText(getText(R.string.login_activity_loginfail_text_phmissing));
+            return;
+        }
+        Log.i(tag, "Facebook session is valid? "+facebook.isSessionValid());
     	if(!facebook.isSessionValid()) {
-    	facebook.authorize(this, new DialogListener() {
-            public void onComplete(Bundle values) {
-            	
-            }
-
-            public void onFacebookError(FacebookError error) {}
-
-            public void onError(DialogError e) {}
-
-            public void onCancel() {}
-        });
-      }
+	    	facebook.authorize(this, new DialogListener() {
+	            public void onComplete(Bundle values) {}
+	            public void onFacebookError(FacebookError error) {}
+	            public void onError(DialogError e) {}
+	            public void onCancel() {}
+	        });
+	    	return;
+    	}
+    	createAccountWithFbId();
     }
     
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-         facebook.authorizeCallback(requestCode, resultCode, data);
-         View v=(View)findViewById(R.id.login_layout);
-         createAccountWithFbId(v);
-       
+        facebook.authorizeCallback(requestCode, resultCode, data);
+        createAccountWithFbId();
     }
-    public void createAccountWithFbId(View v){
-   	 mPrefs = getPreferences(MODE_PRIVATE);
-   	 SharedPreferences.Editor editor = mPrefs.edit();
+    
+    void createAccountWithFbId() {
+   	 	mPrefs = getPreferences(MODE_PRIVATE);
+   	 	SharedPreferences.Editor editor = mPrefs.edit();
      	editor.putString("access_token", facebook.getAccessToken());
         editor.putLong("access_expires", facebook.getAccessExpires());
         editor.commit();
@@ -385,23 +370,30 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 			try {
 				json = Util.parseJson(facebook.request("me", new Bundle()));
 				String userId = json.getString("id"),
-				userName=json.getString("first_name");
-				mUsernameEdit.setText(userName);
-				mPasswordEdit.setText(userId);
+				userName=json.getString("name");
+				mPhone = mPhoneEdit.getText().toString();
+				new Cloud(getApplicationContext(), userId, userId).loginWithFacebook(mPhone);
+				mUsername = userId;
+				mPassword = userId;
+				finishLogin();
+				// mUsernameEdit.setText(userName);
+				// mPasswordEdit.setText(userId);
 				Log.i(tag, "userName: "+userName+" userId: "+userId);
 				Log.i(tag,"response:"+json);
 			} catch (Exception e1) {
+				Log.e(tag, "Exception logging on with Facebook: "+e1);
 				e1.printStackTrace();
 			} catch (FacebookError e) {
+				Log.e(tag, "Facebook error logging on with Facebook: "+e);
 				e.printStackTrace();
 			}
         }
-        
    }
     
     
     public void onItemSelected(AdapterView<?> parent,
-            View view, int pos, long id) {
+            View view, int pos, long id) 
+    {
         	
         	String value = parent.getItemAtPosition(pos).toString();
         	String [] parts = value.split("\\+");
@@ -412,10 +404,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         		"Country is " + country +", code is: "+code,
         		Toast.LENGTH_LONG).show();
      
-        }
+    }
 
-        public void onNothingSelected(AdapterView parent) {
-        	
-        }
-
+    public void onNothingSelected(AdapterView parent) {}
 }
+
