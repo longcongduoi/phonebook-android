@@ -85,6 +85,7 @@ public class Cloud {
     	BASE_URL = "http://10.9.8.29:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
+    	FACEBOOK_LOGIN_URL = BASE_URL + "/login/facebookMobileLogin",
     	VALIDATION_URI = BASE_URL + "/mobile/validate",
     	NEW_VALIDATION_CODE_URI = BASE_URL + "/mobile/newValidationCode",
     	CHECK_VALID_ACCOUNT_URI = BASE_URL + "/mobile/valid",
@@ -917,4 +918,12 @@ public class Cloud {
 		    return "";
 		}
     }
+
+	public void loginWithFacebook(String phone) throws ClientProtocolException, JSONException, IOException {
+        final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair(PARAM_USERNAME, accountName));
+        params.add(new BasicNameValuePair(PARAM_PHONE_NUMBER, phone));
+        final JSONArray response = new JSONArray(post(FACEBOOK_LOGIN_URL, params));
+        Log.i(tag, "response is: "+response);
+	}
 }

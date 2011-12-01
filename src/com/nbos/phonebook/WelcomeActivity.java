@@ -42,7 +42,7 @@ public class WelcomeActivity extends ListActivity {
 	List<Contact> m_contacts = null;
 	List<Contact> m_phoneContacts = null;
 	ProgressDialog m_ProgressDialog = null;
-	int layout=R.layout.group_entry;
+	int layout = R.layout.group_entry;
 	Db db;
 	WelcomeActivityCursorAdapter adapter ;
 
@@ -62,7 +62,7 @@ public class WelcomeActivity extends ListActivity {
 		String phoneNumber = getPhoneNumber();
 		Log.i(tag, "phone number: " + phoneNumber);
 		
-		if (!hasAccount(Constants.ACCOUNT_TYPE)) {
+		if (!hasAccount()) {
 			final Intent intent = new Intent(getApplicationContext(),
 					AuthenticatorActivity.class);
 			intent.putExtra(AuthenticatorActivity.PARAM_AUTHTOKEN_TYPE,
@@ -120,18 +120,12 @@ public class WelcomeActivity extends ListActivity {
 				e.printStackTrace();
 			} 
 		 	break;
-			case R.id.delete_group:{
+			case R.id.delete_group:
 				LinearLayout mainLayout=(LinearLayout)findViewById(R.id.mainlinearLayout);
 				LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.deleteLayout);
 				childLayout.setVisibility(1);
 				populateGroups(R.layout.delete_group_entry);
-				
-				/*Intent d=new Intent(WelcomeActivity.this, DeleteGroupActivity.class);
-				startActivityForResult(d, DELETE_GROUP);*/
 			break;
-				//showDeleteGroupDialog();
-			}
-
 		} 
 		return true;
 	}
@@ -266,12 +260,12 @@ public class WelcomeActivity extends ListActivity {
 		startActivityForResult(i, SHOW_GROUP);
 	}
 
-	boolean hasAccount(String type) {
+	boolean hasAccount() {
 		Account[] accounts = AccountManager.get(getApplicationContext())
 				.getAccounts();
 		Log.i(tag, "There are " + accounts.length + " accounts");
 		for (Account account : accounts)
-			if (account.type.equals(type))
+			if (account.type.equals(Constants.ACCOUNT_TYPE))
 			{
 				setTitle(" Phonebook: "+account.name);
 				return true;
@@ -291,43 +285,37 @@ public class WelcomeActivity extends ListActivity {
 	
 	
 	private void showDeleteGroupDialog() {
-		 
 		int delete_group_count=0;
-		
-		for(int i=0;i<listView.getChildCount();i++){
+		for(int i=0;i<listView.getChildCount();i++)
+		{
 			View childView = listView.getChildAt(i);
     		CheckBox check =(CheckBox)childView.findViewById(R.id.check);
     		
-    		if(check.isChecked()){
+    		if(check.isChecked())
     			delete_group_count++;
-    		}
 		}
 		Log.i(tag,"selected group count"+delete_group_count);
 		if(delete_group_count>0)
 		{
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setMessage("Are you sure you want to delete selected group(s)?")
-				.setCancelable(false)
-				.setPositiveButton("Yes",
-						new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog, int id) {
-								deleteGroups();
-							}
-						})
-				.setNegativeButton("No", new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						dialog.cancel();
-					}
-				});
-		AlertDialog alert = builder.create();
-		alert.show();
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setMessage("Are you sure you want to delete selected group(s)?")
+					.setCancelable(false)
+					.setPositiveButton("Yes",
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog, int id) {
+									deleteGroups();
+								}
+							})
+					.setNegativeButton("No", new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int id) {
+							dialog.cancel();
+						}
+					});
+			AlertDialog alert = builder.create();
+			alert.show();
 		}
-		
 		else
-		{
 			deleteGroups();
-	    }
-		
 	}
 
 	
