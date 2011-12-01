@@ -35,7 +35,11 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -52,7 +56,7 @@ import com.nbos.phonebook.sync.client.Net;
 /**
  * Activity which displays login screen to the user.
  */
-public class AuthenticatorActivity extends AccountAuthenticatorActivity {
+public class AuthenticatorActivity extends AccountAuthenticatorActivity implements OnItemSelectedListener{
     public static final String PARAM_CONFIRMCREDENTIALS = "confirmCredentials";
     public static final String PARAM_USERNAME = "username";
     public static final String PARAM_AUTHTOKEN_TYPE = "authtokenType";
@@ -107,6 +111,12 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         getWindow().setFeatureDrawableResource(Window.FEATURE_LEFT_ICON,
             android.R.drawable.ic_dialog_alert);
 
+        Spinner spinner = (Spinner) findViewById(R.id.spinner);
+	    ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+	            this, R.array.country_code_array, android.R.layout.simple_spinner_item);
+	    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+	    spinner.setAdapter(adapter);
+	    spinner.setOnItemSelectedListener(this);
         mMessage = (TextView) findViewById(R.id.message);
         mUsernameEdit = (EditText) findViewById(R.id.username_edit);
         mPasswordEdit = (EditText) findViewById(R.id.password_edit);
@@ -388,4 +398,24 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         }
         
    }
+    
+    
+    public void onItemSelected(AdapterView<?> parent,
+            View view, int pos, long id) {
+        	
+        	String value = parent.getItemAtPosition(pos).toString();
+        	String [] parts = value.split("\\+");
+        	String country = parts[0].substring(0, parts[0].indexOf("(")).trim(),
+        		code = parts[1].substring(0, parts[1].indexOf(")")).trim();
+        	
+        	Toast.makeText(parent.getContext(), 
+        		"Country is " + country +", code is: "+code,
+        		Toast.LENGTH_LONG).show();
+     
+        }
+
+        public void onNothingSelected(AdapterView parent) {
+        	
+        }
+
 }
