@@ -78,7 +78,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     /** for posting authentication attempts back to UI thread */
     private final Handler mHandler = new Handler();
     private TextView mMessage;
-    private String mPassword, mPhone,countryCode;
+    private String mPassword, mPhone, countryCode;
     private EditText mPasswordEdit, mPhoneEdit;
 
     /** Was the original caller asking for an entirely new account? */
@@ -172,7 +172,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
             showProgress();
             // Start authenticating...
             mAuthThread =
-                Net.attemptAuth(mUsername, mPassword, countryCode+mPhone, mHandler,
+                Net.attemptAuth(mUsername, mPassword, countryCode + mPhone, mHandler,
                     AuthenticatorActivity.this);
         }
     }
@@ -193,7 +193,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
             // Start authenticating...
             Log.i(tag, "attempting register");
             mAuthThread =
-                Net.attemptRegister(mUsername, mPassword, countryCode+mPhone, mHandler,
+                Net.attemptRegister(mUsername, mPassword, countryCode + mPhone, mHandler,
                     AuthenticatorActivity.this);
         }
     }
@@ -209,7 +209,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         Log.i(tag, "finishConfirmCredentials()");
         final Account account = new Account(mUsername, Constants.ACCOUNT_TYPE);
         mAccountManager.setPassword(account, mPassword);
-        mAccountManager.setUserData(account, Constants.PHONE_NUMBER_KEY, countryCode+mPhone);
+        mAccountManager.setUserData(account, Constants.PHONE_NUMBER_KEY, countryCode + mPhone);
         final Intent intent = new Intent();
         intent.putExtra(AccountManager.KEY_BOOLEAN_RESULT, result);
         setAccountAuthenticatorResult(intent.getExtras());
@@ -233,7 +233,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 
         if (mRequestNewAccount) {
             mAccountManager.addAccountExplicitly(account, mPassword, null);
-            mAccountManager.setUserData(account, Constants.PHONE_NUMBER_KEY, countryCode+mPhone);            
+            mAccountManager.setUserData(account, Constants.PHONE_NUMBER_KEY, countryCode + mPhone);            
             // Set contacts sync for this account.
             ContentResolver.setSyncAutomatically(account,
                 ContactsContract.AUTHORITY, true);
