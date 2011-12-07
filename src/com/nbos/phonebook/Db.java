@@ -1,5 +1,6 @@
 package com.nbos.phonebook;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
+import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.Groups;
@@ -34,6 +36,7 @@ import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.database.tables.ContactTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
+import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.ServerData;
@@ -41,14 +44,15 @@ import com.nbos.phonebook.sync.client.SharingBook;
 import com.nbos.phonebook.sync.platform.BatchOperation;
 import com.nbos.phonebook.sync.platform.ContactOperations;
 import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
+import com.nbos.phonebook.sync.platform.SyncManager;
+import com.nbos.phonebook.util.ImageInfo;
 
 public class Db {
 	ContentResolver cr;
-	public Db(ContentResolver cr) {
-		this.cr = cr;
-	}
+	Context context;
 
 	public Db(Context context) {
+		this.context = context;
 		this.cr = context.getContentResolver();
 	}
 
@@ -222,11 +226,15 @@ public class Db {
 	    
 	    while(groupsCursor.moveToNext())
 	    {
+	    	List<Contact> contacts = new ArrayList<Contact>();
 	    	String name = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.TITLE));
 	    	String groupId = groupsCursor.getString(groupsCursor.getColumnIndex(Groups._ID));
 	    	String groupSourceId = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.SOURCE_ID));
 	    	if(groupSourceId != null && syncedGroupServerIds.contains(groupSourceId))
+	    	{
+	    		Log.i(tag, "Already synced group: "+name);
 	    		continue;
+	    	}
 	    	String dirty = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.DIRTY));
 	    	String accName = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.ACCOUNT_NAME));
 	    	String accType = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.ACCOUNT_TYPE));
@@ -234,7 +242,6 @@ public class Db {
 	    	Log.i(tag, "Group: "+name+", account: "+accName+", account type: "+accType+", sourceId: "+groupSourceId);//+", owner: "+owner);
 		    Cursor groupCursor = getContactsInGroup(new Long(groupId).toString(), cr);
 		    Log.i(tag, "There are "+groupCursor.getCount()+" contacts in group: "+groupId);
-	    	List<Contact> contacts = new ArrayList<Contact>();
 	    	groupCursor.moveToFirst();
 	    	if(groupCursor.getCount() > 0)
 	    	do {
@@ -344,10 +351,10 @@ public class Db {
 		Log.i(tag, "Raw contact id is: "+rawContactId+", serverId: "+serverId);
 		boolean insert = true;
 		String phoneServerId = null;
-        final ContactOperations contactOp =
+        /*final ContactOperations contactOp =
             ContactOperations.updateExistingContact(context, 
             	Long.parseLong(rawContactId),
-                batchOperation);
+                batchOperation);*/
 		
 		serverDataCursor.moveToFirst();
 		if(serverDataCursor.getCount() > 0)
@@ -363,15 +370,16 @@ public class Db {
 		ContentValues values = new ContentValues();
 		if(insert) { // insert
 			Log.i(tag, "inserting "+serverId);
-			// contactOp.addProfileAction(Integer.parseInt(serverId));
+			// insertServerId(rawContactId, serverId, batchOperation);
+			/*contactOp.addProfileAction(Integer.parseInt(serverId));
             values.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
             values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
             values.put(Data.RAW_CONTACT_ID, rawContactId);
-            context.getContentResolver().insert(Data.CONTENT_URI, values);
+            context.getContentResolver().insert(Data.CONTENT_URI, values);*/
 			return;
 		}
 		// update 
-		Log.i(tag, "updating");
+		/*Log.i(tag, "updating");
 		values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
 		if(phoneServerId != null && !phoneServerId.equals(serverId)) // server id has changed
 		{
@@ -386,10 +394,11 @@ public class Db {
 			.appendQueryParameter(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE)
 			.build();
 		Log.i(tag, "update uri is: "+uri);
-		//contactOp.updateProfileAction(Integer.parseInt(serverId), uri);
+		contactOp.updateProfileAction(Integer.parseInt(serverId), uri);
 		context.getContentResolver().update(Data.CONTENT_URI, values, 
 				Data.RAW_CONTACT_ID + " = " + rawContactId + " and " +
 				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
+				*/
 	}
 
 	
@@ -613,6 +622,10 @@ public class Db {
 		num = applicationContext.getContentResolver()
 			.delete(Constants.CONTACT_URI, null, null);
 		Log.i(tag, "deleted "+num+" rows of contact link data");
+		num = applicationContext.getContentResolver()
+			.delete(Constants.SHARE_BOOK_URI, null, null);
+		Log.i(tag, "deleted "+num+" rows of share book data");
+		
 	}
 	
 	static Map<String, Set<String>> getLinkedContacts(Cursor c, String contactIdColumn, String rawContactIdColumn) {
@@ -687,6 +700,7 @@ public class Db {
 	}
 	
 	public void storeLinkedContacts(Map<String, Set<String>> linkedContacts) {
+		// BatchOperation batchOperation = new BatchOperation(context);
 		int num = cr.delete(Constants.CONTACT_URI, null, null);
 		Log.i(tag, "Deleted "+num+" links");
 		for(String ct : linkedContacts.keySet())
@@ -695,13 +709,113 @@ public class Db {
 			for(String r : linkedContacts.get(ct))
 			{
 				Log.i(tag, "Raw contact: "+r);
+				/*ContentProviderOperation.Builder builder = 
+					ContentProviderOperation.newInsert(Constants.CONTACT_URI)
+			            .withYieldAllowed(true);*/
+				
 				// insert into contact table
 		        ContentValues bookValues = new ContentValues();
 		        bookValues.put(ContactTable.CONTACTID, ct);
 		        bookValues.put(ContactTable.RAWCONTACTID, r);
+		        //builder.withValues(bookValues);
+		        //batchOperation.add(builder.build());
 		        Uri cUri = cr.insert(Constants.CONTACT_URI, bookValues);
-		        Log.i(tag, "inserted: "+cUri);
+		        // Log.i(tag, "inserted: "+cUri);
 			}
 		}
+		//Log.i(tag, "Executing contact table batch insert: "+batchOperation.size());
+		//batchOperation.execute();
 	}
+	
+	public static void insertServerId(Long rawContactId, Long serverId, BatchOperation batchOperation) {
+		ContentProviderOperation.Builder builder = 
+			ContentProviderOperation.newInsert(
+	            SyncManager.addCallerIsSyncAdapterParameter(Data.CONTENT_URI))
+	            .withYieldAllowed(true);
+		ContentValues values = new ContentValues();
+        values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
+        values.put(Data.RAW_CONTACT_ID, rawContactId);        
+        values.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
+        builder.withValues(values);
+        batchOperation.add(builder.build());
+	}
+
+	Cursor dataPicsCursor;
+	Map<String, Integer> contactPicturesIndex;
+	private void getDataPicsCursor() {
+    	dataPicsCursor = cr.query(ContactsContract.Data.CONTENT_URI,
+	    		// null,
+	    	    new String[] {
+	    			Data.CONTACT_ID,
+	    			Contacts.DISPLAY_NAME,
+	    			Data.RAW_CONTACT_ID,
+	    			Data.MIMETYPE,
+	    			Photo.PHOTO,
+	    		},
+	    		Photo.PHOTO +" is not null "
+	    		// null,
+	    		+ " and "+Data.MIMETYPE+" = ? ",
+	    	    new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
+	    	    ContactsContract.Data.CONTACT_ID);
+    	Log.i(tag, "Data pics cursor has "+dataPicsCursor.getCount()+" rows");
+	}
+
+	public void closeDataPicsCursor() {
+		dataPicsCursor.close();
+	}
+
+	
+	public Map<String, Integer> getContactPicturesIndex() {
+		getDataPicsCursor();
+		contactPicturesIndex = new HashMap<String, Integer>();
+    	Log.i(tag, "There are "+dataPicsCursor.getCount()+" photo data entries");
+		dataPicsCursor.moveToFirst();
+		if(dataPicsCursor.getCount() == 0) 
+			return contactPicturesIndex;
+		do {
+	    	String mimetype = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.MIMETYPE));
+	    	if(!mimetype.equals(Photo.CONTENT_ITEM_TYPE)) continue;
+	    	String rawId = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+	    	contactPicturesIndex.put(rawId, new Integer(dataPicsCursor.getPosition()));//new ContactPicture(pic, contentType));	    	
+	    	/*String name = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Contacts.DISPLAY_NAME));
+	    	byte[] pic = dataPicsCursor.getBlob(dataPicsCursor.getColumnIndex(Photo.PHOTO));
+	    	String contentType;
+			try {
+				contentType = new ImageInfo(pic).getMimeType();
+		    	Log.i(tag, "Contact["+rawId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
+		    	
+			} catch (IOException e) {
+				Log.e(tag, "Exception getting pic mime type: "+e);
+				e.printStackTrace();
+			}*/ 
+		} while(dataPicsCursor.moveToNext());
+		
+		return contactPicturesIndex;
+	}
+	
+	public ContactPicture getContactPicture(String rawContactId, boolean getContentType) {
+		Log.d(tag, "getContactPicture("+rawContactId+"), index is: "+contactPicturesIndex);
+		Integer index = contactPicturesIndex.get(rawContactId);
+		if(index == null)
+		{
+			Log.d(tag, "No picture");
+			return null;
+		}
+		dataPicsCursor.moveToPosition(index);
+		byte[] pic = dataPicsCursor.getBlob(dataPicsCursor.getColumnIndex(Photo.PHOTO));
+		String name = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Contacts.DISPLAY_NAME));
+    	String contentType = null;
+    	
+    	if(getContentType)
+		try {
+			contentType = new ImageInfo(pic).getMimeType();
+		} catch (IOException e) {
+			Log.e(tag, "Exception getting pic mime type: "+e);
+			e.printStackTrace();
+		} 
+		
+		Log.i(tag, "Contact["+rawContactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
+		return new ContactPicture(pic, contentType);
+	}
+
 }
