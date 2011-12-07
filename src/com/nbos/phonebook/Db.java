@@ -194,7 +194,7 @@ public class Db {
 		return cr.query(RawContacts.CONTENT_URI, PROJECTION, where, null, RawContacts.CONTACT_ID);	
 	}
 
-	public List<Group> getGroups(boolean newOnly) {
+	public List<Group> getGroups(boolean newOnly, Set<String> syncedGroupServerIds) {
 		List<Group> groups = new ArrayList<Group>();
 	    String where = Groups.DELETED + " = 0 ";
 	    if(newOnly)
@@ -222,10 +222,11 @@ public class Db {
 	    
 	    while(groupsCursor.moveToNext())
 	    {
-	    	List<Contact> contacts = new ArrayList<Contact>();
 	    	String name = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.TITLE));
 	    	String groupId = groupsCursor.getString(groupsCursor.getColumnIndex(Groups._ID));
 	    	String groupSourceId = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.SOURCE_ID));
+	    	if(groupSourceId != null && syncedGroupServerIds.contains(groupSourceId))
+	    		continue;
 	    	String dirty = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.DIRTY));
 	    	String accName = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.ACCOUNT_NAME));
 	    	String accType = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.ACCOUNT_TYPE));
@@ -233,6 +234,7 @@ public class Db {
 	    	Log.i(tag, "Group: "+name+", account: "+accName+", account type: "+accType+", sourceId: "+groupSourceId);//+", owner: "+owner);
 		    Cursor groupCursor = getContactsInGroup(new Long(groupId).toString(), cr);
 		    Log.i(tag, "There are "+groupCursor.getCount()+" contacts in group: "+groupId);
+	    	List<Contact> contacts = new ArrayList<Contact>();
 	    	groupCursor.moveToFirst();
 	    	if(groupCursor.getCount() > 0)
 	    	do {
