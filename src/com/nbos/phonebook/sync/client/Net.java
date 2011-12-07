@@ -182,7 +182,7 @@ public class Net {
 
     public static boolean register(String username, String password, String ph,
             Handler handler, final Context context) {
-        	Log.i(tag, "Register");
+        	Log.i(tag, "Register" +" ,ph:"+ph);
             final HttpResponse resp;
 
             final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();

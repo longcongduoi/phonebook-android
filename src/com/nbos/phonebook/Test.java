@@ -6,16 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
-
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
-import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Contacts;
@@ -154,12 +150,12 @@ public class Test {
 
     
     public static void getGroups(Context ctx) {
-    	new Db(ctx).getGroups(false);
+    	new Db(ctx).getGroups(false, new HashSet<String>());
     }
     
 
     public static void getDirtyGroups(Context ctx) {
-    	new Db(ctx).getGroups(true);
+    	new Db(ctx).getGroups(true, new HashSet<String>());
     }
     
     public static void getGroupList(Context ctx) {
