@@ -4,7 +4,7 @@ import android.util.Log;
 
 public class ServerData {
 	static String tag = "ServerData";
-	
+	public String contactId, serverId, picId, picSize, picHash;
 	public ServerData(String contactId, String serverId, String picId, String picSize, String picHash) {
 		Log.i(tag, "contactId: "+contactId+", serverId: "+serverId+", picId: "+picId+", size: "+picSize+", picHash: "+picHash);
 		this.contactId = contactId;
@@ -13,6 +13,9 @@ public class ServerData {
 		this.picSize = picSize;
 		this.picHash = picHash;
 	}
-
-	public String contactId, serverId, picId, picSize, picHash;
+	
+	public String toString() {
+		return "contactId: "+contactId+", serverId: "+serverId+", picId: "+picId+", size: "+picSize+", picHash: "+picHash;
+	}
+	
 }

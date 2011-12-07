@@ -10,4 +10,7 @@ public class PicData {
 		// this.picHash =  picHash;
 	}
 	
+	public String toString() {
+		return "Pic data - serverId: "+serverId+", picId: "+picId+", size: "+picSize;
+	}
 }

@@ -3,7 +3,12 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+<<<<<<< HEAD
 	<classpathentry kind="src" path="/com_facebook_android"/>
 	<classpathentry kind="src" path="com_facebook_android_src"/>
+=======
+	<classpathentry kind="src" path="com_facebook_android_src"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/com_facebook_android"/>
+>>>>>>> 2c53bf1c89b8a9cf9cda14a03b2aa61d047e4b6c
 	<classpathentry kind="output" path="bin"/>
 </classpath>

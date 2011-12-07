@@ -54,7 +54,7 @@ public class ContactManager {
      * Custom IM protocol used when storing status messages.
      */
     public static final String CUSTOM_IM_PROTOCOL = "SampleSyncAdapter";
-    private static final String TAG = "ContactManager";
+    private static final String tag = "ContactManager";
 
     /**
      * Synchronize raw contacts
@@ -158,10 +158,11 @@ public class ContactManager {
      * @param rawContactId the unique Id for this rawContact in contacts
      *        provider
      * @param dataCursor 
+     * @param serverDataExists 
      */
     public static void updateContact(Context context, String accountName, Contact contact,
-        long rawContactId, BatchOperation batchOperation, Cursor dataCursor) {
-    	Log.i(TAG, "Update contact: "+contact.name+", rawContactId: "+rawContactId);
+        long rawContactId, BatchOperation batchOperation, Cursor dataCursor, boolean serverDataExists) {
+    	Log.i(tag, "Update contact: "+contact.name+", rawContactId: "+rawContactId);
     	if(dataCursor.getCount() == 0) return;
         Uri uri;
         String cellPhone = null;
@@ -235,7 +236,18 @@ public class ContactManager {
         if (email == null) {
             // contactOp.addEmail(contact.email);
         }
-
+        // Wrong approach 
+        /*if(serverDataExists)
+        {
+        	Log.i(tag, "Server data exists for "+contact.serverId);
+            uri = ContentUris.withAppendedId(RawContacts.CONTENT_URI, rawContactId);
+            contactOp.updateProfileAction(Integer.parseInt(contact.serverId), uri);
+        }
+        else
+        {
+        	Log.i(tag, "No server data for "+contact.serverId);
+        	contactOp.addProfileAction(Integer.parseInt(contact.serverId));
+        }*/
     }
 
     /**
@@ -359,14 +371,14 @@ public class ContactManager {
 	public static void resetDirtySharedBooks(Context ctx) {
 		ContentResolver cr = ctx.getContentResolver();
 		int num = cr.delete(Constants.SHARE_BOOK_URI, BookTable.DELETED + " = 1", null);
-		Log.i(TAG, "Deleted "+num+" contacts sharing with");
+		Log.i(tag, "Deleted "+num+" contacts sharing with");
 	    ContentValues values = new ContentValues();
 	    values = new ContentValues();
 	    values.put(BookTable.DIRTY, "0");
 	    num = cr.update(
 	    		Constants.SHARE_BOOK_URI, values,
 	    		null, null);
-	    Log.i(TAG, "Updated "+num+" sharebooks to dirty = 0");
+	    Log.i(tag, "Updated "+num+" sharebooks to dirty = 0");
 	}
 
 	public static void resetDirtyGroups(Context ctx) {
@@ -374,7 +386,7 @@ public class ContactManager {
 	    ContentValues values = new ContentValues();
 	    values.put(ContactsContract.Groups.DIRTY, "0");
 	    int num = cr.update(ContactsContract.Groups.CONTENT_URI, values, null, null);
-	    Log.i(TAG, "Updated "+num+" groups to dirty = 0");
+	    Log.i(tag, "Updated "+num+" groups to dirty = 0");
 	}
 	
 
@@ -385,13 +397,13 @@ public class ContactManager {
 	    ContentValues values = new ContentValues();
 	    values.put(ContactsContract.RawContacts.DIRTY, 0);
 	    int num = cr.update(uri, values, null, null);
-	    Log.i(TAG, "Resetting "+num+" dirty on contacts");
+	    Log.i(tag, "Resetting "+num+" dirty on contacts");
 	    
 	    // delete phonebook contacts that are marked deleted
 	    num = cr.delete(SyncManager.addCallerIsSyncAdapterParameter(uri), ContactsContract.RawContacts.DELETED + " = 1 "
 	    		+" and " + ContactsContract.RawContacts.ACCOUNT_TYPE + " = ? ", 
 	    		new String[] {Constants.ACCOUNT_TYPE});
-	    Log.i(TAG, "Deleted "+num+" phonebook contacts");
+	    Log.i(tag, "Deleted "+num+" phonebook contacts");
 	}
 
 	public static void setDirtyContacts(Context mContext) { // for testing
@@ -403,34 +415,35 @@ public class ContactManager {
 	    Log.i("ContactManager", "Resetting "+num+" dirty on contacts");
 	}
 
-	public static void updateContact(JSONObject contact, Context context, Cursor serverDataCursor, BatchOperation batchOperation) throws JSONException {
-        int serverId = contact.getInt("sourceId"),
-        	contactId = contact.getInt("contactId");
+	public static void updateContact(JSONObject contact, BatchOperation batchOperation) throws JSONException {
+        long serverId = contact.getLong("sourceId"),
+        	contactId = contact.getLong("contactId");
         // Log.i(TAG, "updateContact, sourceId: "+serverId+", contactId: "+contactId);
-        Db.updateContactServerId(new Integer(contactId).toString(), new Integer(serverId).toString(), context, serverDataCursor, batchOperation);
+        Db.insertServerId(contactId, serverId, batchOperation);
+        // Db.updateContactServerId(new Integer(contactId).toString(), new Integer(serverId).toString(), context, serverDataCursor, batchOperation);
 	}
 
 	public static void updateBook(JSONObject book, Context context) throws JSONException {
         int sourceId = book.getInt("sourceId"),
     		groupId = book.getInt("groupId");
-        Log.i(TAG, "updateBook, sourceId: "+sourceId+", contactId: "+groupId);
+        Log.i(tag, "updateBook, sourceId: "+sourceId+", contactId: "+groupId);
         ContentResolver cr = context.getContentResolver();
         Uri uri = ContactsContract.Groups.CONTENT_URI;
         ContentValues values = new ContentValues();
         values.put(ContactsContract.Groups.SOURCE_ID, sourceId);
         int rows = cr.update(uri, values, ContactsContract.Groups._ID + " = " + groupId, null);
-        Log.i(TAG, rows + " rows updated");
+        Log.i(tag, rows + " rows updated");
 	}
 
 	public static void updateGroup(JSONObject group, Context context) throws JSONException {
         int sourceId = group.getInt("sourceId"),
 			groupId = group.getInt("groupId");
-        Log.i(TAG, "updateGroup, sourceId: "+sourceId+", groupId: "+groupId);
+        Log.i(tag, "updateGroup, sourceId: "+sourceId+", groupId: "+groupId);
 	    ContentResolver cr = context.getContentResolver();
 	    Uri uri = ContactsContract.Groups.CONTENT_URI;
 	    ContentValues values = new ContentValues();
 	    values.put(ContactsContract.Groups.SOURCE_ID, sourceId);
 	    int rows = cr.update(uri, values, ContactsContract.Groups._ID + " = " + groupId, null);
-	    Log.i(TAG, "updated "+ rows + " rows to sourceId: "+sourceId);
+	    Log.i(tag, "updated "+ rows + " rows to sourceId: "+sourceId);
 	}
 }
