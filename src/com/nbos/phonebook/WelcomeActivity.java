@@ -72,9 +72,11 @@ public class WelcomeActivity extends ListActivity {
 		// startActivity(new Intent(Settings.ACTION_SYNC_SETTINGS));
 		//Test.getContactLinks(getApplicationContext());
 		//Test.getStoredContactLinks(getApplicationContext());
-		// Test.getContacts(getApplicationContext());
+		// Test.getRawContacts(getApplicationContext());
+		// Test.getDataPicsCursor(getApplicationContext());
+		// Test.joinContacts(getApplicationContext());
 		// Test.deleteContactLinkTable(getApplicationContext());
-		//Test.getServerDataTable(getApplicationContext());
+		// Test.getServerDataTable(getApplicationContext());
 		//Test.updateServerId(getApplicationContext());
 
 	}

@@ -6,21 +6,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
-
 import android.app.Activity;
+import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
-import android.net.Uri;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.AggregationExceptions;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
+import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -29,8 +28,10 @@ import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.database.tables.ContactTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.PhoneContact;
+import com.nbos.phonebook.sync.platform.BatchOperation;
 import com.nbos.phonebook.sync.platform.ContactManager;
 import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
+import com.nbos.phonebook.sync.platform.SyncManager;
 
 public class Test {
 	static String tag = "Test";
@@ -138,6 +139,7 @@ public class Test {
     public static void getRawContacts(Context ctx) {
     	Cursor c = new Db(ctx).getRawContactsCursor(false);
     	Log.i(tag, "There are "+c.getCount()+" raw contacts");
+    	if(c.getCount() == 0) return;
     	c.moveToFirst();
     	do {
 			String cId = c.getString(c.getColumnIndex(RawContacts.CONTACT_ID)),
@@ -154,12 +156,12 @@ public class Test {
 
     
     public static void getGroups(Context ctx) {
-    	new Db(ctx).getGroups(false);
+    	new Db(ctx).getGroups(false, new HashSet<String>());
     }
     
 
     public static void getDirtyGroups(Context ctx) {
-    	new Db(ctx).getGroups(true);
+    	new Db(ctx).getGroups(true, new HashSet<String>());
     }
     
     public static void getGroupList(Context ctx) {
@@ -229,10 +231,15 @@ public class Test {
     		String contactId = c.getString(c.getColumnIndex(Data.CONTACT_ID));
     		String serverId = c.getString(c.getColumnIndex(Data.DATA1));
     		String data2 = c.getString(c.getColumnIndex(Data.DATA2));
+    		String picId = c.getString(c.getColumnIndex(Data.DATA4));
+    		String picSize = c.getString(c.getColumnIndex(Data.DATA5));
+    		String picHash = c.getString(c.getColumnIndex(Data.DATA6));
+    		
+    		
     		String mimeType = c.getString(c.getColumnIndex(Data.MIMETYPE));
     		if(!mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)) continue;
     		count++;
-    		Log.i(tag, "raw contactId: "+rawContactId+", contactId: "+contactId+", data1: "+serverId+", data2: "+data2+", mimeType: "+mimeType);
+    		Log.i(tag, "raw contactId: "+rawContactId+", contactId: "+contactId+", data1: "+serverId+", picId: "+picId+", picSize: "+picSize+", picHash: "+picHash);
 		} while(c.moveToNext());
 		Log.i(tag, "There are "+count+" server data rows");
 	}
@@ -472,4 +479,51 @@ public class Test {
 			.delete(Constants.CONTACT_URI, null, null);
 		Log.i(tag, "Deleted "+num+" links");
 	}
+	
+	public static void joinContacts(Context applicationContext) {
+		// setAggregationException(rawContactId, AggregationExceptions.TYPE_KEEP_TOGETHER);
+        ContentValues values = new ContentValues(3);
+        Log.i(tag, "joining 4534 and 4535");
+        // for (long aRawContactId : mRawContactIds) {
+            //if (aRawContactId != rawContactId) {
+                values.put(AggregationExceptions.RAW_CONTACT_ID1, 4534);
+                values.put(AggregationExceptions.RAW_CONTACT_ID2, 4535);
+                values.put(AggregationExceptions.TYPE, AggregationExceptions.TYPE_KEEP_TOGETHER);
+                applicationContext.getContentResolver()
+                	.update(AggregationExceptions.CONTENT_URI, values, null, null);
+            //}
+        //}
+	}
+	
+	public void batch(String serverId, BatchOperation batchOperation) {
+		ContentProviderOperation.Builder builder = 
+			ContentProviderOperation.newInsert(
+	            SyncManager.addCallerIsSyncAdapterParameter(Data.CONTENT_URI))
+	            .withYieldAllowed(true);
+		ContentValues values = new ContentValues();
+        values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
+        values.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
+        builder.withValues(values);
+        batchOperation.add(builder.build());
+	}
+	
+	public static void getDataPicsCursor(Context context) {
+    	Cursor dataPicsCursor = context.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
+	    		// null,
+	    	    new String[] {
+	    			Data.CONTACT_ID,
+	    			Contacts.DISPLAY_NAME,
+	    			Data.RAW_CONTACT_ID,
+	    			Data.MIMETYPE,
+	    			Photo.PHOTO,
+	    		},
+	    		Photo.PHOTO +" is not null "
+	    		+" and "+Data.MIMETYPE+" = ? ",
+	    		// null,
+	    		//+"and "+Data.MIMETYPE+" = ? ",
+	    	    new String[] {Photo.CONTENT_ITEM_TYPE}, 
+	    	    ContactsContract.Data.CONTACT_ID);
+    	Log.i(tag, "Data pics cursor has "+dataPicsCursor.getCount()+" rows");
+	}
+	
 }

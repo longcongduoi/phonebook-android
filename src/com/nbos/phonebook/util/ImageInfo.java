@@ -156,7 +156,7 @@ public class ImageInfo {
     	System.out.println("Digest(in hex format):: " + hexString.toString());*/
     }
 	
-	public static boolean isServerPic(String serverId, byte[] photo, List<PicData> serverPicData) {
+	public static Boolean isServerPic(String serverId, byte[] photo, List<PicData> serverPicData) {
 		for(PicData p : serverPicData)
 		{
 			if(p.serverId.equals(serverId))
@@ -170,7 +170,7 @@ public class ImageInfo {
 				else return false;
 			}
 		}
-		return false;
+		return null;
 	}
     
 	public int getHeight() {

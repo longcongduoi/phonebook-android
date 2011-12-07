@@ -51,7 +51,6 @@ import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 
 import com.nbos.phonebook.Db;
-import com.nbos.phonebook.database.tables.ContactTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.ContactPicture;
@@ -70,7 +69,8 @@ public class Cloud {
     String accountName, authToken, lastUpdated;
     HttpClient httpClient;
     List<PicData> serverPicData;
-    Set<String> unchangedPicsRawContactIds, syncedContactServerIds, syncedGroupServerIds;
+    Set<String> unchangedPicsRawContactIds, syncedContactServerIds, syncedGroupServerIds, syncedPictureIds;
+    Map<String, String> serverPicIds;
     boolean newOnly;
     public static final int REGISTRATION_TIMEOUT = 20 * 60 * 1000; // ms
 
@@ -117,6 +117,8 @@ public class Cloud {
 		unchangedPicsRawContactIds = new HashSet<String>();
 		syncedContactServerIds = new HashSet<String>();
 		syncedGroupServerIds = new HashSet<String>();
+		syncedPictureIds = new HashSet<String>();
+		serverPicIds = new HashMap<String, String>();
         List<Contact> contacts =  (List<Contact>) update[0];
         List<Group> groups = (List<Group>) update[1];
         List<Group> sharedBooks = getSharedBooks();
@@ -127,7 +129,8 @@ public class Cloud {
         	new SyncManager(context, accountName, 
         			contacts, groups, sharedBooks, 
         			serverPicData, unchangedPicsRawContactIds, 
-        			syncedContactServerIds, syncedGroupServerIds);
+        			syncedContactServerIds, syncedGroupServerIds, syncedPictureIds,
+        			serverPicIds);
         }
 
         getSharedBookIds();
@@ -326,7 +329,7 @@ public class Cloud {
 	public void sendUpdates() throws ClientProtocolException, IOException, JSONException {
 		List<PhoneContact> contacts = db.getContacts(newOnly);
 		sendContactUpdates(contacts);
-        sendGroupUpdates(db.getGroups(newOnly));
+        sendGroupUpdates(db.getGroups(newOnly, syncedGroupServerIds));
         sendSharedBookUpdates(db.getSharingBooks(newOnly));
         sendLinkUpdates();
         uploadContactPictures();
@@ -495,8 +498,8 @@ public class Cloud {
 	}
 
 	private void sendContactUpdates(List<PhoneContact> contacts) throws ClientProtocolException, IOException, JSONException {
-        int batchSize = 30;
-        Cursor serverDataCursor = Db.getContactServerData(context);
+        int batchSize = 50;
+        // Cursor serverDataCursor = Db.getContactServerData(context);
 		for(int b = 0; b < contacts.size();  b = b + batchSize)
 		{
 			Log.i(tag, "Sending batch #"+b);
@@ -516,42 +519,26 @@ public class Cloud {
 	        params.add(new BasicNameValuePair("numContacts", new Integer(numContacts).toString()));
 	        if(lastUpdated != null)
 	        	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
-			
-	        JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
-	        updateServerData(contactUpdates, serverDataCursor);
+			if(numContacts > 0)
+			{
+				JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
+				updateServerData(contactUpdates);
+			}
 		}
-
-        
-        /*for(int i=0; i< contacts.size(); i++)
-        {
-        	PhoneContact contact =  contacts.get(i);
-        	if(contact.serverId != null // this server id has already been synced in the pull 
-        	&& syncedContactServerIds.contains(contact.serverId))
-        		continue; 
-        	contact.addParams(params, new Integer(numContacts).toString());
-        	numContacts++;
-        }
-        
-        params.add(new BasicNameValuePair("numContacts", new Integer(numContacts).toString()));
-        if(lastUpdated != null)
-        	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
-		
-        JSONArray contactUpdates = new JSONArray(post(SEND_CONTACT_UPDATES_URI, params));
-        updateServerData(contactUpdates);*/
 	}
 	
-	private void updateServerData(JSONArray contactUpdates, Cursor serverDataCursor) throws JSONException {
+	private void updateServerData(JSONArray contactUpdates) throws JSONException {
         final BatchOperation batchOperation = new BatchOperation(context);
         for (int i = 0; i < contactUpdates.length(); i++)
         {
-        	ContactManager.updateContact(contactUpdates.getJSONObject(i), context, serverDataCursor, batchOperation);
+        	ContactManager.updateContact(contactUpdates.getJSONObject(i), batchOperation);
         	if(batchOperation.size() > 50)
         	{
-        		Log.i(tag, "Executing batch");
+        		Log.i(tag, "Executing batch: "+batchOperation.size());
         		batchOperation.execute();
         	}
         }
-        Log.i(tag, "Executing last batch");
+        Log.i(tag, "Executing last batch: "+batchOperation.size());
         batchOperation.execute();
 	}
 
@@ -567,68 +554,75 @@ public class Cloud {
 	}
 
 	void uploadContactPictures() throws ClientProtocolException, JSONException, IOException {
-		Map<String, String> params = new HashMap<String, String>();
+	    Map<String, Integer> contactPicturesIndex = db.getContactPicturesIndex();
+	    Log.i(tag, "There are "+contactPicturesIndex.size()+" contact pictures");
+	    if(contactPicturesIndex.size() == 0)
+	    	return;
+		
+	    Map<String, String> params = new HashMap<String, String>();
 		params.put("upload", "avatar");
 		params.put("errorAction", "error");
 		params.put("errorController", "file");
 		params.put("successAction", "success");
 		params.put("successController", "file");
+		
 		Cursor rawContactsCursor = db.getRawContactsCursor(newOnly);
 		Log.i(tag, "There are "+rawContactsCursor.getCount()+" raw contacts entries");
 		if(rawContactsCursor.getCount() == 0) return;
 		serverPicData = getServerPicData();
-	    Cursor dataCursor = db.getProfileData(),
-	    	photosDataCursor = context.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
-	    		// null,
-	    	    new String[] {
-	    			Contacts._ID, 
-	    			Data.CONTACT_ID,
-	    			Data.RAW_CONTACT_ID,
-	    			RawContacts._ID,
-	    			Contacts.DISPLAY_NAME,
-	    			Photo.PHOTO,
-	    			Data.MIMETYPE, Data.DATA1,
-	    		},
-	    		ContactsContract.CommonDataKinds.Photo.PHOTO +" is not null ",
-	    		null,
-	    		// +"and "+Data.MIMETYPE+" = ? ",
-	    	    // new String[] {ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE}, 
-	    	    ContactsContract.Data.CONTACT_ID);
-	    
-	    Log.i(tag, "There are "+photosDataCursor.getCount()+" photo data entries");
-	    
-	    photosDataCursor.moveToFirst();
+	    Cursor dataCursor = db.getProfileData();
 	    rawContactsCursor.moveToFirst();
 	    do {
-	    	
 	    	String rawContactId = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts._ID));
 	    	if(unchangedPicsRawContactIds.contains(rawContactId))
 	    	{
 	    		Log.i(tag, "Unchanged pic");
 	    		continue;
 	    	}
+	    	
 	    	ServerData data = Db.getServerDataFromContactId(dataCursor, rawContactId);
+	    	Log.i(tag, "Server data: "+data);
 	    	if(data == null) {
 	    		Log.i(tag, "Server data is null for contactId: "+rawContactId);
 	    		continue;
 	    	}
-	    	String serverId = data.serverId,
+	    	
+	    	if(data.picId != null && syncedPictureIds.contains(data.picId))
+	    	{
+	    		Log.i(tag, "Already synced picure");
+	    		continue;
+	    	}
+
+	    	/*String serverId = data.serverId,
 	    		picId = data.picId, 
 	    		picSize = data.picSize,
-	    		picHash = data.picHash;
+	    		picHash = data.picHash;*/
 	    	
 	    	ContactPicture pic = null;
 			try {
-				pic = getContactPicture(photosDataCursor, rawContactId);
-				if(pic == null) continue;
+				pic = db.getContactPicture(rawContactId, true);//getContactPicture(photosDataCursor, rawContactId);
+				if(pic == null) 
+				{
+					Log.i(tag, "No pic");
+					continue;
+				}
 				String hash = ImageInfo.hash(pic.pic);
-		        Log.i(tag, "picId: "+picId);//+", hash: " + hash);
+		        Log.i(tag, "picId: "+data.picId);//+", hash: " + hash);
+		        
+		        String serverPicId = serverPicIds.get(data.serverId);
+		        if(serverPicId != null)
+		        {
+		        	Log.i(tag, "updating pic id from sync serverPicId");
+		        	updateContactPicData(rawContactId, data.serverId, serverPicId, new Long(pic.pic.length).toString(), hash);
+		        	continue;
+		        }
 
-				if(picId != null && picSize != null) {
-					int pSize = Integer.parseInt(picSize);
+				if(data.picId != null && data.picSize != null) 
+				{
+					int pSize = Integer.parseInt(data.picSize);
 					if(pSize == pic.pic.length 
-					&& picHash != null && hash.equals(picHash)
-					&& isServerPicData(serverId, picId, serverPicData))
+					&& data.picHash != null && hash.equals(data.picHash)
+					&& isServerPicData(data, serverPicData))
 					{
 						Log.i(tag, "Same image not uploading");
 						continue;
@@ -637,7 +631,7 @@ public class Cloud {
 	    		String contentType = pic.mimeType.split("/")[1];
 	    		Log.i(tag, "uploading "+contentType);
 	    		params.remove("id");
-	    		params.put("id", serverId);
+	    		params.put("id", data.serverId);
 	    		JSONObject response = upload(UPLOAD_CONTACT_PIC_URI, pic.pic, contentType, params);
 	    		if(response != null)
 	    		{
@@ -648,28 +642,29 @@ public class Cloud {
 							String pId = response.getString("id");
 								// pSize = response.getString("size"),
 								// hash = response.getString("hash");
-							updateContactPicData(rawContactId, serverId, pId, new Long(pic.pic.length).toString(), hash);
+							updateContactPicData(rawContactId, data.serverId, pId, new Long(pic.pic.length).toString(), hash);
 						}
 					} catch (JSONException e) {
+						Log.e(tag, "JSON Exception: "+e);
 						e.printStackTrace();
 					}
 	    		}
-			} catch (IOException e) {
+			} catch (Exception e) {
+				Log.e(tag, "Error getting picture: "+e);
 				e.printStackTrace();
 			}
 	    } while(rawContactsCursor.moveToNext());
 	    rawContactsCursor.close();
 	    dataCursor.close();
-	    photosDataCursor.close();
 	}
 
-	private boolean isServerPicData(String serverId, String picId,
-			List<PicData> serverPicData) {
+
+	private boolean isServerPicData(ServerData data, List<PicData> serverPicData) {
 		for(PicData p : serverPicData)
 		{
-			if(p.serverId.equals(serverId))
+			if(p.serverId.equals(data.serverId))
 			{
-				if(p.picId.equals(picId))
+				if(p.picId.equals(data.picId))
 				{
 					Log.i(tag, "Pic is same on server");
 					return true;
@@ -687,10 +682,11 @@ public class Cloud {
 		values.put(PhonebookSyncAdapterColumns.PIC_ID, picId);
 		values.put(PhonebookSyncAdapterColumns.PIC_SIZE, picSize);
 		values.put(PhonebookSyncAdapterColumns.PIC_HASH, hash);
-		context.getContentResolver().update(uri, values, 
+		int num = context.getContentResolver().update(uri, values, 
 				Data.RAW_CONTACT_ID + " = " + rawContactId + " and " +
 				PhonebookSyncAdapterColumns.DATA_PID + " = " + serverId + " and " +
 				Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
+		Log.i(tag, "updated "+num+" rows to picId: "+picId+" for serverId:"+serverId);
 	}
 
 	private ContactPicture getContactPicture(Cursor dataCursor, String rawContactId) throws IOException {
