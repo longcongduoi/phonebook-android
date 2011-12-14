@@ -156,23 +156,6 @@ public class ImageInfo {
     	System.out.println("Digest(in hex format):: " + hexString.toString());*/
     }
 	
-	public static Boolean isServerPic(String serverId, byte[] photo, List<PicData> serverPicData) {
-		for(PicData p : serverPicData)
-		{
-			if(p.serverId.equals(serverId))
-			{
-				if(p.picSize == photo.length) 
-				// && ImageInfo.hash(photo).equals(p.picHash))
-				{
-					Log.i(tag, "Pic is same on server");
-					return true;
-				}
-				else return false;
-			}
-		}
-		return null;
-	}
-    
 	public int getHeight() {
 		return height;
 	}

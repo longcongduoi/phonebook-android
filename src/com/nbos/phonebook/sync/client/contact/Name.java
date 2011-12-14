@@ -9,23 +9,26 @@ import org.json.JSONObject;
 
 import android.database.Cursor;
 import android.provider.ContactsContract.CommonDataKinds;
+import android.text.TextUtils;
 
 import com.nbos.phonebook.sync.client.Contact;
+import com.nbos.phonebook.util.Text;
 
 public class Name {
 	public String prefix, given, middle, family, suffix;
 	
 	public String toString() {
+		
 		String name = "";
-		if(prefix != null)
+		if(!Text.isEmpty(prefix))
 			name += prefix + " ";
-		if(given != null)
+		if(!Text.isEmpty(given))
 			name += given + " ";
-		if(middle != null)
+		if(!Text.isEmpty(middle))
 			name += middle + " ";
-		if(family != null)
+		if(!Text.isEmpty(family))
 			name += family + " ";
-		if(suffix != null)
+		if(!Text.isEmpty(suffix))
 			name += suffix;
 		return name.trim();
 	}

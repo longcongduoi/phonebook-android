@@ -137,34 +137,6 @@ public class Contact {
 			contact.websites.add(website);
 	}
 	
-	static void addContactField(Contact contact, Cursor cursor, String mimeType) {
-		if(mimeType == null) return;
-        if(mimeType.equals(CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE))
-        	Name.add(contact, cursor);
-        if(mimeType.equals(CommonDataKinds.Phone.CONTENT_ITEM_TYPE))
-        	Phone.add(contact, cursor);
-        if(mimeType.equals(CommonDataKinds.Email.CONTENT_ITEM_TYPE))
-        	Email.add(contact, cursor);
-        if(mimeType.equals(CommonDataKinds.Im.CONTENT_ITEM_TYPE))
-        	Im.add(contact, cursor);
-        if(mimeType.equals(CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE))
-        	Address.add(contact, cursor);
-        if(mimeType.equals(CommonDataKinds.Organization.CONTENT_ITEM_TYPE))
-        	Organization.add(contact, cursor);
-        if(mimeType.equals(CommonDataKinds.Note.CONTENT_ITEM_TYPE))
-        	Contact.addNote(contact, cursor);
-        if(mimeType.equals(CommonDataKinds.Nickname.CONTENT_ITEM_TYPE))
-        	Contact.addNickname(contact, cursor);
-        if(mimeType.equals(CommonDataKinds.Website.CONTENT_ITEM_TYPE))
-        	Contact.addWebsite(contact, cursor);
-        if(mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)) // the server id
-        	addServerId(contact, cursor);
-	}
-
-	static void addServerId(Contact contact, Cursor c) {
-		String serverId = c.getString(c.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
-		contact.serverId = serverId;
-	}
 
 	public static Contact valueOf(JSONObject user) {
         try {
@@ -199,7 +171,7 @@ public class Contact {
             Log.i(tag, "name: "+name+", picId is: "+picId);*/
             return c; // new Contact(name, number, serverId, picId); 
         } catch (final Exception ex) {
-            Log.i(tag, "Error parsing JSON user object" + ex.toString());
+            Log.e(tag, "Error parsing JSON user object" + ex.toString());
         }
         return null;
     }	

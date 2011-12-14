@@ -1,16 +1,11 @@
 package com.nbos.phonebook.sync.platform;
 
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.http.util.ByteArrayBuffer;
 
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
@@ -20,84 +15,76 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
-import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.Data;
 import android.util.Log;
 
 import com.nbos.phonebook.Db;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.client.Contact;
-import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.Group;
-import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.contact.Email;
 import com.nbos.phonebook.sync.client.contact.Phone;
-import com.nbos.phonebook.util.ImageInfo;
-import com.nbos.phonebook.value.PicData;
 
 public class SyncManager {
 	static String tag = "Sync";
 	Context context;
 	Db db;
-    
 	String account; 
-    
     List<PhoneContact> allContacts; 
-    
-    Cursor dataCursor, serverDataCursor, 
-    	rawContactsCursor;//, dataPicsCursor;
-    
-    Set<String> syncedContactServerIds, syncedGroupServerIds, syncedPictureIds,
-    	unchangedPicsRawContactIds, serverDataIds;
-    Map<String, String> serverPicIds;
-    List<PicData> serverPicData;
-    
+    Cursor dataCursor, rawContactsCursor;//, dataPicsCursor;
+    Set<String> syncedContactServerIds, syncedGroupServerIds; 
+    SyncPics syncPics;
     Set<String> groupRawContactIds;
-    
-    BatchOperation updateGroupBatchOperation,
-    	updatePicBatchOperation,
-    	updatePicIdBatchOperation;
-    
+	Map<String, Integer> dataRawContactIdIndex;
+    BatchOperation updateGroupBatchOperation;
+    Cloud cloud;
     int batchSize = 50;
-	
-    Map<String, Integer> contactPicturesIndex;
 	
 	public SyncManager(Context context, String account, 
 		List<Contact> contacts, List<Group> groups, 
-		List<Group> sharedBooks, List<PicData> serverPicData, 
-		Set<String> unchangedPicsRawContactIds, Set<String> syncedContactServerIds, 
-		Set<String> syncedGroupServerIds, Set<String> syncedPictureIds, Map<String, String> serverPicIds) 
+		List<Group> sharedBooks, 
+		// List<PicData> serverPicData, Set<String> unchangedPicsRawContactIds, 
+		Set<String> syncedContactServerIds, Set<String> syncedGroupServerIds,
+		SyncPics syncPics, Cloud cloud)
+		// Set<String> syncedPictureIds, Map<String, String> serverPicIds) 
 	{
 		super();
 		this.context = context;
-		this.serverPicData = serverPicData;
 		this.account = account;
-		this.unchangedPicsRawContactIds = unchangedPicsRawContactIds;
 		this.syncedContactServerIds = syncedContactServerIds;
 		this.syncedGroupServerIds = syncedGroupServerIds;
-		this.syncedPictureIds = syncedPictureIds;
-		this.serverPicIds = serverPicIds;
-		
+		this.syncPics = syncPics;
+		this.cloud = cloud;
 		getDataCursors();
         syncContacts(contacts);
         syncGroups(groups, false);
         syncGroups(sharedBooks, true);
-        syncPictures(contacts);
+        syncPics.sync(contacts, this);
         closeCursors();
 	}
 	
 	private void getDataCursors() {
 		db = new Db(context);
-		allContacts = db.getContacts(false);
-		dataCursor = db.getData();
-		serverDataCursor = db.getProfileData();
+		allContacts = UpdateContacts.getContacts(cloud);
+		dataCursor = getData();
 		rawContactsCursor = db.getRawContactsCursor(false);
 	}
 
+    public Cursor getData() {
+        final String[] PROJECTION =
+            new String[] {Data._ID, Data.MIMETYPE, Data.DATA1, Data.DATA2,
+                Data.DATA3, Data.DATA4, Data.DATA5, Data.DATA6, Data.DATA7, 
+                Data.DATA8, Data.DATA9, Data.DATA10, 
+                Data.RAW_CONTACT_ID, Data.CONTACT_ID};
+
+    	return cloud.cr.query(Data.CONTENT_URI, PROJECTION, null, null, Data.RAW_CONTACT_ID);
+    }
+
 	private void closeCursors() {
 		dataCursor.close();
-		serverDataCursor.close();
+		// leave serverDataCursor open for cloud queries
+		// serverDataCursor.close();
 		rawContactsCursor.close();
 		// dataPicsCursor.close();
 	}
@@ -106,25 +93,31 @@ public class SyncManager {
         long rawContactId = 0;
         final BatchOperation batchOperation = new BatchOperation(context);
         Log.i(tag, "In SyncContacts: There are "+rawContactsCursor.getCount()+" raw contacts, num columns: "+rawContactsCursor.getColumnCount());
-        serverDataCursor.requery();
-        Log.i(tag, "Server data cursor has "+serverDataCursor.getCount()+" rows");
-		getServerDataIds();
-
+		cloud.getServerDataIds();
+		getDataCursorIndex();
+		Set<Long> dirtyContacts = getDirtyContacts();
         for (final Contact contact : contacts) 
         {
         	if(syncedContactServerIds.contains(contact.serverId)) continue;
-        	syncedContactServerIds.add(contact.serverId);
             // userId = Integer.parseInt(user.getUserId());
             // Check to see if the contact needs to be inserted or updated
             rawContactId = lookupRawContact(contact);
-            boolean dirty = ContactManager.isDirtyContact(rawContactId, rawContactsCursor); 
+            // TODO: insert the server ids
+            boolean dirty = dirtyContacts.contains(rawContactId); // ContactManager.isDirtyContact(rawContactId, rawContactsCursor); 
             Log.d(tag, "Raw contact id is: "+rawContactId+", name: "+contact.name+", dirty: "+dirty);
-            if(dirty) continue;
+            if(dirty) 
+            {
+            	// update the server id
+            	if(!cloud.serverIds.contains(contact.serverId))
+            		UpdateContacts.insertServerId(rawContactId, Long.parseLong(contact.serverId), cloud.account, batchOperation);
+            	continue;
+            }
+                        
             if (rawContactId != 0) {
                 if (!contact.deleted) {
                     // update contact
                     ContactManager.updateContact(context, account, contact,
-                        rawContactId, batchOperation, dataCursor, serverDataIds.contains(contact.serverId));
+                        rawContactId, batchOperation, dataCursor, dataRawContactIdIndex.get(rawContactId));
                 } else {
                     // delete contact
                     ContactManager.deleteContact(context, rawContactId, batchOperation);
@@ -138,214 +131,47 @@ public class SyncManager {
             }
             // A sync adapter should batch operations on multiple contacts,
             // because it will make a dramatic performance difference.
-            if (batchOperation.size() >= 50) {
+            if (batchOperation.size() >= 50) 
                 batchOperation.execute();
-            }
+
+            syncedContactServerIds.add(contact.serverId);            
         }
         int num = batchOperation.size();
         batchOperation.execute();
         // if(num == 0) return;
         refreshCursors();
 	}
-
-	private void syncPictures(List<Contact> contacts) {
-		serverDataCursor.requery();
-		contactPicturesIndex = db.getContactPicturesIndex();
-		updatePicBatchOperation = new BatchOperation(context);
-    	updatePicIdBatchOperation = new BatchOperation(context);
-		for(Contact c : contacts) {
-			if(c.picId == null) continue;
-			syncPicture(c);
-			if(updatePicBatchOperation.size() > batchSize)
-			{
-				Log.i(tag, "Executing update pic batch operation: "+updatePicBatchOperation.size());
-				updatePicBatchOperation.execute();
-			}
-			
-			if(updatePicIdBatchOperation.size() > batchSize)
-			{
-				Log.i(tag, "Executing update pic id batch operation: "+updatePicIdBatchOperation.size());
-				updatePicIdBatchOperation.execute();
-			}
-		}
-		
-		Log.i(tag, "Executing last update pic batch operation: "+updatePicBatchOperation.size());
-		updatePicBatchOperation.execute();
-		Log.i(tag, "Executing last update pic id batch operation: "+updatePicIdBatchOperation.size());
-		updatePicIdBatchOperation.execute();
-		db.closeDataPicsCursor();
-	}
-
-	private void getServerDataIds() {
-		serverDataIds = new HashSet<String>();
-		if(serverDataCursor.getCount() == 0)
-			return;
-		serverDataCursor.moveToFirst();
-		do {
-			String serverId = serverDataCursor.getString(serverDataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
-			if(serverId != null)
-				serverDataIds.add(serverId);
-		} while(serverDataCursor.moveToNext());
-	}
-
-	private void syncPicture(Contact c) {
-		// check if the pic is the same in the server
-		serverDataCursor.moveToFirst();
-		if(serverDataCursor.getCount() > 0)
-		do {
-			String serverId = serverDataCursor.getString(serverDataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
-			if(serverId == null || !c.serverId.equals(serverId)) continue;
-			
-			String rawContactId = serverDataCursor.getString(serverDataCursor.getColumnIndex(Data.RAW_CONTACT_ID)),
-				picId = serverDataCursor.getString(serverDataCursor.getColumnIndex(PhonebookSyncAdapterColumns.PIC_ID));
-			
-			if(c.picId.equals(picId)) // no change in pic 
-			{
-				unchangedPicsRawContactIds.add(rawContactId);
-				Log.i(tag, "no change in pic: "+c.picId+", serverId: "+serverId);
-				return;
-			}
-			break;
-			//updateContactPic(c);
-			// pic id has changed, download the pic
-			//return;
-		} while(serverDataCursor.moveToNext());
-		// not in the database, insert the values
-		updateContactPic(c);
-	}
-
 	
-	private void updateContactPic(Contact c) {
-		if(syncedPictureIds.contains(c.picId))
-		{
-			Log.d(tag, "Already synced picture id: "+c.picId);
-			return;
-		}
-		byte[] image = null;
-		boolean sameImage = false;
-        Long rawContactId = lookupRawContact(c);
-        Uri uri = addCallerIsSyncAdapterParameter(Data.CONTENT_URI);
-        ContactPicture contactPicture = db.getContactPicture(rawContactId.toString(), false);
-        if(contactPicture == null) return;
-    	byte[] photo = contactPicture.pic;
-    	PicData picData = getPicData(c.serverId);
-    	Boolean isServerPic = ImageInfo.isServerPic(c.serverId, photo, serverPicData);
-    	// is server pic null mean its not in the server table
-    	if(photo != null && isServerPic != null && isServerPic) // see if pic is already in the server data
-    	// && ImageInfo.isServerPic(c.serverId, photo, serverPicData))
-    	{
-    		Log.i(tag, "Photo is same on server");
-    		sameImage = true;
-    		// updateContactPicData(rawContactId, c.serverId, c., new Long(pic.pic.length).toString(), hash);
-    		// return;
-    	}
-    	
-   		image = downloadPic(c);
-   		if(image == null) return;
-    	
-    	if(photo != null && !sameImage) // already has a photo, update
-    	{
-	    	Log.i(tag, "Updating pic for serverId: "+c.serverId);
-	    	ContentValues values = new ContentValues();
-	    	values.put(Photo.PHOTO, image);
-	    	context.getContentResolver().update(uri, values, 
-	    			Data.RAW_CONTACT_ID + " = ? and " +
-	    			Data.MIMETYPE + " = ? ", 
-	    			new String[] {rawContactId.toString(), Photo.CONTENT_ITEM_TYPE});
-    	}
-        
-        /*dataPicsCursor.moveToFirst();
-        if(dataPicsCursor.getCount() > 0)
-	    do {
-	    	String mimetype = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.MIMETYPE));
-	    	if(!mimetype.equals(Photo.CONTENT_ITEM_TYPE)) continue;
-	    	
-	    	String rawId = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.RAW_CONTACT_ID));
-	    	if(!rawId.equals(rawContactId)) continue;
-	    	byte[] photo = dataPicsCursor.getBlob(dataPicsCursor.getColumnIndex(Photo.PHOTO));
-	    	if(photo != null 
-	    	&& ImageInfo.isServerPic(c.serverId, photo, serverPicData))
-	    		return;
-	    	image = downloadPic(c);
-	    	if(image == null) return;
-	    	Log.i(tag, "Updating pic for serverId: "+c.serverId);
-	    	ContentValues values = new ContentValues();
-	    	values.put(Photo.PHOTO, image);
-	    	context.getContentResolver().update(uri, values, 
-	    			Data.RAW_CONTACT_ID + " = ? and " +
-	    			Data.MIMETYPE + " = ? ", 
-	    			new String[] {rawContactId.toString(), Photo.CONTENT_ITEM_TYPE});
-	    	newPic = false;
-	    	break;
-	    } while(dataPicsCursor.moveToNext());*/
-        // TODO: Batch insert the pics?
-    	else if(!sameImage)// if(newPic) // insert the pic
-        {
-	        Log.i(tag, "inserting pic for serverId: "+c.serverId+", image is: "+image.length+", rawContactId: "+rawContactId);
-	        ContentValues values = new ContentValues();
-	        values.put(Data.RAW_CONTACT_ID, rawContactId);
-	        values.put(Data.IS_SUPER_PRIMARY, 1);
-	        // values.put(ContactsContract.CALLER_IS_SYNCADAPTER, "true");
-	        values.put(Photo.PHOTO, image);
-	        values.put(Data.MIMETYPE, Photo.CONTENT_ITEM_TYPE);
-	        Uri result = context.getContentResolver().insert(uri, values);
-	        Log.i(tag, "pic uri is: "+result);
-        }
-        
-    	
-    	if(serverDataIds.contains(c.serverId))
-    	{
-	    	ContentValues values = new ContentValues();
-			values.put(PhonebookSyncAdapterColumns.PIC_ID, c.picId);
-			values.put(PhonebookSyncAdapterColumns.PIC_SIZE, image.length);
-			values.put(PhonebookSyncAdapterColumns.PIC_HASH, ImageInfo.hash(image));
-			int num = context.getContentResolver().update(uri, values, 
-					PhonebookSyncAdapterColumns.DATA_PID + " = ? and " + Data.MIMETYPE + " = ? ", 
-					new String[] {c.serverId, PhonebookSyncAdapterColumns.MIME_PROFILE});
-			Log.i(tag, "updated "+num+" entries pic id to: "+c.picId+" for serverId "+c.serverId);
-    	}
-    	else
-    		serverPicIds.put(c.serverId, c.picId);
-		syncedPictureIds.add(c.picId);
-        // Uri uri = ContentUris.withAppendedId(ContactsContract.Data.CONTENT_URI, Long.parseLong(contactId));
-        // cr.update(uri, values, ContactsContract.Contacts._ID + " = " + contactId, null);
-
+	private void getDataCursorIndex() {
+		dataRawContactIdIndex = new HashMap<String, Integer>();
+    	dataCursor.moveToFirst();
+    	do {
+    		String rawContactId = dataCursor.getString(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+    		if(dataRawContactIdIndex.keySet().contains(rawContactId))
+    			continue;
+    		Integer index = dataCursor.getPosition();
+    		dataRawContactIdIndex.put(rawContactId, index);
+    	} while(dataCursor.moveToNext());
 	}
 
-	private PicData getPicData(String serverId) {
-		for(PicData p : serverPicData)
-			if(p.serverId.equals(serverId))
-				return p;
-		return null;
-	}
-
-	private byte[] downloadPic(Contact c) {
-		URL url;
-		try {
-			url = new URL(Net.DOWNLOAD_CONTACT_PIC_URI + c.picId);
-			URLConnection ucon = url.openConnection();
-	        InputStream is = ucon.getInputStream();
-	        BufferedInputStream bis = new BufferedInputStream(is, 8192);
-	        /*
-	         * Read bytes to the Buffer until there is nothing more to read(-1).
-	         */
-	        ByteArrayBuffer baf = new ByteArrayBuffer(50);
-	        int current = 0;
-	        while ((current = bis.read()) != -1) 
-	        	baf.append((byte) current);
-	        byte[] image = baf.toByteArray();
-	        Log.i(tag, "Contact: "+c.serverId+", image size: "+image.length);
-	        return image;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
+	private Set<Long> getDirtyContacts() {
+		Set<Long> dirtyContacts = new HashSet<Long>();
+		if(rawContactsCursor.getCount() == 0)
+			return dirtyContacts;
+		rawContactsCursor.moveToFirst();
+		do {
+			Long rId = rawContactsCursor.getLong(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts._ID));
+			String dirty = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
+			if(dirty.equals("1"))
+				dirtyContacts.add(rId);
+		} while(rawContactsCursor.moveToNext());
+		return dirtyContacts;
 	}
 
 	private void refreshCursors() {
 		Log.i(tag, "refreshCursors");
         dataCursor.requery();
-        serverDataCursor.requery();
+        cloud.serverDataCursor.requery();
         rawContactsCursor.requery();
 	}
 
@@ -393,7 +219,7 @@ public class SyncManager {
     	}
     	Log.i(tag, "Contacts to sync in this group: "+contactsToSync.size());
     	syncContacts(contactsToSync);
-    	syncPictures(contactsToSync);
+    	syncPics.sync(contactsToSync, this);
     	Set<String> rawContactIds = new HashSet<String>();
 
     	updateGroupBatchOperation = new BatchOperation(context);
@@ -402,12 +228,12 @@ public class SyncManager {
     		rawContactIds.add(updateGroupContact(u, groupId));
     		if(updateGroupBatchOperation.size() > batchSize)
     		{
-    			updateGroupBatchOperation.execute();
     			Log.i(tag, "Executing update group batch: "+updateGroupBatchOperation.size());
+    			updateGroupBatchOperation.execute();
     		}
     	}
-		updateGroupBatchOperation.execute();
 		Log.i(tag, "Executing last update group batch: "+updateGroupBatchOperation.size());
+		updateGroupBatchOperation.execute();
 
 		for(String rawContactId : groupRawContactIds)
 		{
@@ -458,7 +284,7 @@ public class SyncManager {
 		if(bookCursor.getCount() > 0)
 		do {
 			Long rawContactId = bookCursor.getLong(bookCursor.getColumnIndex(BookTable.CONTACTID));
-			String serverId = Db.getServerIdFromRawContactId(dataCursor, rawContactId.toString());
+			String serverId = cloud.contactServerIdsMap.get(rawContactId.toString());
 			Log.i(tag, "server id: "+serverId+", for raw contactId: "+rawContactId);
 			if(serverId == null) continue;
 			if(!g.sharingWithContactIds.contains(Long.parseLong(serverId)))
@@ -469,7 +295,7 @@ public class SyncManager {
     	
 		for(Long serverId : g.sharingWithContactIds)
 		{
-			String rawContactId = Db.getRawContactIdFromServerId(serverId.toString(), dataCursor);
+			String rawContactId = cloud.serverContactIdsMap.get(serverId.toString()); // Db.getRawContactIdFromServerId(serverId.toString(), dataCursor);
 			if(rawContactId == null) continue;
 			if(!existingContacts.contains(rawContactId))
 				contactsToAdd.add(rawContactId);
@@ -540,19 +366,13 @@ public class SyncManager {
 	    // DatabaseHelper.setGroupDirty(groupId, cr);		    
 	}
 	
-	long lookupRawContactFromServerId(String contactServerId) {
-		serverDataCursor.moveToFirst();
-		if(serverDataCursor.getCount() > 0)
-		do {
-			String mimeType = serverDataCursor.getString(serverDataCursor.getColumnIndex(Data.MIMETYPE));
-			String serverId = serverDataCursor.getString(serverDataCursor.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
-			if(!mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)
-			|| !serverId.equals(contactServerId))
-				continue;
-			long rawContactId = serverDataCursor.getLong(serverDataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
-			Log.i(tag, "rawContactId: "+rawContactId+", serverId: "+serverId);
-			return rawContactId;
-		} while(serverDataCursor.moveToNext()); 
+	long lookupRawContactFromServerId(String serverId) {
+		String rawContactId = cloud.serverContactIdsMap.get(serverId); 
+		if(rawContactId != null)
+		{
+			Log.i(tag, "rawContactId: "+rawContactId+" from serverId: "+serverId);
+			return Long.parseLong(rawContactId); 
+		}
 		return 0;
 	}
 	
@@ -584,7 +404,8 @@ public class SyncManager {
 				}
 			}
 			// Log.d(tag, "Compare "+u.name+" = "+contact.name+", "+u.name.toString().equals(contact.name.toString()));
-			if(u.name.toString().equals(contact.name.toString()))
+			if(u.name.toString().trim().length() > 0 
+			&& u.name.toString().equals(contact.name.toString()))
 				return Long.parseLong(u.rawContactId);
 		}
 		return 0;

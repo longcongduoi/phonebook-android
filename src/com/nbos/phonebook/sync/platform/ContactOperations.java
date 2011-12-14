@@ -191,14 +191,15 @@ public class ContactOperations {
      * @param userId the userId of the sample SyncAdapter user object
      * @return instance of ContactOperations
      */
-    public ContactOperations addProfileAction(long userId) {
+    public ContactOperations addProfileAction(long userId, String account) {
         mValues.clear();
         if (userId != 0) {
             mValues.put(PhonebookSyncAdapterColumns.DATA_PID, userId);
-            mValues.put(PhonebookSyncAdapterColumns.DATA_SUMMARY, mContext
-                .getString(R.string.profile_action));
-            mValues.put(PhonebookSyncAdapterColumns.DATA_DETAIL, mContext
-                .getString(R.string.view_profile));
+            mValues.put(PhonebookSyncAdapterColumns.ACCOUNT, account);
+            // mValues.put(PhonebookSyncAdapterColumns.DATA_SUMMARY, mContext
+               // .getString(R.string.profile_action));
+            // mValues.put(PhonebookSyncAdapterColumns.DATA_DETAIL, mContext
+               // .getString(R.string.view_profile));
             mValues.put(Data.MIMETYPE, PhonebookSyncAdapterColumns.MIME_PROFILE);
             addInsertOp();
         }
@@ -274,9 +275,10 @@ public class ContactOperations {
      * @param uri Uri for the existing raw contact to be updated
      * @return instance of ContactOperations
      */
-    public ContactOperations updateProfileAction(Integer userId, Uri uri) {
+    public ContactOperations updateProfileAction(Integer userId, Uri uri, String account) {
         mValues.clear();
         mValues.put(PhonebookSyncAdapterColumns.DATA_PID, userId);
+        mValues.put(PhonebookSyncAdapterColumns.ACCOUNT, account);
         addUpdateOp(uri);
         return this;
     }

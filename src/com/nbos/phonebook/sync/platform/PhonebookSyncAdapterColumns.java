@@ -29,8 +29,8 @@ public interface PhonebookSyncAdapterColumns {
 
     public static final String 
     	DATA_PID = Data.DATA1,
-    	DATA_SUMMARY = Data.DATA2,
-    	DATA_DETAIL = Data.DATA3,
+    	ACCOUNT = Data.DATA2,
+    	// DATA_DETAIL = Data.DATA3,
     	PIC_ID = Data.DATA4,
     	PIC_SIZE = Data.DATA5,
     	PIC_HASH = Data.DATA6;

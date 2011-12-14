@@ -2,7 +2,6 @@ package com.nbos.phonebook;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,10 +15,10 @@ import android.database.Cursor;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.AggregationExceptions;
 import android.provider.ContactsContract.CommonDataKinds;
+import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
-import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -27,11 +26,10 @@ import android.util.Log;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.database.tables.ContactTable;
 import com.nbos.phonebook.sync.Constants;
-import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.platform.BatchOperation;
-import com.nbos.phonebook.sync.platform.ContactManager;
 import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
 import com.nbos.phonebook.sync.platform.SyncManager;
+import com.nbos.phonebook.sync.platform.UpdateContacts;
 
 public class Test {
 	static String tag = "Test";
@@ -134,7 +132,7 @@ public class Test {
 	}*/
 
     public static void resetDirtyContacts(Context ctx) {
-    	ContactManager.resetDirtyContacts(ctx);
+    	// UpdateContacts.resetDirtyContacts(ctx);
     }
     public static void getRawContacts(Context ctx) {
     	Cursor c = new Db(ctx).getRawContactsCursor(false);
@@ -155,14 +153,14 @@ public class Test {
 	}
 
     
-    public static void getGroups(Context ctx) {
+    /*public static void getGroups(Context ctx) {
     	new Db(ctx).getGroups(false, new HashSet<String>());
     }
     
 
     public static void getDirtyGroups(Context ctx) {
     	new Db(ctx).getGroups(true, new HashSet<String>());
-    }
+    }*/
     
     public static void getGroupList(Context ctx) {
     	Cursor c = ctx.getContentResolver().query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
@@ -204,7 +202,7 @@ public class Test {
 		} while(c.moveToNext());
 	}
 
-	public static void getDataTable(Context applicationContext) {
+	/*public static void getDataTable(Context applicationContext) {
 		Cursor c = new Db(applicationContext).getData();
 		c.moveToFirst();
 		do {
@@ -215,9 +213,9 @@ public class Test {
     		String mimeType = c.getString(c.getColumnIndex(Data.MIMETYPE));
     		Log.i(tag, "raw contactId: "+rawContactId+", contactId: "+contactId+", data1: "+serverId+", data2: "+data2+", mimeType: "+mimeType);
 		} while(c.moveToNext());
-	}
+	}*/
 
-	public static void getServerDataTable(Context applicationContext) {
+	/*public static void getServerDataTable(Context applicationContext) {
 		Cursor c = new Db(applicationContext).getData();
 		if(c.getCount() == 0)
 		{
@@ -242,7 +240,7 @@ public class Test {
     		Log.i(tag, "raw contactId: "+rawContactId+", contactId: "+contactId+", data1: "+serverId+", picId: "+picId+", picSize: "+picSize+", picHash: "+picHash);
 		} while(c.moveToNext());
 		Log.i(tag, "There are "+count+" server data rows");
-	}
+	}*/
 	
 	public static void getDataPicsTable(Context applicationContext) {
 		Cursor c = applicationContext.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
@@ -308,11 +306,11 @@ public class Test {
 		
 	}
 
-	public static void getShareBooks(Context ctx) {
+	/* public static void getShareBooks(Context ctx) {
 		new Db(ctx).getSharingBooks(false);
-	}
+	}*/
 
-	public static void getContactServerData(Context applicationContext) {
+	/*public static void getContactServerData(Context applicationContext) {
 		Cursor c = new Db(applicationContext).getData();
 		c.moveToFirst();
 		do {
@@ -326,21 +324,13 @@ public class Test {
 			Log.i(tag, "contactId: "+contactId+", rawId: "+rawContactId+", serverId: "+serverId+", picId: "+picId);
 		} while(c.moveToNext());
 		Log.i(tag, "Got contact server data");
-	}
+	}*/
 
 	public static void deleteContactsServerData(Context applicationContext) {
 		int num = applicationContext.getContentResolver().delete(Data.CONTENT_URI, Data.MIMETYPE + "='" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
 		Log.i(tag, "deleted "+num+" rows");
 	}
 
-	public static void getContacts(Context ctx) {
-		List<PhoneContact> contacts = new Db(ctx).getContacts(false);
-		for(PhoneContact c : contacts) {
-			Log.i(tag, "-----\n"+c+"\n-----\n\n");
-		}
-		
-	}
-	
 	static Map<String, Set<String>> getLinkedContacts(Cursor c, String contactIdColumn, String rawContactIdColumn) {
 		Map<String, Set<String>> linkedContacts = new HashMap<String, Set<String>>();
 		Log.i(tag, "There are "+c.getCount()+" rows");

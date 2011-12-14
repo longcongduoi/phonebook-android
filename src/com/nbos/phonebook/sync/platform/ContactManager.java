@@ -16,7 +16,9 @@
 
 package com.nbos.phonebook.sync.platform;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -37,12 +39,10 @@ import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.StatusUpdates;
 import android.util.Log;
 
-import com.nbos.phonebook.Db;
 import com.nbos.phonebook.R;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
-import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.client.User;
 import com.nbos.phonebook.sync.client.contact.Name;
 
@@ -55,27 +55,6 @@ public class ContactManager {
      */
     public static final String CUSTOM_IM_PROTOCOL = "SampleSyncAdapter";
     private static final String tag = "ContactManager";
-
-    /**
-     * Synchronize raw contacts
-     * 
-     * @param context The context of Authenticator Activity
-     * @param account The username for the account
-     * @param users The list of users
-     * @param allContacts All contacts
-     * @param dataCursor 
-     */
-	public static boolean isDirtyContact(long rawContactId, Cursor rawContactsCursor) {
-		if(rawContactsCursor.getCount() == 0) return false;
-		rawContactsCursor.moveToFirst();
-		do {
-			Long rId = rawContactsCursor.getLong(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts._ID));
-			if(rId != rawContactId) continue;
-			String dirty = rawContactsCursor.getString(rawContactsCursor.getColumnIndex(ContactsContract.RawContacts.DIRTY));
-			if(dirty.equals("1")) return true;
-		} while(rawContactsCursor.moveToNext());
-		return false;
-	}
 
 	/**
      * Add a list of status messages to the contacts provider.
@@ -140,7 +119,7 @@ public class ContactManager {
         	contactOp.addPhone(p);
         for(com.nbos.phonebook.sync.client.contact.Email e : contact.emails)
         	contactOp.addEmail(e);
-        contactOp.addProfileAction(Integer.parseInt(contact.serverId));
+        contactOp.addProfileAction(Integer.parseInt(contact.serverId), accountName);
         //user.getLastName())
         /*.addEmail(
             contact.email).addPhone(contact.number, Phone.TYPE_MOBILE)
@@ -158,12 +137,14 @@ public class ContactManager {
      * @param rawContactId the unique Id for this rawContact in contacts
      *        provider
      * @param dataCursor 
-     * @param serverDataExists 
+     * @param integer 
      */
     public static void updateContact(Context context, String accountName, Contact contact,
-        long rawContactId, BatchOperation batchOperation, Cursor dataCursor, boolean serverDataExists) {
-    	Log.i(tag, "Update contact: "+contact.name+", rawContactId: "+rawContactId);
-    	if(dataCursor.getCount() == 0) return;
+        long rawContactId, BatchOperation batchOperation, Cursor dataCursor, Integer index) {
+    	Log.i(tag, "Update contact: "+contact.name+", rawContactId: "+rawContactId+", index: "+index);
+    	if(dataCursor.getCount() == 0 || index == null) return;
+    	
+    	// get the data cursor index
         Uri uri;
         String cellPhone = null;
         String otherPhone = null;
@@ -177,12 +158,12 @@ public class ContactManager {
             ContactOperations.updateExistingContact(context, rawContactId,
                 batchOperation);
         
-        dataCursor.moveToFirst();
+        dataCursor.moveToPosition(index);
         
         try {
             do {
             	long rawContactIdee = dataCursor.getLong(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
-            	if(rawContactIdee != rawContactId) continue;
+            	if(rawContactIdee != rawContactId) return;
                 final long id = dataCursor.getLong(DataQuery.COLUMN_ID);
                 final String mimeType = dataCursor.getString(DataQuery.COLUMN_MIMETYPE);
                 uri = ContentUris.withAppendedId(Data.CONTENT_URI, id);
@@ -390,22 +371,6 @@ public class ContactManager {
 	}
 	
 
-	public static void resetDirtyContacts(Context mContext) {
-		// TODO: reset individual contact and group from update contact or group
-	    ContentResolver cr = mContext.getContentResolver();
-	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;
-	    ContentValues values = new ContentValues();
-	    values.put(ContactsContract.RawContacts.DIRTY, 0);
-	    int num = cr.update(uri, values, null, null);
-	    Log.i(tag, "Resetting "+num+" dirty on contacts");
-	    
-	    // delete phonebook contacts that are marked deleted
-	    num = cr.delete(SyncManager.addCallerIsSyncAdapterParameter(uri), ContactsContract.RawContacts.DELETED + " = 1 "
-	    		+" and " + ContactsContract.RawContacts.ACCOUNT_TYPE + " = ? ", 
-	    		new String[] {Constants.ACCOUNT_TYPE});
-	    Log.i(tag, "Deleted "+num+" phonebook contacts");
-	}
-
 	public static void setDirtyContacts(Context mContext) { // for testing
 	    ContentResolver cr = mContext.getContentResolver();
 	    Uri uri = ContactsContract.RawContacts.CONTENT_URI;
@@ -413,14 +378,6 @@ public class ContactManager {
 	    values.put(ContactsContract.RawContacts.DIRTY, 1);
 	    int num = cr.update(uri, values, null, null);
 	    Log.i("ContactManager", "Resetting "+num+" dirty on contacts");
-	}
-
-	public static void updateContact(JSONObject contact, BatchOperation batchOperation) throws JSONException {
-        long serverId = contact.getLong("sourceId"),
-        	contactId = contact.getLong("contactId");
-        // Log.i(TAG, "updateContact, sourceId: "+serverId+", contactId: "+contactId);
-        Db.insertServerId(contactId, serverId, batchOperation);
-        // Db.updateContactServerId(new Integer(contactId).toString(), new Integer(serverId).toString(), context, serverDataCursor, batchOperation);
 	}
 
 	public static void updateBook(JSONObject book, Context context) throws JSONException {
