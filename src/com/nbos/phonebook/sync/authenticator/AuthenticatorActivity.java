@@ -16,6 +16,9 @@
 
 package com.nbos.phonebook.sync.authenticator;
 
+import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+
 import org.json.JSONObject;
 
 import android.accounts.Account;
@@ -28,9 +31,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.ContactsContract;
+import android.telephony.TelephonyManager;
+import android.text.Html.TagHandler;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -53,6 +59,8 @@ import com.nbos.phonebook.R;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.platform.Cloud;
+import com.nbos.phonebook.util.CountryMap;
+import com.nbos.phonebook.util.Text;
 
 /**
  * Activity which displays login screen to the user.
@@ -117,6 +125,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 	    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 	    spinner.setAdapter(adapter);
 	    spinner.setOnItemSelectedListener(this);
+	    setSpinnerCountry(spinner);
         mMessage = (TextView) findViewById(R.id.message);
         mUsernameEdit = (EditText) findViewById(R.id.username_edit);
         mPasswordEdit = (EditText) findViewById(R.id.password_edit);
@@ -126,7 +135,27 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         mMessage.setText(getMessage());
     }
 
-    private void getPhoneNumber(Context context) {
+    private void setSpinnerCountry(Spinner spinner) {
+    	TelephonyManager tel = (TelephonyManager) getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+		String country = tel.getSimCountryIso();
+		Log.i(tag,"country: "+country);
+		if(Text.isEmpty(country))
+		{
+		    spinner.setSelection(92); // India
+		    return;
+		}
+        try{
+			CountryMap m = new CountryMap();
+			Log.i(tag,"index: "+m.getIndex(country.toUpperCase()));
+			spinner.setSelection(m.getIndex(country.toUpperCase()));
+			Log.i(tag,"IN calling code: "+m.getCallingCode(country.toUpperCase())+", index: "+m.getIndex(country));
+	       }
+        catch(Exception e){
+        	 e.printStackTrace();
+         }
+	}
+
+	private void getPhoneNumber(Context context) {
     	String ph = Db.getPhoneNumber(context);
     	if(ph == null) return;
     	mPhoneEdit.setText(ph);
@@ -394,16 +423,13 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     public void onItemSelected(AdapterView<?> parent,
             View view, int pos, long id) 
     {
-    	if(pos!=0)
-    	{
-	        	String value = parent.getItemAtPosition(pos).toString();
-	        	String [] parts = value.split("\\+");
-	        	String country = parts[0].substring(0, parts[0].indexOf("(")).trim();
-	        	countryCode = parts[1].substring(0, parts[1].indexOf(")")).trim();
-	        	Toast.makeText(parent.getContext(), 
-	        		"Country is " + country +", code is: "+countryCode,
-	        		Toast.LENGTH_LONG).show();
-        }
+		String value = parent.getItemAtPosition(pos).toString();
+		String [] parts = value.split("\\+");
+		String country = parts[0].substring(0, parts[0].indexOf("(")).trim();
+		countryCode = parts[1].substring(0, parts[1].indexOf(")")).trim();
+		Toast.makeText(parent.getContext(), 
+			"Country is " + country +", code is: "+countryCode,
+			Toast.LENGTH_LONG).show();
     }
 
     public void onNothingSelected(AdapterView parent) {}

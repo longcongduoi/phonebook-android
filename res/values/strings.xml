@@ -403,7 +403,6 @@
     <string name="bump_contacts">Bump contacts</string>
     
     <string-array name="country_code_array">
-        <item>Select country code</item>
 		<item>Afghanistan (+93)</item>
 		<item>Albania (+355)</item>
 		<item>Algeria (+213)</item>

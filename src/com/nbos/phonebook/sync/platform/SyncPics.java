@@ -48,7 +48,7 @@ public class SyncPics {
 	Context context;
 	ContentResolver cr;
 	Db db;
-	List<PicData> serverPicData;
+	Map<String, PicData> serverPicData;
     Set<String> unchangedPicsRawContactIds  = new HashSet<String>(), 
     	syncedPictureIds = new HashSet<String>();
 
@@ -60,9 +60,9 @@ public class SyncPics {
 	Cloud cloud;
     int batchSize = 50;
 
-    SyncPics(Context context, List<PicData> serverPicData, Cloud cloud) {
+    SyncPics(Context context, Map<String, PicData> map, Cloud cloud) {
     	this.context = context;
-    	this.serverPicData = serverPicData;
+    	this.serverPicData = map;
     	this.cloud = cloud;
     	db = new Db(context);
     	cr = context.getContentResolver();
@@ -94,7 +94,6 @@ public class SyncPics {
 		updatePicBatchOperation.execute();
 		Log.i(tag, "Executing last update pic id batch operation: "+updatePicIdBatchOperation.size());
 		updatePicIdBatchOperation.execute();
-		closeCursors();
 	}
 	
 	public Map<String, Integer> getContactPicturesIndex() {
@@ -142,26 +141,27 @@ public class SyncPics {
 			Log.d(tag, "Already synced picture id: "+c.picId);
 			return;
 		}
-		boolean sameImage = false;
-        Long rawContactId = syncManager.lookupRawContact(c);
-        Uri uri = SyncManager.addCallerIsSyncAdapterParameter(Data.CONTENT_URI);
+
+		// 
+		Long rawContactId = syncManager.lookupRawContact(c);
         ContactPicture contactPicture = getContactPicture(rawContactId.toString(), false);
-        if(contactPicture == null) return;
-    	byte[] phonePhoto = contactPicture.pic;
-    	Boolean isServerPic = isServerPic(c.serverId, phonePhoto, serverPicData);
+        // if(contactPicture == null) return;
+    	byte[] phonePhoto = contactPicture == null ? null : contactPicture.pic;
+
     	// is server pic null mean its not in the server table
-    	if(phonePhoto != null && isServerPic != null && isServerPic) // see if pic is already in the server data
-    	// && ImageInfo.isServerPic(c.serverId, photo, serverPicData))
+    	if(isServerPic(c.serverId, phonePhoto)) // see if pic is already in the server data
     	{
     		Log.i(tag, "Photo is same on server");
     		unchangedPicsRawContactIds.add(rawContactId.toString());
-    		sameImage = true;
+    		return;
     	}
     	
     	byte[] serverPhoto = downloadPic(c);
    		if(serverPhoto == null) return;
+   		// TODO: delete the phone photo if server photo is null?
     	
-    	if(phonePhoto != null && !sameImage) // already has a photo, update
+        Uri uri = SyncManager.addCallerIsSyncAdapterParameter(Data.CONTENT_URI);
+    	if(phonePhoto != null) // already has a photo, update
     	{
 	    	Log.i(tag, "Updating pic for serverId: "+c.serverId);
 	    	ContentValues values = new ContentValues();
@@ -171,9 +171,8 @@ public class SyncPics {
 	    			Data.MIMETYPE + " = ? ", 
 	    			new String[] {rawContactId.toString(), Photo.CONTENT_ITEM_TYPE});
     	}
-        
         // TODO: Batch insert the pics?
-    	else if(!sameImage)// if(newPic) // insert the pic
+    	else 
         {
 	        Log.i(tag, "inserting pic for serverId: "+c.serverId+", image is: "+serverPhoto.length+", rawContactId: "+rawContactId);
 	        ContentValues values = new ContentValues();
@@ -297,21 +296,12 @@ public class SyncPics {
 		dataPicsCursor.close();
 	}
 	
-	Boolean isServerPic(String serverId, byte[] photo, List<PicData> serverPicData) {
-		for(PicData p : serverPicData)
-		{
-			if(p.serverId.equals(serverId))
-			{
-				if(p.picSize == photo.length) 
-				// && ImageInfo.hash(photo).equals(p.picHash))
-				{
-					Log.i(tag, "Pic is same on server");
-					return true;
-				}
-				else return false;
-			}
-		}
-		return null;
+	boolean isServerPic(String serverId, byte[] photo) {
+		PicData picData = serverPicData.get(serverId);
+		if(picData != null && photo != null 
+		&& picData.picSize == photo.length) 
+			return true;
+		return false;
 	}
 
 	public void send(boolean newOnly) throws ClientProtocolException, JSONException, IOException {
@@ -373,7 +363,7 @@ public class SyncPics {
 					int pSize = Integer.parseInt(data.picSize);
 					if(pSize == pic.pic.length 
 					&& data.picHash != null && hash.equals(data.picHash)
-					&& isServerPicData(data, serverPicData))
+					&& isServerPicData(data))
 					{
 						Log.i(tag, "Same image not uploading");
 						continue;
@@ -418,20 +408,11 @@ public class SyncPics {
 		return params;
 	}
 
-	private boolean isServerPicData(ServerData data, List<PicData> serverPicData) {
-		for(PicData p : serverPicData)
-		{
-			if(p.serverId.equals(data.serverId))
-			{
-				if(p.picId.equals(data.picId))
-				{
-					Log.i(tag, "Pic is same on server");
-					return true;
-				}
-				else return false;
-			}
-		}
-		Log.i(tag, "No pic on server");
+	private boolean isServerPicData(ServerData data) {
+		PicData p = serverPicData.get(data.serverId);
+		if(p != null && p.picId != null
+		&& p.picId.equals(data.picId))
+			return true;
 		return false;
 	}
 

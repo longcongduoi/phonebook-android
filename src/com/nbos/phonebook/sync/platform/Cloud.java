@@ -72,7 +72,7 @@ public class Cloud {
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
     	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	BASE_URL = "http://10.9.8.29:8080/phonebook",
+    	BASE_URL = "http://10.9.8.172:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	FACEBOOK_LOGIN_URL = BASE_URL + "/login/facebookMobileLogin",
@@ -125,6 +125,7 @@ public class Cloud {
         }
         getSharedBookIds();
         sendUpdates();
+        syncPics.closeCursors();
         return getTimestamp();
 	}
 
@@ -378,13 +379,14 @@ public class Cloud {
 		return contactServerIds;
 	}
 
-	private List<PicData> getServerPicData() throws ClientProtocolException, JSONException, IOException {
-		List<PicData> picData = new ArrayList<PicData>();
+	private Map<String, PicData> getServerPicData() throws ClientProtocolException, JSONException, IOException {
+		Map<String, PicData> picData = new HashMap<String, PicData>();
 		JSONArray picsJson = new JSONArray(post(GET_PIC_DATA_URI, getAuthParams()));
 		for(int i=0; i< picsJson.length(); i++)
 		{
 			JSONArray picJson = picsJson.getJSONArray(i);
-			picData.add(new PicData(picJson.getLong(0), picJson.getLong(1), picJson.getLong(2)));
+			String serverId = new Long(picJson.getLong(0)).toString();
+			picData.put(serverId, new PicData(picJson.getLong(1), picJson.getLong(2)));
 		}
 		return picData;
 	}

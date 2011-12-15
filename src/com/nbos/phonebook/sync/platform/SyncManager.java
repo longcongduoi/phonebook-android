@@ -117,15 +117,16 @@ public class SyncManager {
                 if (!contact.deleted) {
                     // update contact
                     ContactManager.updateContact(context, account, contact,
-                        rawContactId, batchOperation, dataCursor, dataRawContactIdIndex.get(rawContactId));
+                        rawContactId, batchOperation, dataCursor, 
+                        dataRawContactIdIndex.get(new Long(rawContactId).toString()));
                 } else {
                     // delete contact
                     ContactManager.deleteContact(context, rawContactId, batchOperation);
                 }
             } else {
                 // add new contact
-                Log.d(tag, "In addContact, user: "+contact.name);
                 if (!contact.deleted) {
+                	Log.d(tag, "In addContact, user: "+contact.name);
                     ContactManager.addContact(context, account, contact, batchOperation);
                 }
             }
@@ -152,6 +153,7 @@ public class SyncManager {
     		Integer index = dataCursor.getPosition();
     		dataRawContactIdIndex.put(rawContactId, index);
     	} while(dataCursor.moveToNext());
+    	Log.i(tag, "dataRawContactIndex size is: "+dataRawContactIdIndex.size());
 	}
 
 	private Set<Long> getDirtyContacts() {
