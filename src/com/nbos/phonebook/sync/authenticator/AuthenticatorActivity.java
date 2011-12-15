@@ -144,15 +144,10 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 		    spinner.setSelection(92); // India
 		    return;
 		}
-        try{
-			CountryMap m = new CountryMap();
-			Log.i(tag,"index: "+m.getIndex(country.toUpperCase()));
-			spinner.setSelection(m.getIndex(country.toUpperCase()));
-			Log.i(tag,"IN calling code: "+m.getCallingCode(country.toUpperCase())+", index: "+m.getIndex(country));
-	       }
-        catch(Exception e){
-        	 e.printStackTrace();
-         }
+		CountryMap m = new CountryMap();
+		Log.i(tag,"index: "+m.getIndex(country.toUpperCase()));
+		spinner.setSelection(m.getIndex(country.toUpperCase()));
+	    Log.i(tag,"country: "+m.getCallingCode(country.toUpperCase()));
 	}
 
 	private void getPhoneNumber(Context context) {
