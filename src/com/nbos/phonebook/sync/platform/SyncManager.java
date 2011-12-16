@@ -145,6 +145,8 @@ public class SyncManager {
 	
 	private void getDataCursorIndex() {
 		dataRawContactIdIndex = new HashMap<String, Integer>();
+		if(dataCursor.getCount() == 0)
+			return;
     	dataCursor.moveToFirst();
     	do {
     		String rawContactId = dataCursor.getString(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
