@@ -49,26 +49,33 @@ import com.nbos.phonebook.sync.platform.Cloud;
  */
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private static final String tag = "SyncAdapter";
-
-    private static AccountManager accountManager;
-    private static Context context;
-    static Account account;
-    static String authtoken;
+    AccountManager accountManager;
+    Context context;
+    Account account;
+    String authtoken;
+    static boolean isSyncing = false;
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
-        SyncAdapter.context = context;
+        this.context = context;
         accountManager = AccountManager.get(context);
     }
 
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority,
-        ContentProviderClient provider, SyncResult syncResult) {
-    	SyncAdapter.account = account;
+    ContentProviderClient provider, SyncResult syncResult) 
+    {
+    	if(isSyncing)
+    	{
+    		Log.i(tag, "isSyncing, returning");
+    		return;
+    	}
+    	isSyncing = true;
+    	this.account = account;
         try {
              // use the account manager to request the credentials
         	String phoneNumber = accountManager.getUserData(account, Constants.PHONE_NUMBER_KEY);
         	Log.i(tag, "phone number is: "+phoneNumber);
-             authtoken = accountManager.blockingGetAuthToken(account, Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
+        	authtoken = accountManager.blockingGetAuthToken(account, Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
              // fetch updates from the sample service over the cloud
              boolean valid = Net.checkValidAccount(account, authtoken, 
             		 accountManager.getUserData(account, Constants.PHONE_NUMBER_KEY));
@@ -82,32 +89,26 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                  intent.putExtra(Net.PARAM_USERNAME, account.name);
                  intent.putExtra(Net.PARAM_PASSWORD, authtoken);
                  intent.putExtra(Net.PARAM_PHONE_NUMBER, phoneNumber);
+                 intent.putExtra(Net.PARAM_PHONE_NUMBER, phoneNumber);
                  context.startActivity(intent);
+                 isSyncing = false;
                  return;
              }
              doSync();
         } catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			isSyncing = false;
 		}
     }
 
-	public static void doSync() throws AuthenticationException, ParseException, JSONException, IOException {
+	void doSync() throws AuthenticationException, ParseException, JSONException, IOException {
 		Log.i(tag, "doSync()");
         String lastUpdated = accountManager.getUserData(account, Constants.ACCOUNT_LAST_UPDATED),
         	lastUpdateStarted = accountManager.getUserData(account, Constants.ACCOUNT_LAST_UPDATE_STARTED);
         Log.i(tag, "Last update started: "+lastUpdateStarted+", updated is: "+lastUpdated);
         Cloud cloud = new Cloud(context, account.name, authtoken);
         String startTimestamp = cloud.getTimestamp();
-        /*if(lastUpdateStarted != null) 
-        {
-        	if(lastUpdated == null 
-        	||(lastUpdated != null 
-        	   && (Long.parseLong(lastUpdated) < Long.parseLong(lastUpdateStarted))))
-        	{
-        		Log.i(tag, "Previous sync has not finished - returning");
-        		return;
-        	}
-        }*/
         accountManager.setUserData(account, Constants.ACCOUNT_LAST_UPDATE_STARTED, startTimestamp);
         String endTimestamp = cloud.sync(lastUpdated);
         Log.i(tag, "Timestamp is: "+endTimestamp);

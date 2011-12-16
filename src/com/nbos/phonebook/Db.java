@@ -477,4 +477,15 @@ public class Db {
 		Log.i(tag, "deleted "+num+" rows of share book data");
 		
 	}
+
+	public static Account getAccount(Context context) {
+		Account[] accounts = AccountManager.get(context)
+				.getAccounts();
+		Log.i(tag, "There are " + accounts.length + " accounts");
+		for (Account account : accounts) 
+			if(Constants.ACCOUNT_TYPE.equals(account.type))
+				return account;
+		return null;
+	}
+	
 }

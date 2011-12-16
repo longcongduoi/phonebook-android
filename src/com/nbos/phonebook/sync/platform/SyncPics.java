@@ -96,7 +96,7 @@ public class SyncPics {
 		updatePicIdBatchOperation.execute();
 	}
 	
-	public Map<String, Integer> getContactPicturesIndex() {
+	Map<String, Integer> getContactPicturesIndex() {
 		contactPicturesIndex = new HashMap<String, Integer>();
 		dataPicsCursor.requery();
 		dataPicsCursor.moveToFirst();
@@ -105,7 +105,9 @@ public class SyncPics {
 		do {
 	    	String mimetype = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.MIMETYPE));
 	    	if(!mimetype.equals(Photo.CONTENT_ITEM_TYPE)) continue;
+	    	String name = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.DISPLAY_NAME));
 	    	String rawId = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+	    	Log.i(tag, name+", raw: "+rawId+", index: "+dataPicsCursor.getPosition());
 	    	contactPicturesIndex.put(rawId, new Integer(dataPicsCursor.getPosition()));//new ContactPicture(pic, contentType));	    	
 		} while(dataPicsCursor.moveToNext());
 		return contactPicturesIndex;
@@ -219,7 +221,7 @@ public class SyncPics {
 	}
 	
 	public ContactPicture getContactPicture(String rawContactId, boolean getContentType) {
-		Log.d(tag, "getContactPicture("+rawContactId+"), index is: "+contactPicturesIndex);
+		Log.d(tag, "getContactPicture("+rawContactId+")");
 		Integer index = contactPicturesIndex.get(rawContactId);
 		if(index == null)
 		{
@@ -348,7 +350,7 @@ public class SyncPics {
 					continue;
 				}
 				String hash = ImageInfo.hash(pic.pic);
-		        Log.i(tag, "picId: "+data.picId);//+", hash: " + hash);
+		        Log.i(tag, "hash: " + hash);
 		        
 		        String serverPicId = serverPicIds.get(data.serverId);
 		        if(serverPicId != null)

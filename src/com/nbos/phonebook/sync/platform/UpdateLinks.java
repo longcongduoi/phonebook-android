@@ -13,14 +13,16 @@ import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import com.nbos.phonebook.database.tables.ContactTable;
-import com.nbos.phonebook.sync.Constants;
-
+import android.content.ContentProviderOperation;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
+
+import com.nbos.phonebook.contentprovider.Provider;
+import com.nbos.phonebook.database.tables.ContactTable;
+import com.nbos.phonebook.sync.Constants;
 
 public class UpdateLinks {
 	static String tag = "UpdateLinks";
@@ -39,30 +41,34 @@ public class UpdateLinks {
 		|| (storedLinkedContacts.size() == 0 && linkedContacts.size() != 0)) // first time
 		{	// send all the links
 			Object[] linkedContactsArray = linkedContacts.values().toArray();
-			Integer numLinks = new Integer(linkedContactsArray.length);
+			Integer numLinks = 0; // new Integer(linkedContactsArray.length);
 			List<NameValuePair> params = cloud.getAuthParams();
-			params.add(new BasicNameValuePair("numLinks", numLinks.toString()));
 			for(int i=0; i< numLinks.intValue(); i++)
 			{
 				// Log.i(tag, "Obj: "+linkedContactsArray[i]);
 				Object[] rawContactIds = ((Set<String>) linkedContactsArray[i]).toArray();
 				// Log.i(tag, "num raw contacts: "+rawContactIds.length);
-				int numContacts = 0;
+				Set<String> serverIds = new HashSet<String>();
 				for(int j=0; j< rawContactIds.length; j++)
 				{
 					String serverId = cloud.getServerId(rawContactIds[j].toString()); 
 					Log.i(tag, "Raw #"+j+": "+rawContactIds[j]+", serverId: "+serverId);
 					if(serverId != null)
-						params.add(new BasicNameValuePair("link_"+i+"_"+numContacts++, 
-							serverId));
+						serverIds.add(serverId);
 				}
-				params.add(new BasicNameValuePair("link_"+i+"_count", 
+				int numContacts = 0;
+				if(serverIds.size() > 1)
+				{
+					numLinks++;
+					for(String serverId : serverIds)
+						params.add(new BasicNameValuePair("link_"+i+"_"+numContacts++, serverId));
+					params.add(new BasicNameValuePair("link_"+i+"_count", 
 						new Integer(numContacts).toString()));
-				
-				
+				}
 			}
-
-			JSONArray response = new JSONArray(cloud.post(cloud.SEND_LINK_UPDATES_URI, params));
+			params.add(new BasicNameValuePair("numLinks", numLinks.toString()));
+			if(numLinks > 0)
+				new JSONArray(cloud.post(Cloud.SEND_LINK_UPDATES_URI, params));
 			// delete old data and persist these links
 			storeLinkedContacts(linkedContacts);
 			return;
@@ -201,13 +207,6 @@ public class UpdateLinks {
 			for(String r : linkedContacts.get(ct))
 			{
 				Log.i(tag, "Raw contact: "+r);
-				// insert into contact table
-		        //ContentValues bookValues = new ContentValues();
-		        //bookValues.put(ContactTable.CONTACTID, ct);
-		        // bookValues.put(ContactTable.RAWCONTACTID, r);
-		        //Uri cUri = applicationContext.getContentResolver()
-		        	//.insert(Constants.CONTACT_URI, bookValues);
-		        // Log.i(tag, "inserted: "+cUri);
 			}
 		}
 		
@@ -239,7 +238,7 @@ public class UpdateLinks {
 	}
 	
 	public void storeLinkedContacts(Map<String, Set<String>> linkedContacts) {
-		// BatchOperation batchOperation = new BatchOperation(context);
+		BatchOperation batchOperation = new BatchOperation(cloud.context, Provider.AUTHORITY);
 		int num = cloud.cr.delete(Constants.CONTACT_URI, null, null);
 		Log.i(tag, "Deleted "+num+" links");
 		for(String ct : linkedContacts.keySet())
@@ -248,21 +247,21 @@ public class UpdateLinks {
 			for(String r : linkedContacts.get(ct))
 			{
 				Log.i(tag, "Raw contact: "+r);
-				/*ContentProviderOperation.Builder builder = 
+				ContentProviderOperation.Builder builder = 
 					ContentProviderOperation.newInsert(Constants.CONTACT_URI)
-			            .withYieldAllowed(true);*/
+			            .withYieldAllowed(true);
 				
 				// insert into contact table
 		        ContentValues bookValues = new ContentValues();
 		        bookValues.put(ContactTable.CONTACTID, ct);
 		        bookValues.put(ContactTable.RAWCONTACTID, r);
-		        //builder.withValues(bookValues);
-		        //batchOperation.add(builder.build());
-		        Uri cUri = cloud.cr.insert(Constants.CONTACT_URI, bookValues);
+		        builder.withValues(bookValues);
+		        batchOperation.add(builder.build());
+		        // Uri cUri = cloud.cr.insert(Constants.CONTACT_URI, bookValues);
 		        // Log.i(tag, "inserted: "+cUri);
 			}
 		}
-		//Log.i(tag, "Executing contact table batch insert: "+batchOperation.size());
+		Log.i(tag, "Executing contact table batch insert: "+batchOperation.size());
 		//batchOperation.execute();
 	}	
 }
