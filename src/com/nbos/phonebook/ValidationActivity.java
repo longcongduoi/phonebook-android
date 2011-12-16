@@ -1,5 +1,6 @@
 package com.nbos.phonebook;
 
+import android.accounts.Account;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -19,8 +20,9 @@ import com.nbos.phonebook.sync.syncadapter.SyncAdapter;
 
 public class ValidationActivity extends Activity {
 
-	static String TAG = "ValidationActivity";
+	static String tag = "ValidationActivity";
 	TextView messageText, newValidationCodeMessage;
+	
 	EditText validationCodeEdit;
 	String userName, password, phoneNumber;
 	private final Handler mHandler = new Handler();
@@ -37,12 +39,12 @@ public class ValidationActivity extends Activity {
         userName = intent.getStringExtra(Net.PARAM_USERNAME);
         password = intent.getStringExtra(Net.PARAM_PASSWORD);
         phoneNumber = intent.getStringExtra(Net.PARAM_PHONE_NUMBER);
-        Log.i(TAG, "user: "+userName+", password: "+password+", phoneNumber: "+phoneNumber);
+        Log.i(tag, "user: "+userName+", password: "+password+", phoneNumber: "+phoneNumber);
 	}
 
 	public void handleValidate(View view) {
 		String validationCode = validationCodeEdit.getText().toString();
-		Log.i(TAG, "Handle validate: "+validationCode);
+		Log.i(tag, "Handle validate: "+validationCode);
 		
         if (TextUtils.isEmpty(validationCode)) {
             messageText.setText("Please enter a validation code");
@@ -65,7 +67,7 @@ public class ValidationActivity extends Activity {
         dialog.setCancelable(true);
         dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
             public void onCancel(DialogInterface dialog) {
-                Log.i(TAG, "dialog cancel has been invoked");
+                Log.i(tag, "dialog cancel has been invoked");
                 if (mValidThread != null) {
                 	mValidThread.interrupt();
                     finish();
@@ -76,7 +78,7 @@ public class ValidationActivity extends Activity {
     }
 
 	public void handleGetNewValidation(View view) {
-		Log.i(TAG, "Handle get new validation");
+		Log.i(tag, "Handle get new validation");
         showProgress();
         // Start authenticating...
         mValidThread =
@@ -96,7 +98,7 @@ public class ValidationActivity extends Activity {
     }
 
     public void onValidationResult(boolean result, String message) {
-        Log.i(TAG, "onValidationResult(" + result + ")");
+        Log.i(tag, "onValidationResult(" + result + ")");
         // Hide the progress dialog
         hideProgress();
         messageText.setText(message);
@@ -105,7 +107,12 @@ public class ValidationActivity extends Activity {
             final Runnable runnable = new Runnable() {
                 public void run() {
                 	try {
-                		SyncAdapter.doSync();
+                		SyncAdapter syncAdapter = new SyncAdapter(getApplicationContext(), true);
+                		Account account = Db.getAccount(getApplicationContext());
+                		Log.i(tag, "Account is: "+account);//.name+", "+account.type);
+                		if(account != null)
+                			syncAdapter.onPerformSync(account, null, null, null, null);
+                		
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -117,7 +124,7 @@ public class ValidationActivity extends Activity {
     }
     
     public void onNewValidationCodeResult(boolean result, String message) {
-        Log.i(TAG, "onNewValidationCodeResult(" + result + ")");
+        Log.i(tag, "onNewValidationCodeResult(" + result + ")");
         // Hide the progress dialog
         hideProgress();
         newValidationCodeMessage.setText(message);

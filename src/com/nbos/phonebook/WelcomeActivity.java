@@ -132,7 +132,7 @@ public class WelcomeActivity extends ListActivity {
 	
 	private void doSync() {
 		SyncAdapter syncAdapter = new SyncAdapter(getApplicationContext(), true);
-		Account account = getAccount();
+		Account account = Db.getAccount(getApplicationContext());
 		Log.i(tag, "Account is: "+account);//.name+", "+account.type);
 		if(account != null)
 		{
@@ -272,17 +272,6 @@ public class WelcomeActivity extends ListActivity {
 			}
 		return false;
 	}
-	
-	private Account getAccount() {
-		Account[] accounts = AccountManager.get(getApplicationContext())
-				.getAccounts();
-		Log.i(tag, "There are " + accounts.length + " accounts");
-		for (Account account : accounts) 
-			if(Constants.ACCOUNT_TYPE.equals(account.type))
-				return account;
-		return null;
-	}
-	
 	
 	private void showDeleteGroupDialog() {
 		int delete_group_count=0;
