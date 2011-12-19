@@ -23,6 +23,7 @@ import org.apache.http.util.ByteArrayBuffer;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -35,6 +36,7 @@ import android.provider.ContactsContract.Data;
 import android.util.Log;
 
 import com.nbos.phonebook.Db;
+import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.Net;
@@ -173,18 +175,24 @@ public class SyncPics {
 	    			Data.MIMETYPE + " = ? ", 
 	    			new String[] {rawContactId.toString(), Photo.CONTENT_ITEM_TYPE});
     	}
-        // TODO: Batch insert the pics?
     	else 
         {
 	        Log.i(tag, "inserting pic for serverId: "+c.serverId+", image is: "+serverPhoto.length+", rawContactId: "+rawContactId);
+			ContentProviderOperation.Builder builder = 
+				ContentProviderOperation.newInsert(uri)
+		            .withYieldAllowed(true);
+	        
 	        ContentValues values = new ContentValues();
 	        values.put(Data.RAW_CONTACT_ID, rawContactId);
 	        values.put(Data.IS_SUPER_PRIMARY, 1);
 	        // values.put(ContactsContract.CALLER_IS_SYNCADAPTER, "true");
 	        values.put(Photo.PHOTO, serverPhoto);
 	        values.put(Data.MIMETYPE, Photo.CONTENT_ITEM_TYPE);
-	        Uri result = context.getContentResolver().insert(uri, values);
-	        Log.i(tag, "pic uri is: "+result);
+	        // Uri result = context.getContentResolver().insert(uri, values);
+	        builder.withValues(values);
+	        updatePicBatchOperation.add(builder.build());
+	        
+	        // Log.i(tag, "pic uri is: "+result);
         }
         
     	if(cloud.serverIds.contains(c.serverId))
