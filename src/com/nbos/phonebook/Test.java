@@ -1,17 +1,47 @@
 package com.nbos.phonebook;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.IntentSender;
+import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.content.IntentSender.SendIntentException;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.content.res.Resources.Theme;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
+import android.database.sqlite.SQLiteDatabase.CursorFactory;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.AggregationExceptions;
 import android.provider.ContactsContract.CommonDataKinds;
@@ -26,7 +56,9 @@ import android.util.Log;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.database.tables.ContactTable;
 import com.nbos.phonebook.sync.Constants;
+import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.platform.BatchOperation;
+import com.nbos.phonebook.sync.platform.Cloud;
 import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
 import com.nbos.phonebook.sync.platform.SyncManager;
 import com.nbos.phonebook.sync.platform.UpdateContacts;
@@ -197,8 +229,14 @@ public class Test {
 		Cursor c = new Db(ctx).getRawContactsCursor(false);
 		c.moveToFirst();
 		do {
-    		String contactId = c.getString(c.getColumnIndex(RawContacts.CONTACT_ID));
-    		Log.i(tag, "contactId: "+contactId);
+    		String contactId = c.getString(c.getColumnIndex(RawContacts.CONTACT_ID)),
+    		        rawId = c.getString(c.getColumnIndex(RawContacts._ID)),
+    		        mimeType = c.getString(c.getColumnIndex(Data.MIMETYPE)),
+    		        name = c.getString(c.getColumnIndex(Data.DISPLAY_NAME)),
+    		        deleted = c.getString(c.getColumnIndex(RawContacts.DELETED)),
+    		        dirty = c.getString(c.getColumnIndex(RawContacts.DIRTY));
+    		Log.i(tag, "contactId: "+contactId+",rawId: "+rawId+" ,name: "+name+" ,deleted: "
+    				+deleted+ " ,dirty: "+dirty+" ,mimetype: "+mimeType);
 		} while(c.moveToNext());
 	}
 
@@ -514,6 +552,44 @@ public class Test {
 	    	    new String[] {Photo.CONTENT_ITEM_TYPE}, 
 	    	    ContactsContract.Data.CONTACT_ID);
     	Log.i(tag, "Data pics cursor has "+dataPicsCursor.getCount()+" rows");
+	}
+	
+	public static void getContacts(Context context) 
+	{
+		Map<String, String> contactDisplayNameMap = new HashMap<String, String>();
+    	Cursor contactsCursor = context.getContentResolver().query(Contacts.CONTENT_URI, null, null, null,
+				Contacts._ID);
+
+    	Log.i(tag, "There are "+contactsCursor.getCount()+" contacts");
+    	contactsCursor.moveToFirst();
+    	do {
+    		String contactId = contactsCursor.getString(contactsCursor.getColumnIndex(Contacts._ID)),
+    			name = contactsCursor.getString(contactsCursor.getColumnIndex(Contacts.DISPLAY_NAME));
+    		
+    		Log.i(tag, "id: "+contactId+", name: "+name);
+    	} while(contactsCursor.moveToNext());
+		
+		Cursor cursor = UpdateContacts.getRawContactsEntityCursor(context.getContentResolver(), false);
+    	PhoneContact contact = null;
+    	if(cursor.getCount() == 0) return;
+    	cursor.moveToFirst();
+    	do {
+    		String  contactId = cursor.getString(cursor.getColumnIndex(RawContacts.CONTACT_ID)),
+    			rawContactId = cursor.getString(cursor.getColumnIndex(RawContacts._ID)),
+    			deleted = cursor.getString(cursor.getColumnIndex(RawContacts.DELETED)),
+    			mimeType = cursor.getString(cursor.getColumnIndex(Data.MIMETYPE)),
+    			accountType = cursor.getString(cursor.getColumnIndex(RawContacts.ACCOUNT_TYPE)),
+    			dirty = cursor.getString(cursor.getColumnIndex(RawContacts.DIRTY));
+    			if(contactId == null)
+    				Log.i(tag,"contactId: "+contactId+" ,rawId: "+rawContactId+" ,deleted: "+deleted
+    					+" ,accountType: "+accountType+", dirty: "+dirty+", mimeType: "+mimeType);
+    	} while(cursor.moveToNext());
+	}
+	
+	static Cursor getRawContactsEntityCursor(ContentResolver cr, boolean newOnly) {
+	    String where = newOnly ? ContactsContract.RawContacts.DIRTY + " = 1" : null;
+	    Log.i(tag,"newonly: "+newOnly);
+		return cr.query(ContactsContract.RawContactsEntity.CONTENT_URI, null, where, null, ContactsContract.RawContacts._ID);	
 	}
 	
 }

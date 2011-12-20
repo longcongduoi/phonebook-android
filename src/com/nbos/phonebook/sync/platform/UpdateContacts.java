@@ -39,7 +39,7 @@ public class UpdateContacts {
 	static String tag = "UpdateContacts";
 	Cloud cloud;
 	int numContacts = 0;
-    static String[] DATA_KEYS = new String[]{
+    public static String[] DATA_KEYS = new String[]{
         Data.DATA1,
         Data.DATA2,
         Data.DATA3,
@@ -81,7 +81,7 @@ public class UpdateContacts {
     	if(cursor.getCount() == 0) return contacts;
     	cursor.moveToFirst();
     	do {
-    		String // contactId = cursor.getString(cursor.getColumnIndex(RawContacts.CONTACT_ID)),
+    		String  contactId = cursor.getString(cursor.getColumnIndex(RawContacts.CONTACT_ID)),
     			rawContactId = cursor.getString(cursor.getColumnIndex(RawContacts._ID)),
     			deleted = cursor.getString(cursor.getColumnIndex(RawContacts.DELETED)),
     			mimeType = cursor.getString(cursor.getColumnIndex(Data.MIMETYPE)),
@@ -117,7 +117,8 @@ public class UpdateContacts {
             {
             	if(contact != null)
             	{            	
-            		Log.i(tag, "rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "+contact.accountType+", deleted: "+contact.deleted+", dirty: "+dirty);
+            		Log.i(tag, "rawId: "+contact.rawContactId+", name: "+contact.name+", accountType: "
+            				+contact.accountType+", deleted: "+contact.deleted+", dirty: "+dirty+" ,contactId: "+contactId);
             		contacts.add(contact);
             	}
             	contact = new PhoneContact();
@@ -138,8 +139,9 @@ public class UpdateContacts {
     	return contacts;
 	}
 	
-	static Cursor getRawContactsEntityCursor(ContentResolver cr, boolean newOnly) {
+	public static Cursor getRawContactsEntityCursor(ContentResolver cr, boolean newOnly) {
 	    String where = newOnly ? ContactsContract.RawContacts.DIRTY + " = 1" : null;
+	    Log.i(tag,"newonly: "+newOnly);
 		return cr.query(ContactsContract.RawContactsEntity.CONTENT_URI, null, where, null, ContactsContract.RawContacts._ID);	
 	}
 
@@ -196,7 +198,7 @@ public class UpdateContacts {
 	        	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, cloud.lastUpdated));
 			if(numContacts > 0)
 			{
-				JSONArray contactUpdates = new JSONArray(cloud.post(cloud.SEND_CONTACT_UPDATES_URI, params));
+				JSONArray contactUpdates = new JSONArray(cloud.post(Cloud.SEND_CONTACT_UPDATES_URI, params));
 				Log.i(tag, "There are "+contactUpdates.length()+" contact updates");
 				updateServerData(contactUpdates);
 			}

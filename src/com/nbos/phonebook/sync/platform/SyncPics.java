@@ -249,7 +249,7 @@ public class SyncPics {
 			e.printStackTrace();
 		} 
 		
-		Log.i(tag, "Contact["+rawContactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType));
+		Log.i(tag, "Contact["+rawContactId+"] "+name+", pic: "+(pic == null ? "null" : pic.length+", content type: "+contentType+ " ,index:"+index));
 		return new ContactPicture(pic, contentType);
 	}
 	
@@ -361,6 +361,7 @@ public class SyncPics {
 		        Log.i(tag, "hash: " + hash);
 		        
 		        String serverPicId = serverPicIds.get(data.serverId);
+		        Log.i(tag, "serverPicId: "+serverPicId);
 		        if(serverPicId != null)
 		        {
 		        	Log.i(tag, "updating pic id from sync serverPicId");

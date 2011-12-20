@@ -98,6 +98,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         } catch (Exception e) {
 			e.printStackTrace();
 		} finally {
+			Log.i(tag,"isSyncing: "+isSyncing);
 			isSyncing = false;
 		}
     }
