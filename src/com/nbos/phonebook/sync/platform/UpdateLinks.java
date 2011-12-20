@@ -42,12 +42,14 @@ public class UpdateLinks {
 		{	// send all the links
 			Object[] linkedContactsArray = linkedContacts.values().toArray();
 			Integer numLinks = 0; // new Integer(linkedContactsArray.length);
+			Log.i(tag ,"numLinks: "+numLinks);
 			List<NameValuePair> params = cloud.getAuthParams();
 			for(int i=0; i< numLinks.intValue(); i++)
 			{
-				// Log.i(tag, "Obj: "+linkedContactsArray[i]);
+				Log.i(tag, "Obj: "+linkedContactsArray[i]+"numLinks: "+numLinks.intValue());
+				
 				Object[] rawContactIds = ((Set<String>) linkedContactsArray[i]).toArray();
-				// Log.i(tag, "num raw contacts: "+rawContactIds.length);
+				Log.i(tag, "num raw contacts: "+rawContactIds.length);
 				Set<String> serverIds = new HashSet<String>();
 				for(int j=0; j< rawContactIds.length; j++)
 				{
@@ -66,6 +68,7 @@ public class UpdateLinks {
 						new Integer(numContacts).toString()));
 				}
 			}
+			Log.i(tag, "Uploading "+numLinks+" links");
 			params.add(new BasicNameValuePair("numLinks", numLinks.toString()));
 			if(numLinks > 0)
 				new JSONArray(cloud.post(Cloud.SEND_LINK_UPDATES_URI, params));
@@ -262,6 +265,6 @@ public class UpdateLinks {
 			}
 		}
 		Log.i(tag, "Executing contact table batch insert: "+batchOperation.size());
-		//batchOperation.execute();
+		batchOperation.execute();
 	}	
 }

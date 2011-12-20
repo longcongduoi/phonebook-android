@@ -268,10 +268,15 @@ public class SyncPics {
 		Log.i(tag, "updated "+num+" rows to picId: "+picId+" for serverId:"+serverId);
 	}
 
-	public void insertServerData(String rawContactId, String serverId, String picId,
-			String picSize, String hash) {
+	void insertServerData(String rawContactId, String serverId, String picId, String picSize, String hash) 
+	{
 		Log.i(tag, "insertServerData - raw: "+rawContactId+", serverId: "+serverId+", picId: "+picId+", picSize: "+picSize+", hash: "+hash);
 		Uri uri = SyncManager.addCallerIsSyncAdapterParameter(Data.CONTENT_URI);
+		ContentProviderOperation.Builder builder = 
+			ContentProviderOperation.newInsert(uri)
+	            .withYieldAllowed(true);
+        
+		
     	ContentValues values = new ContentValues();
         values.put(PhonebookSyncAdapterColumns.DATA_PID, serverId);
         values.put(PhonebookSyncAdapterColumns.ACCOUNT, cloud.account);
@@ -280,8 +285,10 @@ public class SyncPics {
 		values.put(PhonebookSyncAdapterColumns.PIC_ID, picId);
 		values.put(PhonebookSyncAdapterColumns.PIC_SIZE, picSize);
 		values.put(PhonebookSyncAdapterColumns.PIC_HASH, hash);
-		Uri result = context.getContentResolver().insert(uri, values);
-		Log.i(tag, "updated "+result);
+        builder.withValues(values);
+        updatePicIdBatchOperation.add(builder.build());
+		// Uri result = context.getContentResolver().insert(uri, values);
+		// Log.i(tag, "updated "+result);
 	}
 
 	private void getCursors() {
