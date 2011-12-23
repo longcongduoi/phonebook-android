@@ -36,14 +36,14 @@ public class UpdateLinks {
 		// Cursor serverDataCursor = syncManager.serverDataCursor;
 		Map<String, Set<String>> linkedContacts = getLinkedContacts(),
 			storedLinkedContacts = getStoredLinkedContacts(); 
-		
+		cloud.getServerDataIds();
 		if(!cloud.newOnly 
 		|| (storedLinkedContacts.size() == 0 && linkedContacts.size() != 0)) // first time
 		{	// send all the links
 			Object[] linkedContactsArray = linkedContacts.values().toArray();
 			Integer numLinks = 0; // new Integer(linkedContactsArray.length);
 			List<NameValuePair> params = cloud.getAuthParams();
-			for(int i=0; i< numLinks.intValue(); i++)
+			for(int i=0; i< linkedContacts.size(); i++)
 			{
 				// Log.i(tag, "Obj: "+linkedContactsArray[i]);
 				Object[] rawContactIds = ((Set<String>) linkedContactsArray[i]).toArray();
@@ -62,11 +62,13 @@ public class UpdateLinks {
 					numLinks++;
 					for(String serverId : serverIds)
 						params.add(new BasicNameValuePair("link_"+i+"_"+numContacts++, serverId));
+				}
 					params.add(new BasicNameValuePair("link_"+i+"_count", 
 						new Integer(numContacts).toString()));
-				}
+				
 			}
 			params.add(new BasicNameValuePair("numLinks", numLinks.toString()));
+			Log.i(tag," numLinks: "+numLinks);
 			if(numLinks > 0)
 				new JSONArray(cloud.post(Cloud.SEND_LINK_UPDATES_URI, params));
 			// delete old data and persist these links
@@ -155,6 +157,7 @@ public class UpdateLinks {
 			for(int i=0; i< deletedLinks.size(); i++)
 			{
 				Log.i(tag, "Obj: "+linkedContactsArray[i]);
+				@SuppressWarnings("unchecked")
 				Object[] rawContactIds = ((Set<String>) linkedContactsArray[i]).toArray();
 				Log.i(tag, "num raw contacts: "+rawContactIds.length);
 				int numContacts = 0;
@@ -170,7 +173,7 @@ public class UpdateLinks {
 						new Integer(numContacts).toString()));
 			}
 		}
-		JSONArray response = new JSONArray(cloud.post(cloud.SEND_CHANGED_LINK_UPDATES_URI, params));
+		JSONArray response = new JSONArray(cloud.post(Cloud.SEND_CHANGED_LINK_UPDATES_URI, params));
 	}
 
 	static Map<String, Set<String>> getLinkedContacts(Cursor c, String contactIdColumn, String rawContactIdColumn) {
@@ -262,6 +265,6 @@ public class UpdateLinks {
 			}
 		}
 		Log.i(tag, "Executing contact table batch insert: "+batchOperation.size());
-		//batchOperation.execute();
+		batchOperation.execute();
 	}	
 }

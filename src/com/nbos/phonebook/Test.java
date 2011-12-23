@@ -48,6 +48,7 @@ import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.Groups;
 import android.provider.ContactsContract.RawContacts;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
@@ -196,14 +197,16 @@ public class Test {
     
     public static void getGroupList(Context ctx) {
     	Cursor c = ctx.getContentResolver().query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
-    	    	ContactsContract.Groups.DELETED + "=0",	    		
+    	    	null,	    		
     	    	null, null);
     	c.moveToFirst();
     	do {
     		String name = c.getString(c.getColumnIndex(ContactsContract.Groups.TITLE)),
     			id = c.getString(c.getColumnIndex(ContactsContract.Groups._ID)),
-    			serverId = c.getString(c.getColumnIndex(ContactsContract.Groups.SOURCE_ID));
-    		Log.i(tag, "Group; name: "+name+", id: "+id+", serverId: "+serverId);
+    			serverId = c.getString(c.getColumnIndex(ContactsContract.Groups.SOURCE_ID)),
+    			dirty = c.getString(c.getColumnIndex(Groups.DIRTY)),
+    		    deleted = c.getString(c.getColumnIndex(Groups.DELETED));
+    		Log.i(tag, "Group; name: "+name+", id: "+id+", serverId: "+serverId+ " , deleted: "+deleted+" ,dirty: "+dirty);
     	} while(c.moveToNext());
     }
     
