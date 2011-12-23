@@ -135,12 +135,6 @@ public class WelcomeActivity extends ListActivity {
 				childLayout.setVisibility(1);
 				populateGroups(R.layout.delete_group_entry);
 			break;
-			
-		    case R.id.select_sharing:
-			    Cursor contactCursor=Db.getContacts(this);
-			    Toast.makeText(getApplicationContext(), "contactsCount: "+contactCursor.getCount(), Toast.LENGTH_LONG).show();
-			    Log.i(tag,"count: "+contactCursor.getCount());
-		    break;
 		} 
 		return true;
 	}
