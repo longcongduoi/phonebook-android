@@ -113,7 +113,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         mConfirmCredentials =
             intent.getBooleanExtra(PARAM_CONFIRMCREDENTIALS, false);
 
-        Log.i(tag, "request new: " + mRequestNewAccount);
+        Log.i(tag, "request new: " + mRequestNewAccount+ " ,ConfirmCredentials: "+mConfirmCredentials);
         requestWindowFeature(Window.FEATURE_LEFT_ICON);
         setContentView(R.layout.login_activity);
         getWindow().setFeatureDrawableResource(Window.FEATURE_LEFT_ICON,
@@ -234,6 +234,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         final Account account = new Account(mUsername, Constants.ACCOUNT_TYPE);
         mAccountManager.setPassword(account, mPassword);
         mAccountManager.setUserData(account, Constants.PHONE_NUMBER_KEY, countryCode + mPhone);
+        Db.deleteServerData(getApplicationContext());
         final Intent intent = new Intent();
         intent.putExtra(AccountManager.KEY_BOOLEAN_RESULT, result);
         setAccountAuthenticatorResult(intent.getExtras());
@@ -396,7 +397,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 				String userId = json.getString("id"),
 				userName=json.getString("name");
 				mPhone = mPhoneEdit.getText().toString();
-				new Cloud(getApplicationContext(), userId, userId).loginWithFacebook(mPhone);
+				new Cloud(getApplicationContext(), userId, userId).loginWithFacebook(countryCode + mPhone);
 				mUsername = userId;
 				mPassword = userId;
 				finishLogin();

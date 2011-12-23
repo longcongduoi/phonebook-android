@@ -198,7 +198,7 @@ public class Db {
 		List<Group> groups = new ArrayList<Group>();
 	    String where = Groups.DELETED + " = 0 ";
 	    if(newOnly)
-	    	where += " and " + Groups.DIRTY + " = 1 ";
+	    	where = Groups.DIRTY + " = 1 ";
 	    Cursor groupsCursor = cr.query(Groups.CONTENT_SUMMARY_URI, 
 	    		new String [] {
 	    			Groups.TITLE,

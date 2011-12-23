@@ -72,7 +72,7 @@ public class Cloud {
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
     	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	BASE_URL = "http://10.9.8.29:8080/phonebook",
+    	BASE_URL = "http://10.9.8.172:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	FACEBOOK_LOGIN_URL = BASE_URL + "/login/facebookMobileLogin",
@@ -397,7 +397,7 @@ public class Cloud {
 	private void sendGroupUpdates(List<Group> groups) throws ClientProtocolException, IOException, JSONException {
         List<NameValuePair> params = getAuthParams();
         int numGroups = 0;
-        
+        Log.i(tag,"groupsSize: "+groups.size());
         for(int i=0; i< groups.size(); i++)
         {
         	Group group =  groups.get(i);
@@ -413,6 +413,7 @@ public class Cloud {
         	params.add(new BasicNameValuePair("serverId_"+index, group.serverId));
         	params.add(new BasicNameValuePair("bookName_"+index, group.name));
         	List<Contact> bookContacts = group.contacts;
+        	Log.i(tag, "numcontacts: "+bookContacts.size());
         	params.add(new BasicNameValuePair("numContacts_"+index, new Integer(bookContacts.size()).toString()));
         	for(int j=0; j< bookContacts.size(); j++)
         	{

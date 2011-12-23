@@ -141,7 +141,6 @@ public class UpdateContacts {
 	
 	public static Cursor getRawContactsEntityCursor(ContentResolver cr, boolean newOnly) {
 	    String where = newOnly ? ContactsContract.RawContacts.DIRTY + " = 1" : null;
-	    Log.i(tag,"newonly: "+newOnly);
 		return cr.query(ContactsContract.RawContactsEntity.CONTENT_URI, null, where, null, ContactsContract.RawContacts._ID);	
 	}
 

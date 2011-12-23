@@ -15,23 +15,31 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.Contacts;
+import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.Groups;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.CheckBox;
 import android.widget.FilterQueryProvider;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 
 import com.nbos.phonebook.contentprovider.Provider;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
+import com.nbos.phonebook.sync.client.BookPermission;
+import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
+import com.nbos.phonebook.sync.platform.UpdateContacts;
 import com.nbos.phonebook.sync.syncadapter.SyncAdapter;
 import com.nbos.phonebook.util.WelcomeActivityCursorAdapter;
 import com.nbos.phonebook.value.Contact;
@@ -45,7 +53,6 @@ public class WelcomeActivity extends ListActivity {
 	int layout = R.layout.group_entry;
 	Db db;
 	WelcomeActivityCursorAdapter adapter ;
-
 	/** Called when the activity is first created. */
 
 	@Override
@@ -69,6 +76,7 @@ public class WelcomeActivity extends ListActivity {
 					Constants.ACCOUNT_TYPE);
 			startActivity(intent);
 		}
+		registerForContextMenu(getListView());
 		// startActivity(new Intent(Settings.ACTION_SYNC_SETTINGS));
 		//Test.getContactLinks(getApplicationContext());
 		//Test.getStoredContactLinks(getApplicationContext());
@@ -120,12 +128,19 @@ public class WelcomeActivity extends ListActivity {
 				e.printStackTrace();
 			} 
 		 	break;
+		 	
 			case R.id.delete_group:
 				LinearLayout mainLayout=(LinearLayout)findViewById(R.id.mainlinearLayout);
 				LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.deleteLayout);
 				childLayout.setVisibility(1);
 				populateGroups(R.layout.delete_group_entry);
 			break;
+			
+		    case R.id.select_sharing:
+			    Cursor contactCursor=Db.getContacts(this);
+			    Toast.makeText(getApplicationContext(), "contactsCount: "+contactCursor.getCount(), Toast.LENGTH_LONG).show();
+			    Log.i(tag,"count: "+contactCursor.getCount());
+		    break;
 		} 
 		return true;
 	}
@@ -145,6 +160,62 @@ public class WelcomeActivity extends ListActivity {
 	}
 
 	static int ADD_GROUP = 1, SHOW_GROUP = 2, DELETE_GROUP=3;
+	
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v,
+	                                ContextMenuInfo menuInfo) 
+	{
+		AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
+		m_cursor.moveToPosition(info.position);
+		String name = m_cursor.getString(m_cursor.getColumnIndex(ContactsContract.Groups.TITLE));
+		String owner = m_cursor.getString(m_cursor.getColumnIndex(Groups.SYNC1));
+		super.onCreateContextMenu(menu, v, menuInfo);
+		menu.setHeaderTitle("Group: "+name);
+		int order = 0;
+		if(owner == null && !name.equals("My phonebook"))
+		{
+			menu.add(0, v.getId(), order++, "Rename");
+		}
+	}
+	
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+		// Get the info on which item was selected
+		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item
+				.getMenuInfo();
+		m_cursor.moveToPosition(info.position);
+		String groupId = m_cursor.getString(m_cursor.getColumnIndex(Groups._ID)), 
+		groupName = m_cursor.getString(m_cursor.getColumnIndex(Groups.TITLE)), 
+		groupOwner = m_cursor.getString(m_cursor.getColumnIndex(Groups.SYNC1)),
+		groupPermission = m_cursor.getString(m_cursor.getColumnIndex(Groups.SYNC2)),
+		accountType = m_cursor.getString(m_cursor.getColumnIndex(Groups.ACCOUNT_TYPE));
+
+	    Log.i(tag, "Group id: " + groupId + ", name: " + groupName);
+	    if(item.getTitle().equals("Showcontacts"))
+	    {
+		    	  Intent i = new Intent(WelcomeActivity.this, GroupActivity.class);
+		 	      i.putExtra("id", groupId);
+		 	      i.putExtra("name", groupName);
+		 	      i.putExtra("layout", R.layout.contact_entry);
+		 	      if(accountType.equals(Constants.ACCOUNT_TYPE))
+		 	        {
+		 		        i.putExtra("owner", groupOwner);
+		 		        i.putExtra("permission", groupPermission);
+		 	        }
+	 	
+	 	startActivityForResult(i, SHOW_GROUP);
+	    }
+	    if(item.getTitle().equals("Rename"))
+	    {
+	    		Intent r = new Intent(WelcomeActivity.this, AddGroupActivity.class);
+	    		r.putExtra("id", groupId);
+	    		r.putExtra("name", groupName);
+	    		r.putExtra("position", info.position);
+	    		startActivityForResult(r, ADD_GROUP);
+	    }
+	   
+		return true;
+	}
 
 	/*public boolean onClickAddGroup(View v) {
 
@@ -315,6 +386,7 @@ public class WelcomeActivity extends ListActivity {
 		LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.deleteLayout);
 		
 		List<Boolean> checkedItems = adapter.getCheckedItems();
+		ContentResolver cr =getContentResolver();
 		for(int i=0;i<listView.getCount();i++) 
 		{
     		if(!checkedItems.get(i)) continue; 
@@ -327,16 +399,15 @@ public class WelcomeActivity extends ListActivity {
 			
 			System.out.println("delete group: " + groupId + ", " + groupName);
 			String[] args = { groupId };
-			int b = getContentResolver().delete(
+			
+			int b = cr.delete(
 					Groups.CONTENT_URI, "_ID=?", args);
 			numDeleted++;
+			Db.setGroupDirty(args[0], cr);
 			// notify registered observers that a row was updated
-			
     	}
 		
 		Toast.makeText(this, "Deleted "+numDeleted+" group(s)", Toast.LENGTH_LONG).show();
-		getContentResolver().notifyChange(
-				ContactsContract.Groups.CONTENT_URI, null);
 		childLayout.setVisibility(-1);
 		populateGroups(layout);
     }
