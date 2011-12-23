@@ -59,7 +59,7 @@ public class AddGroupActivity extends Activity {
 			addGroup.setText("OK");
 			groupName.setText(name);
 			header.setText("Rename group");
-			setTitle("Phonebook: Rename a group");
+			setTitle("Phonebook: Rename group");
 		}
 		Log.i(tag,"name: "+name);
 	}
