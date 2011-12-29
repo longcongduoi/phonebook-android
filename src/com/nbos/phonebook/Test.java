@@ -539,7 +539,8 @@ public class Test {
 	}
 	
 	public static void getDataPicsCursor(Context context) {
-    	Cursor dataPicsCursor = context.getContentResolver().query(ContactsContract.Data.CONTENT_URI,
+    	Cursor dataPicsCursor = context.getContentResolver().query(
+    			Data.CONTENT_URI,
 	    		// null,
 	    	    new String[] {
 	    			Data.CONTACT_ID,
@@ -555,6 +556,20 @@ public class Test {
 	    	    new String[] {Photo.CONTENT_ITEM_TYPE}, 
 	    	    ContactsContract.Data.CONTACT_ID);
     	Log.i(tag, "Data pics cursor has "+dataPicsCursor.getCount()+" rows");
+		Map<String, Integer>contactPicturesIndex = new HashMap<String, Integer>();
+		dataPicsCursor.requery();
+		dataPicsCursor.moveToFirst();
+		if(dataPicsCursor.getCount() == 0) 
+			return; // contactPicturesIndex;
+		do {
+	    	String name = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.DISPLAY_NAME));
+	    	String rawId = dataPicsCursor.getString(dataPicsCursor.getColumnIndex(Data.RAW_CONTACT_ID));
+	    	byte [] photo = dataPicsCursor.getBlob(dataPicsCursor.getColumnIndex(Photo.PHOTO));
+	    	
+	    	Log.i(tag, name+", raw: "+rawId+", index: "+dataPicsCursor.getPosition()+", photo: "+ (photo == null ? " null " : photo.length));
+	    	contactPicturesIndex.put(rawId, new Integer(dataPicsCursor.getPosition()));//new ContactPicture(pic, contentType));	    	
+		} while(dataPicsCursor.moveToNext());
+    	
 	}
 	
 	public static void getContacts(Context context) 
@@ -594,5 +609,4 @@ public class Test {
 	    Log.i(tag,"newonly: "+newOnly);
 		return cr.query(ContactsContract.RawContactsEntity.CONTENT_URI, null, where, null, ContactsContract.RawContacts._ID);	
 	}
-	
 }
