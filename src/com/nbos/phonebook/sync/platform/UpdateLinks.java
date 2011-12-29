@@ -59,13 +59,10 @@ public class UpdateLinks {
 				int numContacts = 0;
 				if(serverIds.size() > 1)
 				{
-					numLinks++;
 					for(String serverId : serverIds)
-						params.add(new BasicNameValuePair("link_"+i+"_"+numContacts++, serverId));
+						params.add(new BasicNameValuePair("link_"+numLinks+"_"+numContacts++, serverId));
+					params.add(new BasicNameValuePair("link_"+(numLinks++)+"_count", new Integer(numContacts).toString()));					
 				}
-					params.add(new BasicNameValuePair("link_"+i+"_count", 
-						new Integer(numContacts).toString()));
-				
 			}
 			params.add(new BasicNameValuePair("numLinks", numLinks.toString()));
 			Log.i(tag," numLinks: "+numLinks);
