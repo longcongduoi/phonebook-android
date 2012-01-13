@@ -41,6 +41,7 @@ public class SyncManager {
     Cloud cloud;
     int batchSize = 50;
 	
+
 	public SyncManager(Context context, String account, 
 		List<Contact> contacts, List<Group> groups, 
 		List<Group> sharedBooks, 
@@ -61,6 +62,7 @@ public class SyncManager {
         syncGroups(groups, false);
         syncGroups(sharedBooks, true);
         syncPics.sync(contacts, this);
+        
         closeCursors();
 	}
 	
@@ -119,6 +121,7 @@ public class SyncManager {
                     ContactManager.updateContact(context, account, contact,
                         rawContactId, batchOperation, dataCursor, 
                         dataRawContactIdIndex.get(new Long(rawContactId).toString()));
+                    
                 } else {
                     // delete contact
                     ContactManager.deleteContact(context, rawContactId, batchOperation);
@@ -179,7 +182,7 @@ public class SyncManager {
         rawContactsCursor.requery();
 	}
 
-	void syncGroups(List<Group> groups, boolean isSharedBook) {
+	 void syncGroups(List<Group> groups, boolean isSharedBook) {
 		for(Group g : groups)
 			updateGroup(g, isSharedBook);
 	}
@@ -200,9 +203,10 @@ public class SyncManager {
 	    }
 	    cursor.moveToFirst();
 	    String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID)),
-	    	dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DIRTY));
+	    	dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DIRTY)),
+	    	deleted = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DELETED));
 	    
-	    if(dirty.equals("1"))
+	    if(dirty.equals("1") || deleted.equals("1"))
 	    {
 	    	Log.i(tag, "Group is dirty, skipping update");
 	    	return;
@@ -426,4 +430,5 @@ public class SyncManager {
     	if(rawContactsCursor != null)
     		rawContactsCursor.close();
 	}
+	
 }

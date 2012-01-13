@@ -3,29 +3,49 @@
 	android:orientation="vertical" android:layout_width="fill_parent"
 	android:layout_height="fill_parent" android:id="@+id/linearLayout1">
 
-	<LinearLayout android:id="@+id/linearLayout2" 
-	    android:layout_width="fill_parent"
-		android:layout_height="wrap_content" android:layout_weight="1"
-		android:orientation="vertical">
+	<LinearLayout android:id="@+id/linearLayout2"
+		android:layout_width="fill_parent" android:layout_height="wrap_content"
+		android:layout_weight="1" android:orientation="vertical">
 
-		<ListView android:id="@android:id/list"
-			android:layout_height="wrap_content" android:layout_width="wrap_content"
-			android:layout_gravity="top" android:fastScrollEnabled="true"></ListView>
+		<ListView android:id="@android:id/list" android:layout_width="wrap_content"
+			android:layout_gravity="top" android:fastScrollEnabled="true"
+			android:layout_height="wrap_content"></ListView>
 
 		<TextView android:id="@android:id/empty"
 			android:layout_height="wrap_content" android:layout_width="wrap_content"
 			android:text="@string/no_contacts" android:textAppearance="?android:attr/textAppearanceLarge"></TextView>
 
 	</LinearLayout>
-	<LinearLayout android:id="@+id/extraLayout" 
-	    android:layout_width="fill_parent"
-	    android:layout_height="2dip"
-	    android:orientation="horizontal"
-		android:visibility="invisible">
+	
+	<LinearLayout android:id="@+id/extraLayout"
+		android:layout_width="fill_parent" android:layout_height="2dip"
+		android:orientation="horizontal" android:visibility="invisible">
 		<Button android:id="@+id/remove_contacts_button"
 			android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:text="@string/remove_selected_contacts" />
+			android:text="@string/remove_selected_contacts" android:visibility="invisible" />
 
+	</LinearLayout>
+
+	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+		android:layout_width="fill_parent" android:layout_height="wrap_content"
+		android:background="#c6c3c6" android:paddingTop="4dip"
+		android:paddingLeft="2dip" android:paddingRight="2dip"
+		android:id="@+id/groupActivity_frame">
+
+		<Button android:id="@+id/share_group" android:layout_height="wrap_content"
+			android:text="@string/share_group" android:onClick="onClick"
+			android:layout_width="100dp" android:drawableTop="@drawable/share"
+			android:layout_weight="1" />
+
+		<Button android:id="@+id/add_contacts" android:layout_height="wrap_content"
+			android:text="@string/add_contacts" android:onClick="onClick"
+			android:layout_width="100dp" android:drawableTop="@drawable/add_group"
+			android:layout_weight="1" />
+
+		<Button android:text="@string/remove_contacts" android:id="@+id/remove_contacts"
+			android:layout_height="wrap_content" android:onClick="onClick"
+			android:layout_width="100dp" android:drawableTop="@drawable/android:ic_delete"
+			android:layout_weight="1" />
 	</LinearLayout>
 
 </LinearLayout>

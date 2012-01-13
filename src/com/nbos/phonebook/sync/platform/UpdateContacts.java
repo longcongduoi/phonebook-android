@@ -216,9 +216,13 @@ public class UpdateContacts {
         	contactId = contact.getLong("contactId");
             String cId = new Long(contactId).toString();
             String [] data = contactServerIds.get(cId);
+            String sourceId = new Long(serverId).toString();
             Log.i(tag, "updateContact, sourceId: "+serverId+", contactId: "+contactId+", data: "+data);
             if(data == null)
+            {
             	insertServerId(contactId, serverId, cloud.account, batchOperation);
+            	cloud.contactServerIdsMap.put(cId, sourceId);
+            }
             else
             {
             	Log.i(tag, "checking update");

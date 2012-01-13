@@ -53,7 +53,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     Context context;
     Account account;
     String authtoken;
-    static boolean isSyncing = false;
+    public static boolean isSyncing = false;
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
         this.context = context;

@@ -101,7 +101,7 @@ public class Widget extends AppWidgetProvider {
 	    }
 		
 	    public RemoteViews buildUpdate(Context context) {
-			Toast.makeText(context, "onUpdate", Toast.LENGTH_SHORT).show();
+			//Toast.makeText(context, "onUpdate", Toast.LENGTH_SHORT).show();
 			Log.i(tag, "update my widget");
 			RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget);
 			Log.i(tag, "got remote widget, message is: "+message);

@@ -22,6 +22,7 @@ import android.provider.ContactsContract.Data;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -32,6 +33,7 @@ import android.view.Window;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
 import android.widget.FilterQueryProvider;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -53,6 +55,12 @@ public class GroupActivity extends ListActivity {
 	Cursor rawContactsCursor;
 	Db db;
 	int layout,keyValue;
+	LinearLayout childLayout,menu; 
+	Button extraButton;
+	LinearLayout.LayoutParams hideParams = new LinearLayout.LayoutParams(
+			LinearLayout.LayoutParams.FILL_PARENT,2),
+			showMenuParams = new LinearLayout.LayoutParams(
+					LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 
 	/** Called when the activity is first created. */
 	@Override
@@ -73,13 +81,58 @@ public class GroupActivity extends ListActivity {
 			layout = extras.getInt("layout");
 			Log.i(tag, "Owner is: " + owner + ", permission is: "+permission);
 		}
+		childLayout = (LinearLayout)findViewById(R.id.extraLayout);
+		extraButton = (Button)findViewById(R.id.remove_contacts_button);
+		menu = (LinearLayout)findViewById(R.id.groupActivity_frame);
 		queryGroup(layout);
+		showMenu();
 		registerForContextMenu(getListView());
 		listView = this.getListView();
 		getListView().setTextFilterEnabled(true);
 
 	}
 
+	
+	private void showMenu() {
+		if(owner == null)
+			menu.setVisibility(1);
+		else
+		{
+			int perm = Integer.parseInt(permission);
+			Log.i(tag,"permission: "+perm);
+			if(perm < BookPermission.ADD_CONTACTS.ordinal())
+				menu.setVisibility(View.GONE);
+			
+			else if(perm < BookPermission.ADD_REMOVE_CONTACTS.ordinal())
+			{
+				Log.i(tag,"owner: "+owner+" ,perm: "+permission);	
+				Button sharing = (Button) menu.findViewById(R.id.share_group);
+				Button removeContacts = (Button) menu.findViewById(R.id.remove_contacts);
+				Button addContacts = (Button) menu.findViewById(R.id.add_contacts);
+				sharing.setVisibility(View.GONE);
+				removeContacts.setVisibility(View.GONE);
+				addContacts.setText("Add contacts to group");
+			}
+		}
+		
+	}
+
+
+	public boolean onClick(View v){
+		switch (v.getId()) { 
+		case R.id.share_group: 
+			showShareGroup();
+			break;
+		case R.id.add_contacts:
+			showAddContacts();
+			break;
+		case R.id.remove_contacts:
+			if(m_cursor.getCount()>0)
+				removeContacts();
+			break;
+		}
+		return true;
+	}
 	@Override
 	public void onAttachedToWindow() {
 		super.onAttachedToWindow();
@@ -214,7 +267,7 @@ public class GroupActivity extends ListActivity {
 		return contactIds.size();
 	}
 
-	@Override
+	/*@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
 		if(owner == null)
@@ -232,7 +285,7 @@ public class GroupActivity extends ListActivity {
 		if(perm < BookPermission.ADD_REMOVE_CONTACTS.ordinal()) // no permission to remove
 			menu.findItem(R.id.remove_contacts).setVisible(false);
 		return true;
-	}
+	}*/
 
 	/*
 	 @Override protected void onListItemClick(ListView l, View v, int
@@ -246,16 +299,17 @@ public class GroupActivity extends ListActivity {
 	private void queryGroup(int layout) {
 		
 		if(owner == null) 
-			setTitle("Group: " + name + " (" + numContacts()
+			setTitle("Group: " + "'" +name+ "'" + " (" + numContacts()
 					+ " contacts sharing with)");
 		else
-			setTitle("Group: " + name + " (" + owner + " is sharing)");
+			setTitle("Group: " + "'" +name+ "'" + " (" + owner + " is sharing)");
 		groupCursor = Db.getContactsInGroup(id, this.getContentResolver());
 		getContactsFromGroupCursor("");
 		String[] fields = new String[] { ContactsContract.Contacts.DISPLAY_NAME };
 		adapter = new ImageCursorAdapter(this, layout, m_cursor, ids, fields,
 				new int[] { R.id.contact_name });
 
+		adapter.setAddButton(extraButton, "Selected num contacts to remove from group");
 		adapter.setStringConversionColumn(m_cursor
 				.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME));
 
@@ -327,7 +381,7 @@ public class GroupActivity extends ListActivity {
 
 	ListView mGroupList;
 	boolean mShowInvisible = false;
-
+	
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// Handle item selection
@@ -364,21 +418,14 @@ public class GroupActivity extends ListActivity {
 	private void removeContacts() {
 		queryGroup(R.layout.remove_contacts_entry);
 		keyValue=1;
-		showButton();
-	}
-
-	private void showButton() {
-		LinearLayout mainLayout = (LinearLayout) findViewById(R.id.linearLayout1);
-		LinearLayout childLayout = (LinearLayout) mainLayout
-				.findViewById(R.id.extraLayout);
 		childLayout.setVisibility(1);
-		LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.FILL_PARENT,
-				LinearLayout.LayoutParams.WRAP_CONTENT);
-		childLayout.setLayoutParams(params);
-		Button extraButton = (Button) childLayout
-				.findViewById(R.id.remove_contacts_button);
+		extraButton.setVisibility(1);
+		childLayout.setLayoutParams(showMenuParams);
+		menu.setLayoutParams(hideParams);
+		menu.setVisibility(-1);
 		extraButton.setOnClickListener(removeContacts);
+		setTitle(" Remove contacts from "+"'"+name+"'");
+		setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.ic_delete);
 	}
 
 	private Button.OnClickListener removeContacts = new OnClickListener() {
@@ -386,9 +433,6 @@ public class GroupActivity extends ListActivity {
 		public void onClick(View v) {
 			int numRemoved = 0;
 			List<Boolean> checkedItems = adapter.getCheckedItems();
-			LinearLayout mainLayout = (LinearLayout) findViewById(R.id.linearLayout1);
-			LinearLayout childLayout = (LinearLayout) mainLayout
-					.findViewById(R.id.extraLayout);
 			Log.i(tag, "Number of items: " + listView.getChildCount());
 			for (int i = 0; i < listView.getCount(); i++) {
 				if (checkedItems.get(i)) {
@@ -401,13 +445,16 @@ public class GroupActivity extends ListActivity {
 				}
 			}
 			childLayout.setVisibility(-1);
+			childLayout.setLayoutParams(hideParams);
+			menu.setVisibility(1);
+			menu.setLayoutParams(showMenuParams);
 			getContentResolver().notifyChange(
 					ContactsContract.Data.CONTENT_URI, null);
 			queryGroup(layout);
 			Toast.makeText(getApplicationContext(),
 					"Deleted " + numRemoved + " contact(s)", Toast.LENGTH_LONG)
 					.show();
-			onAttachedToWindow();
+			setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.group);
 		}
 	};
 	
@@ -416,13 +463,13 @@ public class GroupActivity extends ListActivity {
 		
 	    if (keyCode == KeyEvent.KEYCODE_BACK && keyValue==1){
 	    	
-	    	LinearLayout mainLayout = (LinearLayout) findViewById(R.id.linearLayout1);
-			LinearLayout childLayout = (LinearLayout) mainLayout
-					.findViewById(R.id.extraLayout);
-			childLayout.setVisibility(-1);
+	    	childLayout.setVisibility(-1);
+	    	childLayout.setLayoutParams(hideParams);
+	    	menu.setVisibility(1);
+	    	menu.setLayoutParams(showMenuParams);
 	    	queryGroup(layout);
 	    	keyValue=0;
-	    	onAttachedToWindow();
+	    	setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.group);
 	    }
 	    else{
 	    	return super.onKeyDown(keyCode, event);

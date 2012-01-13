@@ -206,7 +206,8 @@ public class Db {
 	    			Groups.SOURCE_ID,
 	    			Groups.ACCOUNT_NAME,
 	    			Groups.ACCOUNT_TYPE,
-	    			Groups.DIRTY
+	    			Groups.DIRTY,
+	    			Groups.DELETED
 	    		},
 	    		where, null, null);
 	    Log.i(tag, "There are "+groupsCursor.getCount()+" groups");

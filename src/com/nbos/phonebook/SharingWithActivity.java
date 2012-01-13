@@ -19,6 +19,7 @@ import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -27,6 +28,7 @@ import android.view.Window;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -44,7 +46,13 @@ public class SharingWithActivity extends ListActivity {
 	ImageCursorAdapter adapter;
 	MatrixCursor m_cursor;
 	Db db;
-	int layout;
+	int layout, keyValue;
+	Button stopSharing;
+	LinearLayout childLayout,menu;
+	LinearLayout.LayoutParams hideParams = new LinearLayout.LayoutParams(
+			LinearLayout.LayoutParams.FILL_PARENT,2),
+			showParams = new LinearLayout.LayoutParams(
+					LinearLayout.LayoutParams.FILL_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
 
 	/** Called when the activity is first created. */
 	@Override
@@ -57,7 +65,9 @@ public class SharingWithActivity extends ListActivity {
 				R.drawable.share_64x64);
 
 		registerForContextMenu(getListView());
-
+        childLayout = (LinearLayout) findViewById(R.id.extraLayout);
+		stopSharing = (Button)findViewById(R.id.remove_contacts_button);
+		menu = (LinearLayout)findViewById(R.id.sharingWithActivity_frame);
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
 			id = extras.getString("id");
@@ -65,13 +75,27 @@ public class SharingWithActivity extends ListActivity {
 			layout = extras.getInt("layout");
 		}
 
-		setTitle("Group: " + name + " sharing with");
+		setTitle("Group: " + "'" +name+"'" + " sharing with");
 		populateContacts(layout);
 		listview = getListView();
 		listview.setFastScrollEnabled(true);
 		
 	}
 
+	public boolean onClick(View v){
+			switch (v.getId()) {
+			case R.id.add_contact_share_with:
+				showAddContactsToShareWith();
+				break;
+			case R.id.add_new_contact:
+				showCreateNewContact();
+				break;
+			case R.id.stop_sharing:
+				removeSharing();
+				break;
+			}
+			return true;
+	}
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v,
 			ContextMenuInfo menuInfo) {
@@ -143,28 +167,21 @@ public class SharingWithActivity extends ListActivity {
 	
 	private void removeSharing() {
 		populateContacts(R.layout.sharing_contact_entry);
-		showButton();
+		keyValue =1;
+		childLayout.setVisibility(1);
+		childLayout.setLayoutParams(showParams);
+		stopSharing.setVisibility(1);
+		menu.setVisibility(-1);
+		menu.setLayoutParams(hideParams);
+		setTitle("Select contacts to remove sharing from "+"'"+name+"'");
+		setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.ic_delete);
+		stopSharing.setOnClickListener(removeSharingContacts);
 	}
      
-	
-	
-	private void showButton() {
-		LinearLayout mainLayout = (LinearLayout) findViewById(R.id.sharing_with_layout);
-		LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.extraLayout);
-		childLayout.setVisibility(1);
-	    Button stopSharing = (Button)childLayout.findViewById(R.id.remove_contacts_button);
-		stopSharing.setOnClickListener(removeSharingContacts);
-
-	}
-	
-	
 	private Button.OnClickListener removeSharingContacts = new Button.OnClickListener() {
 		
 			public void onClick(View v) {
 				int numRemoved = 0;
-				LinearLayout mainLayout = (LinearLayout) findViewById(R.id.sharing_with_layout);
-				LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.extraLayout);
-				childLayout.setVisibility(1);
 				List<Boolean> checkedItems = adapter.getCheckedItems();
 				for (int i = 0; i < listview.getCount(); i++) 
 				{
@@ -173,17 +190,21 @@ public class SharingWithActivity extends ListActivity {
 					String rawContactId = m_cursor.getString(m_cursor.getColumnIndex(RAW_CONTACT_ID_COLUMN));
 					String contactId = db.getContactId(rawContactId, rawContactsCursor);
 					// remove all raw contactIds which have the same contactId as this rawContactId
-					List<String> rawContactIds = db.getRawContactIds(contactId, rawContactsCursor);
+					List<String> rawContactIds = Db.getRawContactIds(contactId, rawContactsCursor);
 					for(String r : rawContactIds)
 						db.setDeleteSharingWith(id, r);
 					numRemoved++;
 				}
+				setFeatureDrawableResource(Window.FEATURE_LEFT_ICON,
+						R.drawable.share_64x64);
+				childLayout.setVisibility(-1);
+				childLayout.setLayoutParams(hideParams);
+				menu.setVisibility(1);
+				menu.setLayoutParams(showParams);
 				Toast.makeText(getApplicationContext(), 
 					"Removed "+numRemoved+" contact(s) from sharing",
 					Toast.LENGTH_LONG).show();
 				populateContacts(layout);
-				childLayout.setVisibility(-1);
-				onAttachedToWindow();
 			}
 		};
 	
@@ -230,16 +251,17 @@ public class SharingWithActivity extends ListActivity {
 			m_cursor.addRow(new String[] { row.id, row.rawContactId, row.name });
 			ids.add(row.id);
 		}
-		setTitle("Group: " + name + " sharing with ("+rows.size()+")");
+		setTitle("Group: " + "'" +name+"'" + " sharing with ("+rows.size()+")");
 
 		String[] fields = new String[] { ContactsContract.Data.DISPLAY_NAME };
 
 		adapter = new ImageCursorAdapter(this, layout, m_cursor, ids, fields,
 				new int[] { R.id.contact_name });
+		adapter.setAddButton(stopSharing, "Selected num contacts to remove from sharing");
 		getListView().setAdapter(adapter);
 	}
 
-	@Override
+	/*@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
 		if (layout == (int) R.layout.contact_entry) {
@@ -250,12 +272,12 @@ public class SharingWithActivity extends ListActivity {
 		return true;
 
 	}
-
-	@Override
+*/
+	/*@Override
 	public void onAttachedToWindow() {
 		super.onAttachedToWindow();
 		openOptionsMenu();
-	}
+	}*/
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -330,7 +352,6 @@ public class SharingWithActivity extends ListActivity {
 			rawContactsCursor.requery();
 			shareGroupWithContact(contactId);
 		}
-		onAttachedToWindow();
 	    populateContacts(layout);
 	}
 
@@ -374,6 +395,25 @@ public class SharingWithActivity extends ListActivity {
 			db.addSharingWith(id, rawContactId);
 			Log.i(tag, "Sharing " + name + " with rawContact: " + rawContactId);
 		}
+	}
+	
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		
+	    if (keyCode == KeyEvent.KEYCODE_BACK && keyValue==1){
+	    	menu.setVisibility(1);
+	    	menu.setLayoutParams(showParams);
+	    	childLayout.setVisibility(-1);
+	    	childLayout.setLayoutParams(hideParams);
+	    	stopSharing.setVisibility(-1);
+			populateContacts(layout);
+	    	keyValue=0;
+	    	setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.share_64x64);
+	    }
+	    else
+	    	return super.onKeyDown(keyCode, event);
+	  
+	    return true;
 	}
 
 }

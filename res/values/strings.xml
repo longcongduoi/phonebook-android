@@ -104,8 +104,8 @@
     <string name="no_groups">There are no groups. Please select add from the menu.</string>
     <string name="add_group">Add group</string>
     <string name="delete_group">Delete group</string>
-    <string name="share_group">Sharing with</string>
-    <string name="add_contacts">Add contacts</string>
+    <string name="share_group">Sharing</string>
+    <string name="add_contacts">Add</string>
     <string name="no_contacts">There are no contacts in this group</string>
     <string name="left_brace"> (</string>
     <string name="empty"></string>
@@ -392,12 +392,12 @@
 
     <!-- String describing which account a contact came from when editing it -->
     <string name="from_account_format">from <xliff:g id="source" example="user@gmail.com">%1$s</xliff:g></string>
-    <string name="add_selected_contacts">Add selected contacts</string>
+    <string name="add_selected_contacts">No contacts selected</string>
     <string name="add_selected_contacts_to_share_with">Add selected contacts to share with</string>
-    <string name="stop_sharing">Stop sharing</string>
-    <string name="delete_selected_group">Delete selected</string>
-    <string name="remove_contacts">Remove contacts</string>
-    <string name="remove_selected_contacts">Remove selected contacts</string>
+    <string name="stop_sharing">Remove contacts form sharing</string>
+    <string name="delete_selected_group">No groups selected</string>
+    <string name="remove_contacts">Remove</string>
+    <string name="remove_selected_contacts">No contacts selected</string>
     <string name="remove_sharing_contacts">Remove selected contacts from sharing</string>
     <string name="create_new_contact_to_share_with">Create new contact to share with</string>
     <string name="bump_contacts">Bump contacts</string>

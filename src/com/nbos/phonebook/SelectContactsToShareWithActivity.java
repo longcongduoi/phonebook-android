@@ -16,8 +16,10 @@ import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.FilterQueryProvider;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -34,12 +36,17 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 	String tag = "SelectContactsToShareWith", id, name;
 	ImageCursorAdapter adapter;
 	Db db;
-
+	LinearLayout childLayout;
+	Button addContactsButton;
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		requestWindowFeature(Window.FEATURE_LEFT_ICON);
 		setContentView(R.layout.contacts_to_share_with);
+		setFeatureDrawableResource(Window.FEATURE_LEFT_ICON,
+				R.drawable.share_64x64);
+
 		Bundle extras = getIntent().getExtras();
 		db = new Db(getApplicationContext());
 		if (extras != null) {
@@ -47,13 +54,13 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 			name = extras.getString("name");
 		}
 
-		setTitle("Select contacts to share " + name + " with");
-		populateContacts();
+		setTitle("Select contacts to share " + "'" +name+ "'");
 		getListView().setTextFilterEnabled(true);
-		Button addContactsButton = (Button) findViewById(R.id.add_contact_button);
+		childLayout = (LinearLayout) findViewById(R.id.sharedlayout_child);
+		addContactsButton = (Button) findViewById(R.id.add_contact_button);
 		addContactsButton.setOnClickListener(selectedContacts);
 		listView = this.getListView();
-
+		populateContacts();
 	}
 
 	ListView listView;
@@ -78,6 +85,8 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 					shareGroupWithContact(contactId);
 				}
 			}
+			LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+					LinearLayout.LayoutParams.FILL_PARENT,2);
 			Toast.makeText(getApplicationContext(),
 					"Sharing with " + numContacts + " new contact(s)",
 					Toast.LENGTH_LONG).show();
@@ -94,7 +103,7 @@ public class SelectContactsToShareWithActivity extends ListActivity {
 
 		adapter = new ImageCursorAdapter(this, R.layout.select_contact_entry,
 				m_cursor, ids, fields, new int[] { R.id.contact_name });
-
+		adapter.setAddButton(addContactsButton, "Add num contacts to sharing");
 		adapter.setStringConversionColumn(m_cursor
 				.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME));
 

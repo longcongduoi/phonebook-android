@@ -11,15 +11,21 @@ import android.database.CursorJoiner;
 import android.database.MatrixCursor;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.FilterQueryProvider;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.SimpleCursorAdapter.CursorToStringConverter;
 import android.widget.Toast;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
@@ -33,8 +39,9 @@ public class AddContactsActivity extends ListActivity {
 	String tag = "AddContactsActivity", id, name,owner;
 	List<String> ids;
 	ImageCursorAdapter adapter;
-	
+	Button addContactsButton;
 	Db db;
+	LinearLayout childLayout;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -51,9 +58,10 @@ public class AddContactsActivity extends ListActivity {
 			name = extras.getString("name");
 			owner=extras.getString("owner");
 		}
-		setTitle("Phonebook: Add contacts to " + name);
+		setTitle(" Add contacts to " + "'" +name+ "'");
 		rawContactsCursor = db.getRawContactsCursor(false);
-		Button addContactsButton = (Button) findViewById(R.id.add_contact_button);
+		childLayout = (LinearLayout) findViewById(R.id.linearlayout1);
+		addContactsButton = (Button) findViewById(R.id.add_contact_button);
 		addContactsButton.setOnClickListener(selectedContacts);
 		listView = this.getListView();
 		populateContacts();
@@ -67,8 +75,10 @@ public class AddContactsActivity extends ListActivity {
 			int numContacts = 0;
 			List<Boolean> checkedItems = adapter.getCheckedItems();
 			Log.i(tag, "Number of items: " + listView.getChildCount());
-			for (int i = 0; i < listView.getCount(); i++) {
-				if (checkedItems.get(i)) {
+			for (int i = 0; i < listView.getCount(); i++) 
+			{
+				if (checkedItems.get(i)) 
+				{
 					Log.i(tag, i + " is checked");
 					numContacts++;
 					m_cursor.moveToPosition(i);
@@ -99,8 +109,10 @@ public class AddContactsActivity extends ListActivity {
 		adapter = new ImageCursorAdapter(this, R.layout.select_contact_entry,
 				m_cursor, ids, fields, new int[] { R.id.contact_name });
 
+		adapter.setAddButton(addContactsButton, " Add num contacts to group");
 		adapter.setStringConversionColumn(m_cursor
 				.getColumnIndexOrThrow(ContactsContract.Data.DISPLAY_NAME));
+
 
 		adapter.setFilterQueryProvider(new FilterQueryProvider() {
 
@@ -113,7 +125,6 @@ public class AddContactsActivity extends ListActivity {
 				return m_cursor;
 			}
 		});
-
 		getListView().setAdapter(adapter);
 	}
 

@@ -15,17 +15,37 @@
 			android:layout_height="wrap_content" android:layout_width="wrap_content"
 			android:textAppearance="?android:attr/textAppearanceLarge"></TextView>
 	</LinearLayout>
-
+	
 	<LinearLayout android:orientation="horizontal"
-		android:layout_width="fill_parent" android:layout_height="wrap_content"
+		android:layout_width="fill_parent" android:layout_height="2dip"
 		android:id="@+id/deleteLayout" android:visibility="invisible">
 
-		<Button android:id="@+id/delete_group" android:text="@string/delete_selected_group"
-			android:onClick="onClick" android:layout_width="150dp"
-			android:layout_height="fill_parent" android:layout_weight="0.90" />
-
+		<Button android:id="@+id/delete_group_button" android:text="@string/delete_selected_group"
+			android:onClick="onClick" android:layout_width="wrap_content"
+			android:layout_height="fill_parent" android:layout_weight="0.90"
+			android:visibility="invisible" />
 	</LinearLayout>
 
+	<LinearLayout android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:background="#c6c3c6"
+		android:minHeight="54dip" android:paddingTop="4dip"
+		android:paddingLeft="2dip" android:paddingRight="2dip"
+		android:id="@+id/welcomeActivity_frame">
 
+		<Button android:id="@+id/add_group" android:layout_width="100dp"
+			android:layout_height="wrap_content" android:drawableTop="@drawable/group"
+			android:text="@string/add_group" android:onClick="onClick"
+			android:layout_weight="1" />
+		<Button android:id="@+id/delete_group" android:layout_height="wrap_content"
+			android:layout_width="wrap_content" android:text="@string/delete_group"
+			android:onClick="onClick" android:layout_weight="1"
+			android:drawableTop="@drawable/android:ic_delete" />
+
+		<Button android:text="@string/sync" android:id="@+id/sync"
+			android:layout_height="wrap_content" android:onClick="onClick"
+			android:layout_width="100dp" android:layout_weight="1"
+			android:drawableTop="@drawable/android:stat_notify_sync"
+			android:paddingTop="10dp" android:drawablePadding="4dp" />
+	</LinearLayout>
 
 </LinearLayout>

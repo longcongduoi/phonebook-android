@@ -21,14 +21,18 @@ import android.provider.ContactsContract.Groups;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.FilterQueryProvider;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -52,7 +56,13 @@ public class WelcomeActivity extends ListActivity {
 	ProgressDialog m_ProgressDialog = null;
 	int layout = R.layout.group_entry;
 	Db db;
+	Button deleteButton;
 	WelcomeActivityCursorAdapter adapter ;
+	LinearLayout childLayout,menu;
+	LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+			LinearLayout.LayoutParams.FILL_PARENT,2),
+			showParams = new LinearLayout.LayoutParams(
+					LinearLayout.LayoutParams.FILL_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
 	/** Called when the activity is first created. */
 
 	@Override
@@ -63,6 +73,9 @@ public class WelcomeActivity extends ListActivity {
 		setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.icon);
 		testContentProvider();
 		db = new Db(getApplicationContext());
+		childLayout = (LinearLayout) findViewById(R.id.deleteLayout);
+		menu = (LinearLayout)findViewById(R.id.welcomeActivity_frame);
+		deleteButton = (Button)findViewById(R.id.delete_group_button);
 		populateGroups(layout);
 		listView=this.getListView();
 		getListView().setTextFilterEnabled(true);
@@ -91,27 +104,47 @@ public class WelcomeActivity extends ListActivity {
 	public boolean onClick(View v) {
 		switch (v.getId()) 
 		{ 
-			case R.id.delete_group: 
-			showDeleteGroupDialog();
+			case R.id.delete_group_button: 
+				showDeleteGroupDialog();
+			break;
+			case R.id.add_group:
+				Intent i = new Intent(WelcomeActivity.this, AddGroupActivity.class);
+		 		startActivityForResult(i, ADD_GROUP); 
+		 	break;
+			case R.id.delete_group:
+				childLayout.setVisibility(1);
+				deleteButton.setVisibility(1);
+				childLayout.setLayoutParams(showParams);
+				menu.setLayoutParams(params);
+				menu.setVisibility(-1);
+				keyValue = 1;
+				populateGroups(R.layout.delete_group_entry);
+			break;
+			case R.id.sync:
+				try {
+					doSync();
+				} catch (Exception e) {
+					e.printStackTrace();
+				} 
 			break;
 		} 
 		return true;
 	}
-
+/*
 	@Override 
 	public boolean onCreateOptionsMenu(Menu menu) { 
 		MenuInflater inflater = getMenuInflater(); 
 		inflater.inflate(R.menu.group_list_menu, menu); 
 		return true;
-	}
+	}*/
 	
 	
-	@Override
+	/*@Override
 	public void onAttachedToWindow() {
 		super.onAttachedToWindow();
 		openOptionsMenu();
 	}
-
+*/
 	  
 	@Override 
 	public boolean onOptionsItemSelected(MenuItem item) { 
@@ -130,23 +163,27 @@ public class WelcomeActivity extends ListActivity {
 		 	break;
 		 	
 			case R.id.delete_group:
-				LinearLayout mainLayout=(LinearLayout)findViewById(R.id.mainlinearLayout);
-				LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.deleteLayout);
-				childLayout.setVisibility(1);
 				populateGroups(R.layout.delete_group_entry);
 			break;
+				        	
 		} 
 		return true;
 	}
-	
+
 	private void doSync() {
 		SyncAdapter syncAdapter = new SyncAdapter(getApplicationContext(), true);
 		Account account = Db.getAccount(getApplicationContext());
 		Log.i(tag, "Account is: "+account);//.name+", "+account.type);
 		if(account != null)
 		{
-			syncAdapter.onPerformSync(account, null, null, null, null);
-			populateGroups(layout);
+			if(SyncAdapter.isSyncing)
+				Toast.makeText(getApplicationContext(), "Sync is in progress", Toast.LENGTH_LONG).show();
+			else
+			{
+				syncAdapter.onPerformSync(account, null, null, null, null);
+				populateGroups(layout);	
+			}
+			
 		}
 		else
 			Toast.makeText(getApplicationContext(), "You have not added a phonebook account", Toast.LENGTH_LONG)
@@ -166,7 +203,7 @@ public class WelcomeActivity extends ListActivity {
 		super.onCreateContextMenu(menu, v, menuInfo);
 		menu.setHeaderTitle("Group: "+name);
 		int order = 0;
-		if(owner == null && !name.equals("My phonebook"))
+		if(owner == null)
 		{
 			menu.add(0, v.getId(), order++, "Rename");
 		}
@@ -211,20 +248,7 @@ public class WelcomeActivity extends ListActivity {
 		return true;
 	}
 
-	/*public boolean onClickAddGroup(View v) {
-
-		// Handle item selection
-		switch (v.getId()) {
-		case R.id.add_group_new:
-			Intent i = new Intent(WelcomeActivity.this, AddGroupActivity.class);
-			startActivityForResult(i, ADD_GROUP);
-			break;
-		}
-
-		return true;
-
-	}*/
-
+	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		//if ((requestCode == ADD_GROUP && resultCode == RESULT_OK)
@@ -266,7 +290,7 @@ public class WelcomeActivity extends ListActivity {
 
 		adapter.setStringConversionColumn(m_cursor
 				.getColumnIndexOrThrow(ContactsContract.Groups.TITLE));
-
+        adapter.setAddButton(deleteButton, "Selected num groups to remove");
 		adapter.setFilterQueryProvider(new FilterQueryProvider() {
 
 			public Cursor runQuery(CharSequence constraint) {
@@ -339,17 +363,17 @@ public class WelcomeActivity extends ListActivity {
 	}
 	
 	private void showDeleteGroupDialog() {
-		int delete_group_count=0;
+		int deleteCount=0;
 		for(int i=0;i<listView.getChildCount();i++)
 		{
 			View childView = listView.getChildAt(i);
     		CheckBox check =(CheckBox)childView.findViewById(R.id.check);
     		
     		if(check.isChecked())
-    			delete_group_count++;
+    			deleteCount++;
 		}
-		Log.i(tag,"selected group count"+delete_group_count);
-		if(delete_group_count>0)
+		Log.i(tag,"selected group count"+deleteCount);
+		if(deleteCount>0)
 		{
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setMessage("Are you sure you want to delete selected group(s)?")
@@ -374,11 +398,10 @@ public class WelcomeActivity extends ListActivity {
 
 	
 	ListView listView;
+	int keyValue = 0;
+	
 	private void deleteGroups() {
 		int numDeleted = 0;
-		LinearLayout mainLayout=(LinearLayout)findViewById(R.id.mainlinearLayout);
-		LinearLayout childLayout=(LinearLayout)mainLayout.findViewById(R.id.deleteLayout);
-		
 		List<Boolean> checkedItems = adapter.getCheckedItems();
 		ContentResolver cr =getContentResolver();
 		for(int i=0;i<listView.getCount();i++) 
@@ -398,14 +421,38 @@ public class WelcomeActivity extends ListActivity {
 					Groups.CONTENT_URI, "_ID=?", args);
 			numDeleted++;
 			Db.setGroupDirty(args[0], cr);
+			getContentResolver().notifyChange(
+					Groups.CONTENT_URI, null);
+			getContentResolver().notifyChange(
+					ContactsContract.Data.CONTENT_URI, null);
 			// notify registered observers that a row was updated
     	}
 		
 		Toast.makeText(this, "Deleted "+numDeleted+" group(s)", Toast.LENGTH_LONG).show();
 		childLayout.setVisibility(-1);
+		deleteButton.setVisibility(-1);
+		childLayout.setLayoutParams(params);
+		menu.setVisibility(1);
+		menu.setLayoutParams(showParams);
 		populateGroups(layout);
     }
 	
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		if(keyValue == 1)
+		{
+			childLayout.setVisibility(-1);
+			deleteButton.setVisibility(-1);
+			childLayout.setLayoutParams(params);
+			menu.setVisibility(1);
+			menu.setLayoutParams(showParams);
+			keyValue = 0;
+		}
+		else
+			return super.onKeyDown(keyCode, event);
+		
+		return true;
+	}
 	
 }
 
