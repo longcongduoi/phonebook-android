@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import com.nbos.phonebook.sync.client.Net;
 import com.nbos.phonebook.sync.syncadapter.SyncAdapter;
+import com.nbos.phonebook.util.ThreadUtil;
 
 public class ValidationActivity extends Activity {
 
@@ -118,7 +119,7 @@ public class ValidationActivity extends Activity {
 					}
                 }
             };
-            Net.performOnBackgroundThread(runnable);				
+            ThreadUtil.performOnBackgroundThread(runnable);				
         	finish();
         }
     }

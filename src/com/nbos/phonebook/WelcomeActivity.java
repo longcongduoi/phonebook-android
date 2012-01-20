@@ -45,6 +45,7 @@ import com.nbos.phonebook.sync.client.BookPermission;
 import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
 import com.nbos.phonebook.sync.platform.UpdateContacts;
 import com.nbos.phonebook.sync.syncadapter.SyncAdapter;
+import com.nbos.phonebook.sync.syncadapter.SyncListener;
 import com.nbos.phonebook.util.WelcomeActivityCursorAdapter;
 import com.nbos.phonebook.value.Contact;
 import com.nbos.phonebook.value.Group;
@@ -124,6 +125,7 @@ public class WelcomeActivity extends ListActivity {
 				try {
 					doSync();
 				} catch (Exception e) {
+					Toast.makeText(getApplicationContext(), "Sync error: "+e.getMessage(), Toast.LENGTH_LONG).show();					
 					e.printStackTrace();
 				} 
 			break;
@@ -172,6 +174,15 @@ public class WelcomeActivity extends ListActivity {
 
 	private void doSync() {
 		SyncAdapter syncAdapter = new SyncAdapter(getApplicationContext(), true);
+		syncAdapter.addSyncListener(new SyncListener() {
+
+			@Override
+			public void syncException(String message) {
+				Toast.makeText(getApplicationContext(), "Sync exception: "+message, Toast.LENGTH_LONG).show();
+				
+			}
+			
+		});
 		Account account = Db.getAccount(getApplicationContext());
 		Log.i(tag, "Account is: "+account);//.name+", "+account.type);
 		if(account != null)

@@ -18,7 +18,9 @@ package com.nbos.phonebook.sync.syncadapter;
 
 import java.io.IOException;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.http.ParseException;
 import org.apache.http.auth.AuthenticationException;
@@ -26,8 +28,6 @@ import org.json.JSONException;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.accounts.AuthenticatorException;
-import android.accounts.OperationCanceledException;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.Context;
@@ -96,12 +96,22 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
              }
              doSync();
         } catch (Exception e) {
+        	notifyListeners(e.getMessage());
 			e.printStackTrace();
 		} finally {
 			isSyncing = false;
 		}
     }
 
+    List<SyncListener> listeners = new ArrayList<SyncListener>(); 
+	private void notifyListeners(String message) {
+		for(SyncListener l : listeners)
+			l.syncException(message);
+	}
+
+	public void addSyncListener(SyncListener listener) {
+		listeners.add(listener);
+	}
 	void doSync() throws AuthenticationException, ParseException, JSONException, IOException {
 		Log.i(tag, "doSync()");
         String lastUpdated = accountManager.getUserData(account, Constants.ACCOUNT_LAST_UPDATED),

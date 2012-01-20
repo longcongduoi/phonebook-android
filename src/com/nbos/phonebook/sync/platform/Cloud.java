@@ -9,19 +9,43 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthState;
 import org.apache.http.auth.AuthenticationException;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.params.ConnManagerPNames;
 import org.apache.http.conn.params.ConnManagerParams;
+import org.apache.http.conn.params.ConnPerRouteBean;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.AbstractHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.params.HttpProtocolParams;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -41,11 +65,42 @@ import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.SharingBook;
+import com.nbos.phonebook.util.EasySSLSocketFactory;
 import com.nbos.phonebook.util.Notify;
 import com.nbos.phonebook.value.PicData;
 
 public class Cloud {
 	static String tag = "Cloud";
+    public static final String
+	DOMAIN = "10.9.8.29", // "phonebook.nbostech.com"
+	PROTOCOL = "https", // "http"
+	PORT = "8443", // 8080, 80, 443
+	// BASE_URL = "http://phonebook.nbostech.com/phoneb;[uj8ook",
+	BASE_URL = PROTOCOL +"://" +  DOMAIN + ":" + PORT + "/phonebook", // https://10.9.8.29:8443/phonebook",
+	AUTH_URI = BASE_URL + "/mobile/index",
+	REG_URL = BASE_URL + "/mobile/register",
+	FACEBOOK_LOGIN_URL = BASE_URL + "/login/facebookMobileLogin",
+	VALIDATION_URI = BASE_URL + "/mobile/validate",
+	NEW_VALIDATION_CODE_URI = BASE_URL + "/mobile/newValidationCode",
+	CHECK_VALID_ACCOUNT_URI = BASE_URL + "/mobile/valid",
+	GET_CONTACT_UPDATES_URI = BASE_URL + "/mobile/contacts",
+	GET_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/sharedBooks",
+	GET_SHARED_BOOK_ID_UPDATES_URI = BASE_URL + "/mobile/sharedBookIds",
+    SEND_CONTACT_UPDATES_URI = BASE_URL + "/mobile/updateContacts",
+    SEND_GROUP_UPDATES_URI = BASE_URL + "/mobile/updateGroups",
+    TIMESTAMP_URI = BASE_URL + "/mobile/timestamp",
+	SEND_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/updateSharedBooks",
+	SEND_LINK_UPDATES_URI = BASE_URL + "/mobile/updateLinks",
+	SEND_CHANGED_LINK_UPDATES_URI = BASE_URL + "/mobile/updateChangedLinks",
+	UPLOAD_CONTACT_PIC_URI = BASE_URL + "/fileUploader/process",
+	DOWNLOAD_CONTACT_PIC_URI = BASE_URL + "/download/index/",
+	GET_PIC_DATA_URI = BASE_URL + "/mobile/picData",
+	PARAM_USERNAME = "username",
+	// PARAM_PASSWORD = "password",
+	PARAM_PHONE_NUMBER = "ph",
+	PARAM_VALIDATION_CODE = "valid",
+	PARAM_UPDATED = "timestamp";
+	
 	Db db;
     Context context;
     ContentResolver cr;
@@ -64,38 +119,14 @@ public class Cloud {
     boolean newOnly;
     public static final int REGISTRATION_TIMEOUT = 20 * 60 * 1000; // ms
 
-    public static final String 
-    	PARAM_USERNAME = "username",
-    	PARAM_PASSWORD = "password",
-    	PARAM_PHONE_NUMBER = "ph",
-    	PARAM_VALIDATION_CODE = "valid",
-    	PARAM_UPDATED = "timestamp",
-    	USER_AGENT = "AuthenticationService/1.0",
-    	BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	// BASE_URL = "http://10.9.8.172:8080/phonebook",
-    	AUTH_URI = BASE_URL + "/mobile/index",
-    	REG_URL = BASE_URL + "/mobile/register",
-    	FACEBOOK_LOGIN_URL = BASE_URL + "/login/facebookMobileLogin",
-    	VALIDATION_URI = BASE_URL + "/mobile/validate",
-    	NEW_VALIDATION_CODE_URI = BASE_URL + "/mobile/newValidationCode",
-    	CHECK_VALID_ACCOUNT_URI = BASE_URL + "/mobile/valid",
-    	GET_CONTACT_UPDATES_URI = BASE_URL + "/mobile/contacts",
-    	GET_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/sharedBooks",
-    	GET_SHARED_BOOK_ID_UPDATES_URI = BASE_URL + "/mobile/sharedBookIds",
-        SEND_CONTACT_UPDATES_URI = BASE_URL + "/mobile/updateContacts",
-        SEND_GROUP_UPDATES_URI = BASE_URL + "/mobile/updateGroups",
-        TIMESTAMP_URI = BASE_URL + "/mobile/timestamp",
-    	SEND_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/updateSharedBooks",
-    	SEND_LINK_UPDATES_URI = BASE_URL + "/mobile/updateLinks",
-    	SEND_CHANGED_LINK_UPDATES_URI = BASE_URL + "/mobile/updateChangedLinks",
-    	UPLOAD_CONTACT_PIC_URI = BASE_URL + "/fileUploader/process",
-    	DOWNLOAD_CONTACT_PIC_URI = BASE_URL + "/download/index/",
-    	GET_PIC_DATA_URI = BASE_URL + "/mobile/picData";
 
 	public Cloud(Context context, String name, String authtoken) {
 		this.context = context;
-		this.cr = context.getContentResolver();
-		this.db = new Db(context);
+		if(context != null)
+		{
+			this.cr = context.getContentResolver();
+			this.db = new Db(context);
+		}
 		account = name;
 		authToken = authtoken;
 	}
@@ -453,43 +484,99 @@ public class Cloud {
 	}
 	
 	public String post(String url, List<NameValuePair> params) throws ClientProtocolException, IOException, JSONException {
+        final HttpResponse resp = postHttp(url, params);
+        final String response = EntityUtils.toString(resp.getEntity());
+        Log.i(tag, "Response is: "+response);
+        return response;
+	}
+
+	public HttpResponse postHttp(String url, List<NameValuePair> params) throws ClientProtocolException, IOException, JSONException {
         HttpEntity entity = new UrlEncodedFormEntity(params);
         final HttpPost post = new HttpPost(url);
         Log.i(tag, "Sending to: "+url);
         post.addHeader(entity.getContentType());
         post.setEntity(entity);
         maybeCreateHttpClient();
-        final HttpResponse resp = httpClient.execute(post);
-        final String response = EntityUtils.toString(resp.getEntity());
-        Log.i(tag, "Response is: "+response);
-        return response;
+        
+        final HttpResponse httpResponse = httpClient.execute(post);
+        return httpResponse;
 	}
 	
+	HttpRequestInterceptor preemptiveAuth = new HttpRequestInterceptor() {
+	    public void process(final HttpRequest request, final HttpContext context) throws HttpException, IOException {
+	        AuthState authState = (AuthState) context.getAttribute(ClientContext.TARGET_AUTH_STATE);
+	        CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(
+	                ClientContext.CREDS_PROVIDER);
+	        HttpHost targetHost = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
+	        
+	        if (authState.getAuthScheme() == null) {
+	            AuthScope authScope = new AuthScope(targetHost.getHostName(), targetHost.getPort());
+	            Credentials creds = credsProvider.getCredentials(authScope);
+	            if (creds != null) {
+	                authState.setAuthScheme(new BasicScheme());
+	                authState.setCredentials(creds);
+	            }
+	        }
+	    }    
+	};	
     /**
      * Configures the httpClient to connect to the URL provided.
      */
     void maybeCreateHttpClient() {
         if (httpClient == null) {
-            httpClient = new DefaultHttpClient();
-            final HttpParams params = httpClient.getParams();
-            HttpConnectionParams.setConnectionTimeout(params, REGISTRATION_TIMEOUT);
-            HttpConnectionParams.setSoTimeout(params, REGISTRATION_TIMEOUT);
-            ConnManagerParams.setTimeout(params, REGISTRATION_TIMEOUT);
+        	httpClient = createHttpClient();
         }
     }
-	
+
+    HttpClient createHttpClient() {
+    	Log.i(tag, "Creating http client");//, username: "+username+", password: "+password);
+    	SchemeRegistry schemeRegistry = new SchemeRegistry();
+    	// http scheme
+    	schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 8080)); // these port numbers dont seem to matter
+    	// https scheme
+    	schemeRegistry.register(new Scheme("https", new EasySSLSocketFactory(), 443));
+
+    	HttpParams params = new BasicHttpParams();
+    	params.setParameter(ConnManagerPNames.MAX_TOTAL_CONNECTIONS, 30);
+    	params.setParameter(ConnManagerPNames.MAX_CONNECTIONS_PER_ROUTE, new ConnPerRouteBean(30));
+    	params.setParameter(HttpProtocolParams.USE_EXPECT_CONTINUE, false);
+    	
+    	ProtocolVersion pv = new ProtocolVersion("HTTP", 1, 1);
+    	HttpProtocolParams.setVersion(params, pv);
+
+    	// HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
+
+    	ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
+        HttpClient httpClient = new DefaultHttpClient(cm, params); // new DefaultHttpClient();
+        if(account != null)
+        {
+        	Log.i(tag, "Setting credentials for: "+account+", "+authToken);
+        	Credentials credentials = new UsernamePasswordCredentials(account, authToken);
+        	AuthScope as = new AuthScope(DOMAIN, Integer.parseInt(PORT));
+
+        	((AbstractHttpClient) httpClient).getCredentialsProvider()
+                .setCredentials(as, credentials);
+            ((AbstractHttpClient) httpClient).addRequestInterceptor(preemptiveAuth, 0);
+        }
+
+        HttpConnectionParams.setConnectionTimeout(params, REGISTRATION_TIMEOUT);
+        HttpConnectionParams.setSoTimeout(params, REGISTRATION_TIMEOUT);
+        ConnManagerParams.setTimeout(params, REGISTRATION_TIMEOUT);
+        return httpClient;
+    }
+    
 	List<NameValuePair> getAuthParams() {
         List<NameValuePair> params = new ArrayList<NameValuePair>();
-        params.add(new BasicNameValuePair(PARAM_USERNAME, account));
-        params.add(new BasicNameValuePair(PARAM_PASSWORD, authToken));
+        // params.add(new BasicNameValuePair(PARAM_USERNAME, account));
+        // params.add(new BasicNameValuePair(PARAM_PASSWORD, authToken));
         /*if (lastUpdated != null) {
         final SimpleDateFormat formatter =
             new SimpleDateFormat("yyyy/MM/dd HH:mm");
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         params.add(new BasicNameValuePair(PARAM_UPDATED, formatter
             .format(lastUpdated)));
-    }
-    Log.i(TAG, params.toString());*/
+    	}
+    	Log.i(TAG, params.toString());*/
         
         return params;
 	}

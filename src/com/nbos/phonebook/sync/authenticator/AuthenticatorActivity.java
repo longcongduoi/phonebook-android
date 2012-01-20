@@ -16,9 +16,6 @@
 
 package com.nbos.phonebook.sync.authenticator;
 
-import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
-
 import org.json.JSONObject;
 
 import android.accounts.Account;
@@ -31,18 +28,16 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.ContactsContract;
 import android.telephony.TelephonyManager;
-import android.text.Html.TagHandler;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
-import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -51,9 +46,9 @@ import android.widget.Toast;
 
 import com.facebook.android.DialogError;
 import com.facebook.android.Facebook;
+import com.facebook.android.Facebook.DialogListener;
 import com.facebook.android.FacebookError;
 import com.facebook.android.Util;
-import com.facebook.android.Facebook.DialogListener;
 import com.nbos.phonebook.Db;
 import com.nbos.phonebook.R;
 import com.nbos.phonebook.sync.Constants;
@@ -415,7 +410,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         }
    }
     
-    
+    @Override
     public void onItemSelected(AdapterView<?> parent,
             View view, int pos, long id) 
     {
@@ -428,6 +423,10 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 			Toast.LENGTH_LONG).show();
     }
 
-    public void onNothingSelected(AdapterView parent) {}
+	@Override
+	public void onNothingSelected(AdapterView<?> parent) {
+		// TODO Auto-generated method stub
+		
+	}
 }
 
