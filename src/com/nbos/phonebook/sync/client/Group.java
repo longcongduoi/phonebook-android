@@ -16,8 +16,9 @@ public class Group {
 	public int permission;
 	public List<Contact> contacts;
 	public Set<Long> sharingWithContactIds;
+	public Boolean deleted = false;
 	public Group(String groupId, String serverId, String name, String owner, 
-			List<Contact> contacts, Set<Long> sharingWithContactIds) {
+			List<Contact> contacts, Set<Long> sharingWithContactIds, Boolean deleted) {
 		super();
 		this.groupId = groupId;
 		this.serverId = serverId;
@@ -25,6 +26,7 @@ public class Group {
 		this.owner = owner;
 		this.contacts = contacts;
 		this.sharingWithContactIds = sharingWithContactIds;
+		this.deleted = deleted;
 	}
 	
 	static String tag = "Group";
@@ -33,7 +35,8 @@ public class Group {
 		String name = group.getString("name"),
 			owner = group.getString("owner");
 		int permission = group.getInt("perm");
-		Log.i(tag, "Id: "+id+", name: "+name+", owner: "+owner+", permission: "+permission);
+		Boolean deleted = group.has("dt") ? group.getBoolean("dt") : false;
+		Log.i(tag, "Id: "+id+", name: "+name+", owner: "+owner+", permission: "+permission+", deleted: "+deleted);
 		
 		List<Contact> contacts = new ArrayList<Contact>();
 		JSONArray contactsArray = group.getJSONArray("contacts");
@@ -48,7 +51,8 @@ public class Group {
 			for(int i=0; i< sharingWithContactIdsArray.length(); i++)
 				sharingWithContactIds.add(sharingWithContactIdsArray.getLong(i));
 		} catch(Exception e) {}
-		Group g = new Group(new Integer(id).toString(), null, name, owner, contacts, sharingWithContactIds);
+		Group g = new Group(new Integer(id).toString(), null, name, owner, 
+				contacts, sharingWithContactIds, deleted);
 		
 		g.permission = permission;
 		return g;

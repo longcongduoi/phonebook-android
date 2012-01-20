@@ -130,7 +130,11 @@
     <string name="valid_get_new_code_text">If you have not receieved an SMS, click below to get another SMS with the validation code.</string>
     
     <string name="title_postal">Ok</string>
+    
     <string name="Ok">Ok</string>
+    <string name="select_all">Select all</string>
+    
+    <string name="deselect_all">De-select all</string>
     
     <!-- Menu item to indicate you are done editing a contact and want to save the changes you've made -->
     <string name="menu_done">Done</string>

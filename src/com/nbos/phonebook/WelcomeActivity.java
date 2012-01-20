@@ -98,6 +98,7 @@ public class WelcomeActivity extends ListActivity {
 		// Test.joinContacts(getApplicationContext());
 		// Test.deleteContactLinkTable(getApplicationContext());
 		//Test.updateServerId(getApplicationContext());
+		//Test.getGroupList(getApplicationContext());
 	}
 
 	
@@ -130,8 +131,8 @@ public class WelcomeActivity extends ListActivity {
 		} 
 		return true;
 	}
-/*
-	@Override 
+
+	/*@Override 
 	public boolean onCreateOptionsMenu(Menu menu) { 
 		MenuInflater inflater = getMenuInflater(); 
 		inflater.inflate(R.menu.group_list_menu, menu); 
@@ -447,6 +448,7 @@ public class WelcomeActivity extends ListActivity {
 			menu.setVisibility(1);
 			menu.setLayoutParams(showParams);
 			keyValue = 0;
+			populateGroups(layout);
 		}
 		else
 			return super.onKeyDown(keyCode, event);

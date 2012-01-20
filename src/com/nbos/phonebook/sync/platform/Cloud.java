@@ -25,6 +25,7 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -71,8 +72,8 @@ public class Cloud {
     	PARAM_VALIDATION_CODE = "valid",
     	PARAM_UPDATED = "timestamp",
     	USER_AGENT = "AuthenticationService/1.0",
-    	BASE_URL = "http://phonebook.nbostech.com/phonebook",
-    	// BASE_URL = "http://10.9.8.172:8080/phonebook",
+    	//BASE_URL = "http://phonebook.nbostech.com/phonebook",
+    	BASE_URL = "http://10.9.8.172:8080/phonebook",
     	AUTH_URI = BASE_URL + "/mobile/index",
     	REG_URL = BASE_URL + "/mobile/register",
     	FACEBOOK_LOGIN_URL = BASE_URL + "/login/facebookMobileLogin",
@@ -301,8 +302,12 @@ public class Cloud {
 	private List<Group> getSharedBooks() throws ClientProtocolException, JSONException, IOException {
         List<NameValuePair> params = getAuthParams();
         if(lastUpdated != null)
+        {
         	params.add(new BasicNameValuePair(Constants.ACCOUNT_LAST_UPDATED, lastUpdated));
+        	Log.i(tag,"lastUpdated: "+lastUpdated);
+        }
         final JSONArray sharedBooks = new JSONArray(post(GET_SHARED_BOOK_UPDATES_URI, params));
+        Log.i(tag,"sharedbooksSize: "+sharedBooks.length());
         final List<Group> books = new ArrayList<Group>();
         for (int i = 0; i < sharedBooks.length(); i++)  
             books.add(Group.valueOf(sharedBooks.getJSONObject(i)));
@@ -412,6 +417,7 @@ public class Cloud {
         	params.add(new BasicNameValuePair("groupId_"+index, group.groupId));
         	params.add(new BasicNameValuePair("serverId_"+index, group.serverId));
         	params.add(new BasicNameValuePair("bookName_"+index, group.name));
+        	params.add(new BasicNameValuePair("deleted_"+index, group.deleted.toString()));
         	List<Contact> bookContacts = group.contacts;
         	Log.i(tag, "numcontacts: "+bookContacts.size());
         	params.add(new BasicNameValuePair("numContacts_"+index, new Integer(bookContacts.size()).toString()));
@@ -430,6 +436,15 @@ public class Cloud {
         	ContactManager.updateGroup(groupUpdates.getJSONObject(i), context);
         if(groups.size() > 0)
         	ContactManager.resetDirtyGroups(context);
+        int num = 0;
+        for(int i=0;i<groups.size();i++)
+        {
+        	JSONObject g = groupUpdates.getJSONObject(i);
+        	num += cr.delete(SyncManager.addCallerIsSyncAdapterParameter(Groups.CONTENT_URI), Groups.DELETED + " = 1 "
+	    		+" and " + Groups.ACCOUNT_TYPE + " = ? "+" and "+Groups._ID + " =? ", 
+	    		new String[] {Constants.ACCOUNT_TYPE,g.getString("groupId")});
+        }
+	    Log.i(tag, "Deleted "+num+" phonebooks");
 
 	}
 	

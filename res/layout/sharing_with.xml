@@ -11,28 +11,25 @@
 			android:layout_height="wrap_content" android:layout_width="fill_parent"
 			android:choiceMode="multipleChoice"></ListView>
 
-
-
 		<TextView android:id="@android:id/empty"
 			android:layout_height="wrap_content" android:layout_width="wrap_content"
 			android:text="@string/not_sharing" android:textAppearance="?android:attr/textAppearanceLarge"></TextView>
 	</LinearLayout>
-	<LinearLayout android:id="@+id/extraLayout"
+	<LinearLayout android:id="@+id/removeSharingLayout"
 		android:layout_width="fill_parent" android:layout_height="2dip"
 		android:orientation="horizontal" android:visibility="invisible">
-		<Button android:id="@+id/remove_contacts_button"
+		<Button android:id="@+id/remove_sharing_button"
 			android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:text="@string/remove_sharing_contacts" android:visibility="invisible" />
-
+			android:text="@string/remove_selected_contacts" android:visibility="invisible" />
 	</LinearLayout>
-	
+
 	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 		android:orientation="vertical" android:layout_width="fill_parent"
 		android:layout_height="wrap_content" android:background="#c6c3c6"
 		android:minHeight="54dip" android:paddingTop="4dip"
 		android:paddingLeft="2dip" android:paddingRight="2dip"
 		android:id="@+id/sharingWithActivity_frame">
-		
+
 		<Button android:id="@+id/add_contact_share_with"
 			android:layout_height="wrap_content" android:text="@string/add_contact_to_share_with"
 			android:onClick="onClick" android:layout_width="fill_parent"
@@ -47,4 +44,4 @@
 			android:drawableLeft="@drawable/android:ic_delete"></Button>
 	</LinearLayout>
 
-	</LinearLayout>
+</LinearLayout>
