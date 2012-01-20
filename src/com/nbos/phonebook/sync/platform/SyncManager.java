@@ -16,10 +16,12 @@ import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
 import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.Groups;
 import android.util.Log;
 
 import com.nbos.phonebook.Db;
 import com.nbos.phonebook.database.tables.BookTable;
+import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
 import com.nbos.phonebook.sync.client.Group;
 import com.nbos.phonebook.sync.client.PhoneContact;
@@ -192,15 +194,18 @@ public class SyncManager {
 	    ContentResolver cr = context.getContentResolver();
 	    Cursor cursor = cr.query(ContactsContract.Groups.CONTENT_URI, null,  
 	    		ContactsContract.Groups.SOURCE_ID + " = "+id, null, null);
-	    if(cursor.getCount() == 0)
+	    if(cursor.getCount() == 0 && !g.deleted)
 	    {
-	    	Log.i(tag, "New group: "+account+", "+g.name+", owner: "+g.owner+", sourceId: "+g.groupId);
+	    	Log.i(tag, "New group: "+account+", "+g.name+", owner: "+g.owner+", sourceId: "+g.groupId+" ,deleted:"+g.deleted);
 	    	// create a group with the share book name
 	    	//DatabaseHelper.createAGroup(ctx, sharedBook.name, sharedBook.owner, accountName, id);
 	    	Db.createAGroup(context, g.name, isSharedBook ? g.owner : null, isSharedBook ? g.permission : null, account, Integer.parseInt(id));
 	    	cursor.requery();
 	    	Log.i(tag, "cursor has "+cursor.getCount()+" rows");
 	    }
+	    
+	    if(cursor.getCount() == 0) return;
+	    
 	    cursor.moveToFirst();
 	    String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID)),
 	    	dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DIRTY)),
@@ -209,6 +214,14 @@ public class SyncManager {
 	    if(dirty.equals("1") || deleted.equals("1"))
 	    {
 	    	Log.i(tag, "Group is dirty, skipping update");
+	    	return;
+	    }
+	    if(g.deleted)
+	    {
+	    	int num = context.getContentResolver().delete(SyncManager.addCallerIsSyncAdapterParameter(Groups.CONTENT_URI),
+		    	      Groups.ACCOUNT_TYPE + " = ? "+" and "+Groups.SOURCE_ID + " =? ", 
+		    		new String[] {Constants.ACCOUNT_TYPE,g.groupId});
+	    	Log.i(tag,"Group "+ g.name+" was deleted");
 	    	return;
 	    }
 	    syncedGroupServerIds.add(id);
@@ -231,6 +244,7 @@ public class SyncManager {
     	Set<String> rawContactIds = new HashSet<String>();
 
     	updateGroupBatchOperation = new BatchOperation(context);
+  
     	for(Contact u : g.contacts)
     	{
     		rawContactIds.add(updateGroupContact(u, groupId));
@@ -375,6 +389,7 @@ public class SyncManager {
 	}
 	
 	long lookupRawContactFromServerId(String serverId) {
+		
 		String rawContactId = cloud.serverContactIdsMap.get(serverId); 
 		if(rawContactId != null)
 		{

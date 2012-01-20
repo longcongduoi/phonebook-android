@@ -133,9 +133,9 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 				if (bookId > groupId)
 					break;
 				if (bookId == groupId) {
-					String rawId = sharedBooksCursor
-							.getString(sharedBooksCursor
-									.getColumnIndex(BookTable.CONTACTID)), contactId = getContactId(rawId);
+					String rawId = sharedBooksCursor.getString(sharedBooksCursor
+							.getColumnIndex(BookTable.CONTACTID)), 
+						  contactId = getContactId(rawId);
 					if (contactId != null)
 						contactIds.add(contactId);
 				}
@@ -149,9 +149,9 @@ public class WelcomeActivityCursorAdapter extends SimpleCursorAdapter {
 		if (rawContactsCursor.getCount() > 0)
 			do {
 				String rawId = rawContactsCursor.getString(rawContactsCursor
-						.getColumnIndex(RawContacts._ID)), cId = rawContactsCursor
-						.getString(rawContactsCursor
-								.getColumnIndex(RawContacts.CONTACT_ID));
+						.getColumnIndex(RawContacts._ID)), 
+					   cId = rawContactsCursor.getString(rawContactsCursor
+							   .getColumnIndex(RawContacts.CONTACT_ID));
 				if (!rawContactId.equals(rawId))
 					continue;
 				return cId;

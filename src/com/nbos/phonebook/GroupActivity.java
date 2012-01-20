@@ -22,7 +22,6 @@ import android.provider.ContactsContract.Data;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -33,7 +32,6 @@ import android.view.Window;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
 import android.widget.FilterQueryProvider;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -54,7 +52,7 @@ public class GroupActivity extends ListActivity {
 	ImageCursorAdapter adapter;
 	Cursor rawContactsCursor;
 	Db db;
-	int layout,keyValue;
+	int layout;
 	LinearLayout childLayout,menu; 
 	Button extraButton;
 	LinearLayout.LayoutParams hideParams = new LinearLayout.LayoutParams(
@@ -94,6 +92,9 @@ public class GroupActivity extends ListActivity {
 
 	
 	private void showMenu() {
+		Button sharing = (Button) menu.findViewById(R.id.share_group);
+		Button removeContacts = (Button) menu.findViewById(R.id.remove_contacts);
+		Button addContacts = (Button) menu.findViewById(R.id.add_contacts);
 		if(owner == null)
 			menu.setVisibility(1);
 		else
@@ -106,15 +107,15 @@ public class GroupActivity extends ListActivity {
 			else if(perm < BookPermission.ADD_REMOVE_CONTACTS.ordinal())
 			{
 				Log.i(tag,"owner: "+owner+" ,perm: "+permission);	
-				Button sharing = (Button) menu.findViewById(R.id.share_group);
-				Button removeContacts = (Button) menu.findViewById(R.id.remove_contacts);
-				Button addContacts = (Button) menu.findViewById(R.id.add_contacts);
 				sharing.setVisibility(View.GONE);
 				removeContacts.setVisibility(View.GONE);
 				addContacts.setText("Add contacts to group");
 			}
 		}
-		
+		if(m_cursor.getCount()==0)
+			removeContacts.setVisibility(View.GONE);
+		else
+			removeContacts.setVisibility(View.VISIBLE);
 	}
 
 
@@ -133,11 +134,11 @@ public class GroupActivity extends ListActivity {
 		}
 		return true;
 	}
-	@Override
+	/*@Override
 	public void onAttachedToWindow() {
 		super.onAttachedToWindow();
 		openOptionsMenu();
-	}
+	}*/
 
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
@@ -383,10 +384,33 @@ public class GroupActivity extends ListActivity {
 	boolean mShowInvisible = false;
 	
 	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		/*MenuInflater inflater = getMenuInflater();
+			inflater.inflate(R.menu.select_all_menu, menu);*/
+		menu.removeGroup(0);
+		menu.removeGroup(1);
+		if(keyValue == 1)
+		{
+			menu.add(0, R.id.selectAll, 0 ,"Select all")
+				.setIcon(android.R.drawable.checkbox_on_background);
+			menu.add(1, R.id.deSelect, 1,"Deselect all")
+				.setIcon(android.R.drawable.checkbox_off_background);
+		}
+		return true;
+
+	}
+
+	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// Handle item selection
 		switch (item.getItemId()) {
-		case R.id.delete_group:
+		case R.id.selectAll:
+			adapter.toggleSelect(adapter.getCount(),getListView(),true);
+			break;
+		case R.id.deSelect:
+			adapter.toggleSelect(adapter.getCount(),getListView(),false);
+			break;
+		/*case R.id.delete_group:
 			showDeleteGroupDialog();
 			break;
 		case R.id.add_contacts:
@@ -402,7 +426,7 @@ public class GroupActivity extends ListActivity {
 		case R.id.remove_contacts:
 			if(m_cursor.getCount()>0)
 			removeContacts();
-			break;
+			break;*/
 		//case R.id.bump_contacts:
 			//break;
 		}
@@ -414,7 +438,7 @@ public class GroupActivity extends ListActivity {
 	}
 
 	ListView listView;
-
+	static int keyValue;
 	private void removeContacts() {
 		queryGroup(R.layout.remove_contacts_entry);
 		keyValue=1;
@@ -455,6 +479,7 @@ public class GroupActivity extends ListActivity {
 					"Deleted " + numRemoved + " contact(s)", Toast.LENGTH_LONG)
 					.show();
 			setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.group);
+			showMenu();
 		}
 	};
 	
@@ -465,6 +490,7 @@ public class GroupActivity extends ListActivity {
 	    	
 	    	childLayout.setVisibility(-1);
 	    	childLayout.setLayoutParams(hideParams);
+	    	extraButton.setText("No conatcts selected");
 	    	menu.setVisibility(1);
 	    	menu.setLayoutParams(showMenuParams);
 	    	queryGroup(layout);
@@ -506,8 +532,8 @@ public class GroupActivity extends ListActivity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		onAttachedToWindow();
 		queryGroup(layout);
+		showMenu();
 	}
 
 	private void showDeleteGroupDialog() {

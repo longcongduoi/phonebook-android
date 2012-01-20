@@ -226,6 +226,7 @@ public class Db {
 	    	String dirty = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.DIRTY));
 	    	String accName = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.ACCOUNT_NAME));
 	    	String accType = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.ACCOUNT_TYPE));
+	    	Boolean deleted = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.DELETED)).equals("1") ? true : false; 
 	    	// String owner = groupsCursor.getString(groupsCursor.getColumnIndex(Groups.SYNC1));
 	    	Log.i(tag, "Group: "+name+", account: "+accName+", account type: "+accType+", sourceId: "+groupSourceId);//+", owner: "+owner);
 		    Cursor groupCursor = getContactsInGroup(new Long(groupId).toString(), cr);
@@ -241,7 +242,7 @@ public class Db {
     				Log.i(tag, "added contact: "+rawContactId+", serverId: "+serverId);//+", "+contactNumber+", "+contactName);
     			}
 	    	} while(groupCursor.moveToNext());
-	        groups.add(new Group(groupId, groupSourceId, name, null, contacts, null));
+	        groups.add(new Group(groupId, groupSourceId, name, null, contacts, null,deleted));
 	        Log.i(tag, "dirty is "+dirty);
 	        Log.i(tag, "Added group["+groupId+"] "+name+" with "+contacts.size()+" contacts");
 	        groupCursor.close();
@@ -414,6 +415,7 @@ public class Db {
         bookValues.put(BookTable.CONTACTID, rawContactId);
         bookValues.put(BookTable.DELETED, "0");
         Uri cUri = cr.insert(Constants.SHARE_BOOK_URI, bookValues);
+        Db.setGroupDirty(groupId, cr);
 	}
 
 	public void setDeleteSharingWith(String bookId, String rawContactId) {

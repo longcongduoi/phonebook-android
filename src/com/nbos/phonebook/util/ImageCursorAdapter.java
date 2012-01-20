@@ -16,6 +16,8 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.Toast;
 import android.widget.ImageView.ScaleType;
 import android.widget.SectionIndexer;
@@ -69,6 +71,21 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements
 
 	public void setIds(List<String> ids) {
 		this.ids = ids;
+	}
+	
+	public void toggleSelect(int count,ListView list, boolean check){
+
+		for(int i=0;i<count;i++)
+		{
+			list.setItemChecked(i,check);
+			checkedItems.set(i,check);
+		}
+		addButton.setEnabled(check);
+		if(check)
+			addButton.setText(addText.replace("num",
+					Integer.toString(list.getCount())));
+		else
+			addButton.setText("No contacts selected");
 	}
 
 	@Override
@@ -125,6 +142,7 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements
 				}
 			});
 			checkBox.setChecked(checkedItems.get(position));
+			
 		}
 		return v;
 	}

@@ -65,8 +65,8 @@ public class SharingWithActivity extends ListActivity {
 				R.drawable.share_64x64);
 
 		registerForContextMenu(getListView());
-        childLayout = (LinearLayout) findViewById(R.id.extraLayout);
-		stopSharing = (Button)findViewById(R.id.remove_contacts_button);
+        childLayout = (LinearLayout) findViewById(R.id.removeSharingLayout);
+		stopSharing = (Button)findViewById(R.id.remove_sharing_button);
 		menu = (LinearLayout)findViewById(R.id.sharingWithActivity_frame);
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
@@ -77,9 +77,18 @@ public class SharingWithActivity extends ListActivity {
 
 		setTitle("Group: " + "'" +name+"'" + " sharing with");
 		populateContacts(layout);
+		showMenu();
 		listview = getListView();
 		listview.setFastScrollEnabled(true);
 		
+	}
+
+	private void showMenu() {
+		Button removeSharing = (Button) findViewById(R.id.stop_sharing);
+		if(m_cursor.getCount()==0)
+			removeSharing.setVisibility(View.GONE);
+		else
+			removeSharing.setVisibility(View.VISIBLE);
 	}
 
 	public boolean onClick(View v){
@@ -149,20 +158,7 @@ public class SharingWithActivity extends ListActivity {
 		dialog.show();
 	}
 
-	public int getCheckedCount(ListView listview, int checkboxId) {
-
-		int checkedCount = 0;
-		for (int i = 0; i < listview.getChildCount(); i++) 
-		{
-			View v = (View) listview.getChildAt(i);
-			CheckBox checked = (CheckBox) v.findViewById(checkboxId);
-			if (checked.isChecked()) {
-				checkedCount++;
-			}
-		}
-		return checkedCount;
-	}
-    
+	
 	ListView listview;
 	
 	private void removeSharing() {
@@ -199,12 +195,14 @@ public class SharingWithActivity extends ListActivity {
 						R.drawable.share_64x64);
 				childLayout.setVisibility(-1);
 				childLayout.setLayoutParams(hideParams);
+				stopSharing.setText("No contacts selected");
 				menu.setVisibility(1);
 				menu.setLayoutParams(showParams);
 				Toast.makeText(getApplicationContext(), 
 					"Removed "+numRemoved+" contact(s) from sharing",
 					Toast.LENGTH_LONG).show();
 				populateContacts(layout);
+				showMenu();
 			}
 		};
 	
@@ -261,18 +259,23 @@ public class SharingWithActivity extends ListActivity {
 		getListView().setAdapter(adapter);
 	}
 
-	/*@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		MenuInflater inflater = getMenuInflater();
-		if (layout == (int) R.layout.contact_entry) {
-			inflater.inflate(R.menu.sharing_with_group_menu, menu);
-		} else {
-
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		/*MenuInflater inflater = getMenuInflater();
+			inflater.inflate(R.menu.select_all_menu, menu);*/
+		menu.removeGroup(0);
+		menu.removeGroup(1);
+		if(keyValue == 1)
+		{
+			menu.add(0, R.id.selectAll, 0 ,android.R.string.selectAll)
+				.setIcon(android.R.drawable.checkbox_on_background);
+			menu.add(1, R.id.deSelect, 1,"Deselect all")
+				.setIcon(android.R.drawable.checkbox_off_background);
 		}
 		return true;
 
 	}
-*/
+
 	/*@Override
 	public void onAttachedToWindow() {
 		super.onAttachedToWindow();
@@ -283,7 +286,13 @@ public class SharingWithActivity extends ListActivity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// Handle item selection
 		switch (item.getItemId()) {
-		case R.id.add_contact_share_with:
+		case R.id.selectAll:
+			adapter.toggleSelect(adapter.getCount(),getListView(),true);
+			break;
+		case R.id.deSelect:
+			adapter.toggleSelect(adapter.getCount(),getListView(),false);
+			break;
+		/*case R.id.add_contact_share_with:
 			showAddContactsToShareWith();
 			break;
 		case R.id.add_new_contact:
@@ -291,7 +300,7 @@ public class SharingWithActivity extends ListActivity {
 			break;
 		case R.id.stop_sharing:
 			removeSharing();
-			break;
+			break;*/
 		}
 		return true;
 	}
@@ -343,7 +352,7 @@ public class SharingWithActivity extends ListActivity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (requestCode == SHARE_WITH) { }
+		if (requestCode == SHARE_WITH) {  }
 		if (requestCode == INSERT_CONTACT_REQUEST && resultCode == RESULT_OK)
 		{
 			Uri contactUri = data.getData();
@@ -353,6 +362,7 @@ public class SharingWithActivity extends ListActivity {
 			shareGroupWithContact(contactId);
 		}
 	    populateContacts(layout);
+	    showMenu(); 
 	}
 
 	private ContactRow getContactRow(String rawContactId,
@@ -406,6 +416,7 @@ public class SharingWithActivity extends ListActivity {
 	    	childLayout.setVisibility(-1);
 	    	childLayout.setLayoutParams(hideParams);
 	    	stopSharing.setVisibility(-1);
+	    	stopSharing.setText("No contacts selected");
 			populateContacts(layout);
 	    	keyValue=0;
 	    	setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.share_64x64);
