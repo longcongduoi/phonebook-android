@@ -31,6 +31,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -88,17 +89,15 @@ public class Net {
         try {
 			final HttpResponse response = new Cloud(null, username, password).postHttp(AUTH_URI, params);
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                    Log.i(tag, "Successful authentication");
-                    Log.i(tag, "data: "+EntityUtils.toString(response.getEntity()));
-                //}
+            	Log.i(tag, "Successful authentication");
+            	Log.i(tag, "data: "+EntityUtils.toString(response.getEntity()));
                 sendResult(true, handler, context, null);
                 return true;
             } else {
                 // if (Log.isLoggable(TAG, Log.VERBOSE)) {
                     Log.v(tag, "Error authenticating" + response.getStatusLine());
                 // }
-                sendResult(false, handler, context, "Error authenticating" + response.getStatusLine());
+                sendResult(false, handler, context, "Error authenticating: " + response.getStatusLine());
                 return false;
             }
 			
@@ -113,8 +112,6 @@ public class Net {
 
     public static boolean register(String username, String password, String ph, Handler handler, final Context context) {
     	Log.i(tag, "Register" +" ,ph:"+ph);
-        final HttpResponse resp;
-
         final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair(PARAM_USERNAME, username));
         params.add(new BasicNameValuePair(PARAM_PASSWORD, password));
@@ -123,11 +120,15 @@ public class Net {
         try {
 			final HttpResponse response = new Cloud(null, null, null).postHttp(REG_URL, params);
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                    Log.i(tag, "Successful registration");
-                    Log.i(tag, "data: "+EntityUtils.toString(response.getEntity()));
-                //}
-                sendResult(true, handler, context, null);
+                String data = EntityUtils.toString(response.getEntity());
+                Log.i(tag, "data: "+data);
+                JSONObject resp = new JSONObject(data);
+                Boolean registered = resp.getBoolean("registered");
+                String message = resp.getString("message");
+                if(registered)
+                	sendResult(true, handler, context, null);
+                else
+                	sendResult(false, handler, context, message);
                 return true;
             } else {
                 // if (Log.isLoggable(TAG, Log.VERBOSE)) {
