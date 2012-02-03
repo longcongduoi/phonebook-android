@@ -24,14 +24,8 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.conn.params.ConnManagerParams;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -40,7 +34,6 @@ import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
-import com.facebook.android.Util;
 import com.nbos.phonebook.ValidationActivity;
 import com.nbos.phonebook.sync.authenticator.AuthenticatorActivity;
 import com.nbos.phonebook.sync.platform.Cloud;
@@ -94,9 +87,7 @@ public class Net {
                 sendResult(true, handler, context, null);
                 return true;
             } else {
-                // if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                    Log.v(tag, "Error authenticating" + response.getStatusLine());
-                // }
+            	Log.v(tag, "Error authenticating: " + response.getStatusLine());
                 sendResult(false, handler, context, "Error authenticating: " + response.getStatusLine());
                 return false;
             }

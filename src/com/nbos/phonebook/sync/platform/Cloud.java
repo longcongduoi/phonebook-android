@@ -74,16 +74,17 @@ public class Cloud {
 	static String tag = "Cloud";
     public static final String
 	DOMAIN = "10.9.8.29", // "phonebook.nbostech.com"
-	PROTOCOL = "https", // "http"
-	PORT = "8443", // 8080, 80, 443
-	// BASE_URL = "http://phonebook.nbostech.com/phoneb;[uj8ook",
-	BASE_URL = PROTOCOL +"://" +  DOMAIN + ":" + PORT + "/phonebook", // https://10.9.8.29:8443/phonebook",
+	HTTP = "http", // "http"
+	HTTPS = "https",
+	PORT = "8080", // 8080, 80, 443
+	SECURE_PORT = "8443",
+	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
+	BASE_URL = HTTPS +"://" +  DOMAIN + ":" + SECURE_PORT + "/phonebook", // https://10.9.8.29:8443/phonebook",
 	AUTH_URI = BASE_URL + "/mobile/index",
 	REG_URL = BASE_URL + "/mobile/register",
 	FACEBOOK_LOGIN_URL = BASE_URL + "/login/facebookMobileLogin",
 	VALIDATION_URI = BASE_URL + "/mobile/validate",
 	NEW_VALIDATION_CODE_URI = BASE_URL + "/mobile/newValidationCode",
-	CHECK_VALID_ACCOUNT_URI = BASE_URL + "/mobile/valid",
 	GET_CONTACT_UPDATES_URI = BASE_URL + "/mobile/contacts",
 	GET_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/sharedBooks",
 	GET_SHARED_BOOK_ID_UPDATES_URI = BASE_URL + "/mobile/sharedBookIds",
@@ -93,8 +94,9 @@ public class Cloud {
 	SEND_SHARED_BOOK_UPDATES_URI = BASE_URL + "/mobile/updateSharedBooks",
 	SEND_LINK_UPDATES_URI = BASE_URL + "/mobile/updateLinks",
 	SEND_CHANGED_LINK_UPDATES_URI = BASE_URL + "/mobile/updateChangedLinks",
-	UPLOAD_CONTACT_PIC_URI = BASE_URL + "/fileUploader/process",
-	DOWNLOAD_CONTACT_PIC_URI = BASE_URL + "/download/index/",
+	UNSECURED_URL = HTTP +"://" +  DOMAIN + ":" + PORT + "/phonebook", // https://10.9.8.29:8443/phonebook",
+	UPLOAD_CONTACT_PIC_URI = UNSECURED_URL + "/fileUploader/process",
+	DOWNLOAD_CONTACT_PIC_URI = UNSECURED_URL + "/download/index/",
 	GET_PIC_DATA_URI = BASE_URL + "/mobile/picData",
 	PARAM_USERNAME = "username",
 	// PARAM_PASSWORD = "password",
@@ -566,7 +568,7 @@ public class Cloud {
         {
         	Log.i(tag, "Setting credentials for: "+account+", "+authToken);
         	Credentials credentials = new UsernamePasswordCredentials(account, authToken);
-        	AuthScope as = new AuthScope(DOMAIN, Integer.parseInt(PORT));
+        	AuthScope as = new AuthScope(DOMAIN, Integer.parseInt(SECURE_PORT));
 
         	((AbstractHttpClient) httpClient).getCredentialsProvider()
                 .setCredentials(as, credentials);

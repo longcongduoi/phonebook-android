@@ -74,8 +74,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         try {
              // use the account manager to request the credentials
         	String phoneNumber = accountManager.getUserData(account, Constants.PHONE_NUMBER_KEY);
-        	Log.i(tag, "phone number is: "+phoneNumber);
         	authtoken = accountManager.blockingGetAuthToken(account, Constants.AUTHTOKEN_TYPE, true /* notifyAuthFailure */);
+        	Log.i(tag, "phone number is: "+phoneNumber+", authtoken: "+authtoken);
              // fetch updates from the sample service over the cloud
              boolean valid = Net.checkValidAccount(account, authtoken, 
             		 accountManager.getUserData(account, Constants.PHONE_NUMBER_KEY));

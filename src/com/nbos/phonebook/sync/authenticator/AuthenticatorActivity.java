@@ -390,7 +390,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 			try {
 				json = Util.parseJson(facebook.request("me", new Bundle()));
 				String userId = json.getString("id"),
-				userName=json.getString("name");
+				userName = json.getString("name");
 				mPhone = mPhoneEdit.getText().toString();
 				new Cloud(getApplicationContext(), userId, userId).loginWithFacebook(countryCode + mPhone);
 				mUsername = userId;
