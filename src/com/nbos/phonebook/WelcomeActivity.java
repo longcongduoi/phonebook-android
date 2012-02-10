@@ -98,6 +98,7 @@ public class WelcomeActivity extends ListActivity {
 		// Test.getDataPicsCursor(getApplicationContext());
 		// Test.joinContacts(getApplicationContext());
 		// Test.deleteContactLinkTable(getApplicationContext());
+		// Test.deleteServerData(getApplicationContext());
 		//Test.updateServerId(getApplicationContext());
 		//Test.getGroupList(getApplicationContext());
 	}

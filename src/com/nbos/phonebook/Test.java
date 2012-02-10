@@ -1,47 +1,17 @@
 package com.nbos.phonebook;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.IntentSender;
-import android.content.ServiceConnection;
-import android.content.SharedPreferences;
-import android.content.IntentSender.SendIntentException;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.content.res.AssetManager;
 import android.content.res.Resources;
-import android.content.res.Resources.Theme;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
-import android.database.sqlite.SQLiteDatabase.CursorFactory;
-import android.graphics.Bitmap;
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.AggregationExceptions;
 import android.provider.ContactsContract.CommonDataKinds;
@@ -59,7 +29,6 @@ import com.nbos.phonebook.database.tables.ContactTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.PhoneContact;
 import com.nbos.phonebook.sync.platform.BatchOperation;
-import com.nbos.phonebook.sync.platform.Cloud;
 import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
 import com.nbos.phonebook.sync.platform.SyncManager;
 import com.nbos.phonebook.sync.platform.UpdateContacts;
@@ -609,4 +578,11 @@ public class Test {
 	    Log.i(tag,"newonly: "+newOnly);
 		return cr.query(ContactsContract.RawContactsEntity.CONTENT_URI, null, where, null, ContactsContract.RawContacts._ID);	
 	}
+	
+	public static void deleteServerData(Context context) {
+		int num = context.getContentResolver()
+			.delete(Data.CONTENT_URI, Data.MIMETYPE + " = '" + PhonebookSyncAdapterColumns.MIME_PROFILE + "'", null);
+		Log.i(tag, "deleted "+num+" rows of server data");
+	}
+
 }

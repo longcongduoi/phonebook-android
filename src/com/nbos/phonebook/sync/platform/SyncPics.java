@@ -46,7 +46,6 @@ import com.nbos.phonebook.value.PicData;
 
 public class SyncPics {
 	static String tag = "SyncPics";
-	final static String DOWNLOAD_CONTACT_PIC_URI = Cloud.BASE_URL + "/download/index/";
 	Context context;
 	ContentResolver cr;
 	Db db;
@@ -208,7 +207,7 @@ public class SyncPics {
 	private byte[] downloadPic(Contact c) {
 		URL url;
 		try {
-			url = new URL(DOWNLOAD_CONTACT_PIC_URI + c.picId);
+			url = new URL(Cloud.DOWNLOAD_CONTACT_PIC_URI + c.picId);
 			URLConnection ucon = url.openConnection();
 	        InputStream is = ucon.getInputStream();
 	        BufferedInputStream bis = new BufferedInputStream(is, 8192);
@@ -223,6 +222,7 @@ public class SyncPics {
 	        Log.i(tag, "Contact: "+c.serverId+", image size: "+image.length);
 	        return image;
 		} catch (Exception e) {
+			Log.e(tag, "Exception downloading pic: "+e);
 			e.printStackTrace();
 		}
 		return null;

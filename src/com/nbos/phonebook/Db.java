@@ -1,9 +1,7 @@
 package com.nbos.phonebook;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +22,6 @@ import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.GroupMembership;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
-import android.provider.ContactsContract.CommonDataKinds.Photo;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.Groups;
@@ -33,19 +30,12 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.nbos.phonebook.database.tables.BookTable;
-import com.nbos.phonebook.database.tables.ContactTable;
 import com.nbos.phonebook.sync.Constants;
 import com.nbos.phonebook.sync.client.Contact;
-import com.nbos.phonebook.sync.client.ContactPicture;
 import com.nbos.phonebook.sync.client.Group;
-import com.nbos.phonebook.sync.client.PhoneContact;
-import com.nbos.phonebook.sync.client.ServerData;
 import com.nbos.phonebook.sync.client.SharingBook;
 import com.nbos.phonebook.sync.platform.BatchOperation;
-import com.nbos.phonebook.sync.platform.ContactOperations;
 import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
-import com.nbos.phonebook.sync.platform.SyncManager;
-import com.nbos.phonebook.util.ImageInfo;
 
 public class Db {
 	ContentResolver cr;
