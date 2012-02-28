@@ -37,6 +37,7 @@ import android.provider.ContactsContract.CommonDataKinds.Im;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.Groups;
 import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.StatusUpdates;
 import android.text.TextUtils;
@@ -360,6 +361,10 @@ public class ContactManager {
 	    values.put(ContactsContract.Groups.DIRTY, "0");
 	    int num = cr.update(ContactsContract.Groups.CONTENT_URI, values, null, null);
 	    Log.i(tag, "Updated "+num+" groups to dirty = 0");
+        num = cr.delete(SyncManager.addCallerIsSyncAdapterParameter(Groups.CONTENT_URI), Groups.DELETED + " = 1 "
+	    		+" and " + Groups.ACCOUNT_TYPE + " = ? ", 
+	    		new String[] {Constants.ACCOUNT_TYPE});
+        Log.i(tag, "Deleted "+num+" groups");
 	}
 	
 
