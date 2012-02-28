@@ -16,29 +16,34 @@
 
 package com.nbos.phonebook.sync.platform;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.RemoteException;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.Email;
 import android.provider.ContactsContract.CommonDataKinds.Im;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.Groups;
 import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.StatusUpdates;
+import android.text.TextUtils;
 import android.util.Log;
 
+import com.google.android.collect.Lists;
 import com.nbos.phonebook.R;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.Constants;
@@ -140,97 +145,85 @@ public class ContactManager {
      * @param integer 
      */
     public static void updateContact(Context context, String accountName, Contact contact,
-        long rawContactId, BatchOperation batchOperation, Cursor dataCursor, Integer index) {
-    	Log.i(tag, "Update contact: "+contact.name+", rawContactId: "+rawContactId+", index: "+index);
-    	if(dataCursor.getCount() == 0 || index == null) return;
+        long rawContactId){ 
+    	Log.i(tag, "Update contact: "+contact.name+", rawContactId: "+rawContactId);
     	
-    	// get the data cursor index
-        Uri uri;
-        String cellPhone = null;
-        String otherPhone = null;
-        String email = null;
-
-        /*final Cursor dataCursor =
-            resolver.query(Data.CONTENT_URI, DataQuery.PROJECTION,
-                DataQuery.SELECTION,
-                new String[] {String.valueOf(rawContactId)}, null);*/
-        final ContactOperations contactOp =
-            ContactOperations.updateExistingContact(context, rawContactId,
-                batchOperation);
+    	Log.i(tag,"deleting name of contact");
+    	context.getContentResolver().delete(SyncManager.addCallerIsSyncAdapterParameter(Data.CONTENT_URI),
+    			Data.RAW_CONTACT_ID+ "=? and "+ Data.MIMETYPE + "=?", 
+    			new String[]{String.valueOf(rawContactId), StructuredName.CONTENT_ITEM_TYPE });
+    	Log.i(tag, "New Name: "+contact.name);
+    	updateNameOfExistingContact(context, contact.name, rawContactId);
+    	
+        Log.i(tag, "deleting phone numbers");
+    	context.getContentResolver().delete(
+    		SyncManager.addCallerIsSyncAdapterParameter(Data.CONTENT_URI), 
+    		Data.RAW_CONTACT_ID+ "=? and "+ Data.MIMETYPE + "=?", 
+			new String[]{String.valueOf(rawContactId), Phone.CONTENT_ITEM_TYPE});
         
-        dataCursor.moveToPosition(index);
-        
-        try {
-            do {
-            	long rawContactIdee = dataCursor.getLong(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
-            	if(rawContactIdee != rawContactId) return;
-                final long id = dataCursor.getLong(DataQuery.COLUMN_ID);
-                final String mimeType = dataCursor.getString(DataQuery.COLUMN_MIMETYPE);
-                uri = ContentUris.withAppendedId(Data.CONTENT_URI, id);
-                Contact dataContact = new Contact();
-                
-                if (mimeType.equals(StructuredName.CONTENT_ITEM_TYPE)) {
-                	Name.add(dataContact, dataCursor);
-                    /*final String lastName =
-                        dataCursor.getString(DataQuery.COLUMN_FAMILY_NAME);
-                    final String firstName =
-                        dataCursor.getString(DataQuery.COLUMN_GIVEN_NAME);*/
-                    contactOp.updateName(uri, dataContact.name, contact.name);
-                        // .getFirstName(), contact.getLastName());
-                }
-
-                else if (mimeType.equals(Phone.CONTENT_ITEM_TYPE)) {
-                	com.nbos.phonebook.sync.client.contact.Phone.add(dataContact, dataCursor);
-                    /*final int type = dataCursor.getInt(DataQuery.COLUMN_PHONE_TYPE);
-
-                    if (type == Phone.TYPE_MOBILE) {
-                        cellPhone = dataCursor.getString(DataQuery.COLUMN_PHONE_NUMBER);
-                        contactOp.updatePhone(cellPhone, "",//contact.number,
-                            uri);
-                    } else if (type == Phone.TYPE_OTHER) {
-                        otherPhone = dataCursor.getString(DataQuery.COLUMN_PHONE_NUMBER);
-                        contactOp.updatePhone(otherPhone, "",//contact.number,
-                            uri);
-                    }*/
-                }
-                else if (Data.MIMETYPE.equals(Email.CONTENT_ITEM_TYPE)) {
-                    email = dataCursor.getString(DataQuery.COLUMN_EMAIL_ADDRESS);
-                    contactOp.updateEmail(""/*contact.email*/, email, uri);
-                }
-            } while (dataCursor.moveToNext());// while
-        } finally {
-            // c.close();
-        }
-
-        
-        // Add the cell phone, if present and not updated above
-        if (cellPhone == null) {
-            // contactOp.addPhone(contact.number, Phone.TYPE_MOBILE);
-        }
-
-        // Add the other phone, if present and not updated above
-        if (otherPhone == null) {
-            // contactOp.addPhone(contact.number, Phone.TYPE_OTHER);
-        }
-
-        // Add the email address, if present and not updated above
-        if (email == null) {
-            // contactOp.addEmail(contact.email);
-        }
-        // Wrong approach 
-        /*if(serverDataExists)
-        {
-        	Log.i(tag, "Server data exists for "+contact.serverId);
-            uri = ContentUris.withAppendedId(RawContacts.CONTENT_URI, rawContactId);
-            contactOp.updateProfileAction(Integer.parseInt(contact.serverId), uri);
-        }
-        else
-        {
-        	Log.i(tag, "No server data for "+contact.serverId);
-        	contactOp.addProfileAction(Integer.parseInt(contact.serverId));
-        }*/
+        Log.i(tag, "Contact has "+contact.phones.size()+" phones");
+    	for(com.nbos.phonebook.sync.client.contact.Phone p : contact.phones)
+        	addPhoneNumberToExistingContact(context, p, rawContactId);
+    	
+    	Log.i(tag, "deleting emails ");
+    	context.getContentResolver().delete(
+    			SyncManager.addCallerIsSyncAdapterParameter(Data.CONTENT_URI), 
+    			Data.RAW_CONTACT_ID+ "=? and "+ Data.MIMETYPE +"=?", 
+    			new String[]{String.valueOf(rawContactId), Email.CONTENT_ITEM_TYPE});
+    	
+    	for(com.nbos.phonebook.sync.client.contact.Email email : contact.emails)
+    		addEmailToExistingContact(context, email, rawContactId);
+    	
     }
 
+    public static void updateNameOfExistingContact(Context context, Name ContactName, long rawContactId){
+    	 Log.i(tag, ContactName+" added");
+         ContentValues values = new ContentValues();
+         
+         values.put(StructuredName.RAW_CONTACT_ID, rawContactId);
+         values.put(StructuredName.PREFIX, ContactName.prefix);
+         values.put(StructuredName.GIVEN_NAME, ContactName.given);
+         values.put(StructuredName.MIDDLE_NAME, ContactName.middle);
+         values.put(StructuredName.FAMILY_NAME, ContactName.family);
+         values.put(StructuredName.SUFFIX, ContactName.suffix);
+         values.put(StructuredName.MIMETYPE,
+                 StructuredName.CONTENT_ITEM_TYPE);
+         
+         context.getContentResolver().insert(
+        		 SyncManager.addCallerIsSyncAdapterParameter(Data.CONTENT_URI),
+        		 values);
+    }
+    public static void addPhoneNumberToExistingContact(Context context, 
+    com.nbos.phonebook.sync.client.contact.Phone phone, long rawContactId) {
+    	Log.i(tag, "Adding phone number "+phone.number);
+    	if (TextUtils.isEmpty(phone.number)) return;
+    	ContentValues values = new ContentValues();
+    	values.put(Phone.RAW_CONTACT_ID, rawContactId);
+        values.put(Phone.NUMBER, phone.number);
+        int type = phone.getIntType();
+        values.put(Phone.TYPE, type);
+        if(type == Phone.TYPE_CUSTOM)
+        	values.put(Phone.DATA3, phone.type);
+        values.put(Phone.MIMETYPE, Phone.CONTENT_ITEM_TYPE);
+    	context.getContentResolver().insert(
+    		SyncManager.addCallerIsSyncAdapterParameter(Data.CONTENT_URI), 
+    		values);
+    }
+    
+    public static void addEmailToExistingContact(Context context, com.nbos.phonebook.sync.client.contact.Email email, long rawContactId){
+    	Log.i(tag, "adding email: "+email);
+    	if(TextUtils.isEmpty(email.address)) return;
+    	ContentValues values = new ContentValues();
+    	values.put(Email.RAW_CONTACT_ID, rawContactId);
+    	values.put(Email.DATA, email.address);
+    	int type = email.getIntType();
+    	values.put(Email.TYPE, type);
+    	if(type == Email.TYPE_CUSTOM)
+    		values.put(Email.DATA3, email.type);
+    	values.put(Email.MIMETYPE, Email.CONTENT_ITEM_TYPE);
+    	context.getContentResolver().insert(SyncManager.addCallerIsSyncAdapterParameter(Data.CONTENT_URI), values);
+    	
+    }
     /**
      * Deletes a contact from the platform contacts provider.
      * 
@@ -368,6 +361,10 @@ public class ContactManager {
 	    values.put(ContactsContract.Groups.DIRTY, "0");
 	    int num = cr.update(ContactsContract.Groups.CONTENT_URI, values, null, null);
 	    Log.i(tag, "Updated "+num+" groups to dirty = 0");
+        num = cr.delete(SyncManager.addCallerIsSyncAdapterParameter(Groups.CONTENT_URI), Groups.DELETED + " = 1 "
+	    		+" and " + Groups.ACCOUNT_TYPE + " = ? ", 
+	    		new String[] {Constants.ACCOUNT_TYPE});
+        Log.i(tag, "Deleted "+num+" groups");
 	}
 	
 

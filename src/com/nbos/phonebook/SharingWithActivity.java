@@ -9,6 +9,7 @@ import java.util.Set;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
@@ -21,14 +22,11 @@ import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -206,7 +204,6 @@ public class SharingWithActivity extends ListActivity {
 			}
 		};
 	
-	
 	private void populateContacts(int layout) {
 		rawContactsCursor = db.getRawContactsCursor(false);
 		Cursor contactsCursor = Db.getContacts(this);
@@ -221,7 +218,7 @@ public class SharingWithActivity extends ListActivity {
 			+", contactid: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.CONTACTID))
 			+ ", dirty: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.DIRTY))
 			+ ", deleted: " + bookCursor.getString(bookCursor.getColumnIndex(BookTable.DELETED)));
-
+		
 		Log.i(tag, "Sharing with " + bookCursor.getCount() + " raw contacts");
 		List<ContactRow> rows = new ArrayList<ContactRow>();
 		Set<String> contactIds = new HashSet<String>();
@@ -238,42 +235,38 @@ public class SharingWithActivity extends ListActivity {
 				if (row != null)
 					rows.add(row);
 			} while (bookCursor.moveToNext());
-
 		m_cursor = new MatrixCursor(new String[] {
 				Contacts._ID,
 				RAW_CONTACT_ID_COLUMN,
 				Contacts.DISPLAY_NAME }, 10);
-
 		Collections.sort(rows);
 		for (ContactRow row : rows) {
 			m_cursor.addRow(new String[] { row.id, row.rawContactId, row.name });
 			ids.add(row.id);
 		}
 		setTitle("Group: " + "'" +name+"'" + " sharing with ("+rows.size()+")");
-
 		String[] fields = new String[] { ContactsContract.Data.DISPLAY_NAME };
-
 		adapter = new ImageCursorAdapter(this, layout, m_cursor, ids, fields,
 				new int[] { R.id.contact_name });
 		adapter.setAddButton(stopSharing, "Selected num contacts to remove from sharing");
 		getListView().setAdapter(adapter);
 	}
-
+	
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		/*MenuInflater inflater = getMenuInflater();
 			inflater.inflate(R.menu.select_all_menu, menu);*/
 		menu.removeGroup(0);
 		menu.removeGroup(1);
+		Resources res = getResources();
 		if(keyValue == 1)
 		{
-			menu.add(0, R.id.selectAll, 0 ,android.R.string.selectAll)
+			menu.add(0, R.id.selectAll, 0, res.getString(R.string.select_all))
 				.setIcon(android.R.drawable.checkbox_on_background);
-			menu.add(1, R.id.deSelect, 1,"Deselect all")
+			menu.add(1, R.id.deSelect, 1, res.getString(R.string.deselect_all))
 				.setIcon(android.R.drawable.checkbox_off_background);
 		}
 		return true;
-
 	}
 
 	/*@Override

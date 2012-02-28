@@ -449,7 +449,8 @@ public class Cloud {
         	params.add(new BasicNameValuePair("groupId_"+index, group.groupId));
         	params.add(new BasicNameValuePair("serverId_"+index, group.serverId));
         	params.add(new BasicNameValuePair("bookName_"+index, group.name));
-        	params.add(new BasicNameValuePair("deleted_"+index, group.deleted.toString()));
+        	if(group.deleted)
+        		params.add(new BasicNameValuePair("deleted_"+index, "y"));
         	List<Contact> bookContacts = group.contacts;
         	Log.i(tag, "numcontacts: "+bookContacts.size());
         	params.add(new BasicNameValuePair("numContacts_"+index, new Integer(bookContacts.size()).toString()));
@@ -466,18 +467,7 @@ public class Cloud {
         JSONArray groupUpdates = new JSONArray(post(SEND_GROUP_UPDATES_URI, params));
         for (int i = 0; i < groupUpdates.length(); i++)
         	ContactManager.updateGroup(groupUpdates.getJSONObject(i), context);
-        if(groups.size() > 0)
-        	ContactManager.resetDirtyGroups(context);
-        int num = 0;
-        for(int i=0;i<groups.size();i++)
-        {
-        	JSONObject g = groupUpdates.getJSONObject(i);
-        	num += cr.delete(SyncManager.addCallerIsSyncAdapterParameter(Groups.CONTENT_URI), Groups.DELETED + " = 1 "
-	    		+" and " + Groups.ACCOUNT_TYPE + " = ? "+" and "+Groups._ID + " =? ", 
-	    		new String[] {Constants.ACCOUNT_TYPE,g.getString("groupId")});
-        }
-	    Log.i(tag, "Deleted "+num+" phonebooks");
-
+    	ContactManager.resetDirtyGroups(context);
 	}
 	
 	private void sendSharedBookUpdates(List<SharingBook> books) throws ClientProtocolException, IOException, JSONException {

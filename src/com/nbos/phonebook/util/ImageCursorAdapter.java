@@ -15,11 +15,8 @@ import android.widget.AlphabetIndexer;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListAdapter;
-import android.widget.ListView;
-import android.widget.Toast;
 import android.widget.ImageView.ScaleType;
+import android.widget.ListView;
 import android.widget.SectionIndexer;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
@@ -73,19 +70,23 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements
 		this.ids = ids;
 	}
 	
-	public void toggleSelect(int count,ListView list, boolean check){
+	public void toggleSelect(int childCount, ListView list, boolean check){
 
-		for(int i=0;i<count;i++)
+		for(int i=0; i<childCount; i++)
 		{
-			list.setItemChecked(i,check);
-			checkedItems.set(i,check);
+			list.setItemChecked(i, check);
+			checkedItems.set(i, check);
+			count = childCount;
 		}
 		addButton.setEnabled(check);
 		if(check)
 			addButton.setText(addText.replace("num",
 					Integer.toString(list.getCount())));
 		else
+		{
+			count = 0;
 			addButton.setText("No contacts selected");
+		}
 	}
 
 	@Override

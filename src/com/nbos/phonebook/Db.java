@@ -480,5 +480,14 @@ public class Db {
 				return account;
 		return null;
 	}
+	public static void setNewName(String groupId, String newName, ContentResolver cr){
+		 ContentValues values = new ContentValues();
+		 values.put(Groups.TITLE, newName);
+		 int num = cr.update(
+		    		Groups.CONTENT_URI, values,
+		    		Groups._ID + " = " + groupId, null);
+		 Db.setGroupDirty(groupId, cr);
+		 Log.i(tag, num+" group name changed");
+	}
 	
 }
