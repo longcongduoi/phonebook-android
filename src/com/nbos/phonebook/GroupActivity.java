@@ -10,6 +10,7 @@ import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.database.MatrixCursor;
@@ -96,7 +97,12 @@ public class GroupActivity extends ListActivity {
 		Button removeContacts = (Button) menu.findViewById(R.id.remove_contacts);
 		Button addContacts = (Button) menu.findViewById(R.id.add_contacts);
 		if(owner == null)
-			menu.setVisibility(1);
+		{
+			if(m_cursor.getCount() == 0)
+				removeContacts.setVisibility(View.GONE);
+			else
+				removeContacts.setVisibility(View.VISIBLE);
+		}
 		else
 		{
 			int perm = Integer.parseInt(permission);
@@ -111,11 +117,10 @@ public class GroupActivity extends ListActivity {
 				removeContacts.setVisibility(View.GONE);
 				addContacts.setText("Add contacts to group");
 			}
+			else if(perm == BookPermission.ADD_REMOVE_CONTACTS.ordinal())
+				sharing.setVisibility(View.GONE);
+		
 		}
-		if(m_cursor.getCount()==0)
-			removeContacts.setVisibility(View.GONE);
-		else
-			removeContacts.setVisibility(View.VISIBLE);
 	}
 
 
@@ -247,7 +252,6 @@ public class GroupActivity extends ListActivity {
 								+ " and "
 								+ ContactsContract.CommonDataKinds.GroupMembership.CONTACT_ID
 								+ " = ? ", args);
-		Db.setGroupDirty(id, getContentResolver());
 	}
 
 	private int numContacts() {
@@ -389,11 +393,12 @@ public class GroupActivity extends ListActivity {
 			inflater.inflate(R.menu.select_all_menu, menu);*/
 		menu.removeGroup(0);
 		menu.removeGroup(1);
+		Resources res = getResources();
 		if(keyValue == 1)
 		{
-			menu.add(0, R.id.selectAll, 0 ,"Select all")
+			menu.add(0, R.id.selectAll, 0, res.getString(R.string.select_all))
 				.setIcon(android.R.drawable.checkbox_on_background);
-			menu.add(1, R.id.deSelect, 1,"Deselect all")
+			menu.add(1, R.id.deSelect, 1, res.getString(R.string.deselect_all))
 				.setIcon(android.R.drawable.checkbox_off_background);
 		}
 		return true;
@@ -468,6 +473,7 @@ public class GroupActivity extends ListActivity {
 					removeFromGroup(contactId);
 				}
 			}
+			Db.setGroupDirty(id, getContentResolver());
 			childLayout.setVisibility(-1);
 			childLayout.setLayoutParams(hideParams);
 			menu.setVisibility(1);

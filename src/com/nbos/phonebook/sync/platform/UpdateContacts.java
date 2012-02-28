@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import nbos.android.content.RawContact;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.message.BasicNameValuePair;
@@ -23,6 +25,7 @@ import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
+import android.provider.ContactsContract.RawContactsEntity;
 import android.util.Log;
 
 import com.nbos.phonebook.sync.Constants;
@@ -94,7 +97,7 @@ public class UpdateContacts {
     				continue;
     		}
     		String str = "";
-            for (String key : DATA_KEYS) 
+           /* for (String key : DATA_KEYS) 
             {
                 final int columnIndex = cursor.getColumnIndexOrThrow(key);
                 if (cursor.isNull(columnIndex)) {
@@ -110,7 +113,7 @@ public class UpdateContacts {
                         // cv.put(key, cursor.getBlob(columnIndex));
                     }
                 }
-            }
+            }*/
             // Log.i(tag, "contactId: "+contactId+", dirty: "+dirty+", mimetype: "+mimeType+", data:: "+str);
     		// if(contactId == null) continue; // TODO: SIM contacts have null contactId
             if(!prevId.equals(rawContactId))
@@ -127,7 +130,7 @@ public class UpdateContacts {
             	contact.deleted = deleted.equals("1");
             	prevId = rawContactId;
             }
-            addContactField(contact, cursor, mimeType);
+            addContactField(contact, cursor, mimeType, cloud.account);
     	} while(cursor.moveToNext());
     	if(contact != null)
     	{
@@ -140,11 +143,32 @@ public class UpdateContacts {
 	}
 	
 	public static Cursor getRawContactsEntityCursor(ContentResolver cr, boolean newOnly) {
-	    String where = newOnly ? ContactsContract.RawContacts.DIRTY + " = 1" : null;
-		return cr.query(ContactsContract.RawContactsEntity.CONTENT_URI, null, where, null, ContactsContract.RawContacts._ID);	
+	    String where = newOnly ? RawContacts.DIRTY + " = 1" : null;
+	    
+	    final String[] PROJECTION =
+            new String[] {
+	    		RawContacts._ID,
+	    		RawContacts.CONTACT_ID,
+	    		RawContacts.DELETED,
+	    		RawContacts.ACCOUNT_TYPE,
+	    		RawContacts.DIRTY,
+	    		Data.MIMETYPE,
+	    		Data.DATA1,
+	        	Data.DATA2,
+	        	Data.DATA3,
+	        	Data.DATA4,
+	        	Data.DATA5,
+	        	Data.DATA6,
+	        	Data.DATA7,
+	        	Data.DATA8,
+	        	Data.DATA9,
+	        	Data.DATA10
+        };
+
+		return cr.query(RawContactsEntity.CONTENT_URI, PROJECTION, where, null, RawContacts._ID);	
 	}
 
-	static void addContactField(Contact contact, Cursor cursor, String mimeType) {
+	static void addContactField(Contact contact, Cursor cursor, String mimeType, String account) {
 		if(mimeType == null) return;
         if(mimeType.equals(CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE))
         	Name.add(contact, cursor);
@@ -165,17 +189,18 @@ public class UpdateContacts {
         if(mimeType.equals(CommonDataKinds.Website.CONTENT_ITEM_TYPE))
         	Contact.addWebsite(contact, cursor);
         if(mimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)) // the server id
-        	addServerId(contact, cursor);
+        	addServerId(contact, cursor, account);
 	}
 	
-	static void addServerId(Contact contact, Cursor c) {
+	static void addServerId(Contact contact, Cursor c, String account) {
+		String acc = c.getString(c.getColumnIndex(PhonebookSyncAdapterColumns.ACCOUNT));
+		if(acc == null || !acc.equals(account)) return;
 		String serverId = c.getString(c.getColumnIndex(PhonebookSyncAdapterColumns.DATA_PID));
 		contact.serverId = serverId;
 	}
 
 	private void sendContactUpdates(List<PhoneContact> contacts) throws ClientProtocolException, IOException, JSONException {
         int batchSize = 50;
-        
 		for(int b = 0; b < contacts.size();  b = b + batchSize)
 		{
 			Log.i(Cloud.tag, "Sending batch #"+b);

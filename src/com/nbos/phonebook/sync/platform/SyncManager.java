@@ -34,7 +34,7 @@ public class SyncManager {
 	Db db;
 	String account; 
     List<PhoneContact> allContacts; 
-    Cursor dataCursor, rawContactsCursor;//, dataPicsCursor;
+    Cursor rawContactsCursor;//, dataPicsCursor, dataCursor;
     Set<String> syncedContactServerIds, syncedGroupServerIds; 
     SyncPics syncPics;
     Set<String> groupRawContactIds;
@@ -71,11 +71,10 @@ public class SyncManager {
 	private void getDataCursors() {
 		db = new Db(context);
 		allContacts = UpdateContacts.getContacts(cloud);
-		dataCursor = getData();
 		rawContactsCursor = db.getRawContactsCursor(false);
 	}
 
-    public Cursor getData() {
+    /*public Cursor getData() {
         final String[] PROJECTION =
             new String[] {Data._ID, Data.MIMETYPE, Data.DATA1, Data.DATA2,
                 Data.DATA3, Data.DATA4, Data.DATA5, Data.DATA6, Data.DATA7, 
@@ -83,10 +82,9 @@ public class SyncManager {
                 Data.RAW_CONTACT_ID, Data.CONTACT_ID};
 
     	return cloud.cr.query(Data.CONTENT_URI, PROJECTION, null, null, Data.RAW_CONTACT_ID);
-    }
+    }*/
 
 	private void closeCursors() {
-		dataCursor.close();
 		// leave serverDataCursor open for cloud queries
 		// serverDataCursor.close();
 		rawContactsCursor.close();
@@ -98,7 +96,6 @@ public class SyncManager {
         final BatchOperation batchOperation = new BatchOperation(context);
         Log.i(tag, "In SyncContacts: There are "+rawContactsCursor.getCount()+" raw contacts, num columns: "+rawContactsCursor.getColumnCount());
 		cloud.getServerDataIds();
-		getDataCursorIndex();
 		Set<Long> dirtyContacts = getDirtyContacts();
         for (final Contact contact : contacts) 
         {
@@ -118,16 +115,10 @@ public class SyncManager {
             }
                         
             if (rawContactId != 0) {
-                if (!contact.deleted) {
-                    // update contact
-                    ContactManager.updateContact(context, account, contact,
-                        rawContactId, batchOperation, dataCursor, 
-                        dataRawContactIdIndex.get(new Long(rawContactId).toString()));
-                    
-                } else {
-                    // delete contact
+                if (!contact.deleted) // update contact
+                    ContactManager.updateContact(context, account, contact, rawContactId);
+                else // delete contact
                     ContactManager.deleteContact(context, rawContactId, batchOperation);
-                }
             } else {
                 // add new contact
                 if (!contact.deleted) {
@@ -139,7 +130,6 @@ public class SyncManager {
             // because it will make a dramatic performance difference.
             if (batchOperation.size() >= 50) 
                 batchOperation.execute();
-
             syncedContactServerIds.add(contact.serverId);            
         }
         int num = batchOperation.size();
@@ -148,21 +138,6 @@ public class SyncManager {
         refreshCursors();
 	}
 	
-	private void getDataCursorIndex() {
-		dataRawContactIdIndex = new HashMap<String, Integer>();
-		if(dataCursor.getCount() == 0)
-			return;
-    	dataCursor.moveToFirst();
-    	do {
-    		String rawContactId = dataCursor.getString(dataCursor.getColumnIndex(Data.RAW_CONTACT_ID));
-    		if(dataRawContactIdIndex.keySet().contains(rawContactId))
-    			continue;
-    		Integer index = dataCursor.getPosition();
-    		dataRawContactIdIndex.put(rawContactId, index);
-    	} while(dataCursor.moveToNext());
-    	Log.i(tag, "dataRawContactIndex size is: "+dataRawContactIdIndex.size());
-	}
-
 	private Set<Long> getDirtyContacts() {
 		Set<Long> dirtyContacts = new HashSet<Long>();
 		if(rawContactsCursor.getCount() == 0)
@@ -179,7 +154,6 @@ public class SyncManager {
 
 	private void refreshCursors() {
 		Log.i(tag, "refreshCursors");
-        dataCursor.requery();
         cloud.serverDataCursor.requery();
         rawContactsCursor.requery();
 	}
@@ -209,7 +183,8 @@ public class SyncManager {
 	    cursor.moveToFirst();
 	    String groupId = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups._ID)),
 	    	dirty = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DIRTY)),
-	    	deleted = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DELETED));
+	    	deleted = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.DELETED)),
+	    	oldName = cursor.getString(cursor.getColumnIndex(ContactsContract.Groups.TITLE));
 	    
 	    if(dirty.equals("1") || deleted.equals("1"))
 	    {
@@ -218,9 +193,10 @@ public class SyncManager {
 	    }
 	    if(g.deleted)
 	    {
-	    	int num = context.getContentResolver().delete(SyncManager.addCallerIsSyncAdapterParameter(Groups.CONTENT_URI),
-		    	      Groups.ACCOUNT_TYPE + " = ? "+" and "+Groups.SOURCE_ID + " =? ", 
-		    		new String[] {Constants.ACCOUNT_TYPE,g.groupId});
+	    	context.getContentResolver().delete(
+	    			SyncManager.addCallerIsSyncAdapterParameter(Groups.CONTENT_URI),
+	    			Groups.ACCOUNT_TYPE + " = ? "+" and "+Groups.SOURCE_ID + " =? ", 
+		    		new String[] {Constants.ACCOUNT_TYPE, g.groupId});
 	    	Log.i(tag,"Group "+ g.name+" was deleted");
 	    	return;
 	    }
@@ -245,6 +221,7 @@ public class SyncManager {
 
     	updateGroupBatchOperation = new BatchOperation(context);
   
+    	cloud.getServerDataIds();
     	for(Contact u : g.contacts)
     	{
     		rawContactIds.add(updateGroupContact(u, groupId));
@@ -275,6 +252,8 @@ public class SyncManager {
     	*/
     	// update sharing with book info
     	if(isSharedBook) return;
+    	if(!oldName.equals(g.name))
+    		Db.setNewName(groupId, g.name, context.getContentResolver());
     	
     	updateSharingWithContacts(g, groupId);
 	}
@@ -390,7 +369,7 @@ public class SyncManager {
 	
 	long lookupRawContactFromServerId(String serverId) {
 		
-		String rawContactId = cloud.serverContactIdsMap.get(serverId); 
+		String rawContactId = cloud.serverContactIdsMap.get(serverId.toString()); 
 		if(rawContactId != null)
 		{
 			Log.i(tag, "rawContactId: "+rawContactId+" from serverId: "+serverId);
@@ -438,12 +417,4 @@ public class SyncManager {
         return uri.buildUpon().appendQueryParameter(
             ContactsContract.CALLER_IS_SYNCADAPTER, "true").build();
     }
-	
-	public void close() {
-    	if(dataCursor != null)
-    		dataCursor.close();
-    	if(rawContactsCursor != null)
-    		rawContactsCursor.close();
-	}
-	
 }

@@ -167,15 +167,10 @@ public class AddGroupActivity extends Activity {
 	};
 	
 	private Button.OnClickListener renameGroupButton = new Button.OnClickListener() {
-		public void onClick(View v) {
+		public void onClick(View v) 
+		{
 			String newName = groupName.getEditableText().toString();
-			 ContentValues values = new ContentValues();
-			    values.put(Groups.TITLE, newName);
-			 int num = cr.update(
-			    		Groups.CONTENT_URI, values,
-			    		Groups._ID + " = " + groupId, null);
-			 Db.setGroupDirty(groupId, cr);
-			 Log.i(tag, num+" group name changed");
+			Db.setNewName(groupId, newName, cr);
 			finish();
 		}
 

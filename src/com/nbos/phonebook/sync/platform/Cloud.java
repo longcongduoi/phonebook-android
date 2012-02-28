@@ -73,9 +73,9 @@ import com.nbos.phonebook.value.PicData;
 public class Cloud {
 	static String tag = "Cloud";
     public static final String
-	DOMAIN = "10.9.8.29", // "phonebook.nbostech.com"
-	PROTOCOL = "https", // "http"
-	PORT = "8443", // 8080, 80, 443
+	DOMAIN =  "phonebook.nbostech.com", //"10.9.8.29",
+	PROTOCOL = "http", // "http"
+	PORT = "80", // 8080, 80, 443
 	// BASE_URL = "http://phonebook.nbostech.com/phoneb;[uj8ook",
 	BASE_URL = PROTOCOL +"://" +  DOMAIN + ":" + PORT + "/phonebook", // https://10.9.8.29:8443/phonebook",
 	AUTH_URI = BASE_URL + "/mobile/index",
@@ -465,17 +465,18 @@ public class Cloud {
         for (int i = 0; i < groupUpdates.length(); i++)
         	ContactManager.updateGroup(groupUpdates.getJSONObject(i), context);
         if(groups.size() > 0)
-        	ContactManager.resetDirtyGroups(context);
-        int num = 0;
-        for(int i=0;i<groups.size();i++)
         {
-        	JSONObject g = groupUpdates.getJSONObject(i);
-        	num += cr.delete(SyncManager.addCallerIsSyncAdapterParameter(Groups.CONTENT_URI), Groups.DELETED + " = 1 "
-	    		+" and " + Groups.ACCOUNT_TYPE + " = ? "+" and "+Groups._ID + " =? ", 
-	    		new String[] {Constants.ACCOUNT_TYPE,g.getString("groupId")});
+        	ContactManager.resetDirtyGroups(context);
+	        int num = 0;
+	        for(int i=0;i<groups.size();i++)
+	        {
+	        	JSONObject g = groupUpdates.getJSONObject(i);
+	        	num += cr.delete(SyncManager.addCallerIsSyncAdapterParameter(Groups.CONTENT_URI), Groups.DELETED + " = 1 "
+		    		+" and " + Groups.ACCOUNT_TYPE + " = ? "+" and "+Groups._ID + " =? ", 
+		    		new String[] {Constants.ACCOUNT_TYPE,g.getString("groupId")});
+	        }
+		    Log.i(tag, "Deleted "+num+" phonebooks");
         }
-	    Log.i(tag, "Deleted "+num+" phonebooks");
-
 	}
 	
 	private void sendSharedBookUpdates(List<SharingBook> books) throws ClientProtocolException, IOException, JSONException {
