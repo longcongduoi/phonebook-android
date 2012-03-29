@@ -119,6 +119,7 @@ public class GroupActivity extends ListActivity {
 			}
 			else if(perm == BookPermission.ADD_REMOVE_CONTACTS.ordinal())
 				sharing.setVisibility(View.GONE);
+			
 		
 		}
 	}
@@ -475,7 +476,7 @@ public class GroupActivity extends ListActivity {
 			}
 			Db.setGroupDirty(id, getContentResolver());
 			childLayout.setVisibility(-1);
-			childLayout.setLayoutParams(hideParams);
+			//childLayout.setLayoutParams(hideParams);
 			menu.setVisibility(1);
 			menu.setLayoutParams(showMenuParams);
 			getContentResolver().notifyChange(

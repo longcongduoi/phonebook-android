@@ -216,12 +216,13 @@ public class SyncManager {
     	}
     	Log.i(tag, "Contacts to sync in this group: "+contactsToSync.size());
     	syncContacts(contactsToSync);
-    	syncPics.sync(contactsToSync, this);
+    	//syncPics.sync(contactsToSync, this);
     	Set<String> rawContactIds = new HashSet<String>();
 
     	updateGroupBatchOperation = new BatchOperation(context);
   
     	cloud.getServerDataIds();
+    	syncPics.sync(contactsToSync, this);
     	for(Contact u : g.contacts)
     	{
     		rawContactIds.add(updateGroupContact(u, groupId));
@@ -233,7 +234,6 @@ public class SyncManager {
     	}
 		Log.i(tag, "Executing last update group batch: "+updateGroupBatchOperation.size());
 		updateGroupBatchOperation.execute();
-
 		for(String rawContactId : groupRawContactIds)
 		{
     		if(!rawContactIds.contains(rawContactId))

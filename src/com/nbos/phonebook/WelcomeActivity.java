@@ -77,7 +77,6 @@ public class WelcomeActivity extends ListActivity {
 		childLayout = (LinearLayout) findViewById(R.id.deleteLayout);
 		menu = (LinearLayout)findViewById(R.id.welcomeActivity_frame);
 		deleteButton = (Button)findViewById(R.id.delete_group_button);
-		populateGroups(layout);
 		listView=this.getListView();
 		getListView().setTextFilterEnabled(true);
 		String phoneNumber = getPhoneNumber();
@@ -90,6 +89,7 @@ public class WelcomeActivity extends ListActivity {
 					Constants.ACCOUNT_TYPE);
 			startActivity(intent);
 		}
+		populateGroups(layout);
 		registerForContextMenu(getListView());
 		// startActivity(new Intent(Settings.ACTION_SYNC_SETTINGS));
 		//Test.getContactLinks(getApplicationContext());
@@ -178,7 +178,6 @@ public class WelcomeActivity extends ListActivity {
 		SyncAdapter syncAdapter = new SyncAdapter(getApplicationContext(), true);
 		syncAdapter.addSyncListener(new SyncListener() {
 
-			@Override
 			public void syncException(String message) {
 				Toast.makeText(getApplicationContext(), "Sync exception: "+message, Toast.LENGTH_LONG).show();
 				
@@ -283,14 +282,17 @@ public class WelcomeActivity extends ListActivity {
 				+ Provider.BookContent.CONTENT_PATH);
 		Cursor c = getContentResolver().query(URI, null, null, null, null);
 		Log.i(tag, "There are " + c.getCount() + " books");
+		c.close();
 	}
 
 	Cursor m_cursor;
 
 	private void populateGroups(int layout) {
+		String accountName = Db.getAccountName(getApplicationContext());
 		ContentResolver cr = getContentResolver();
 		m_cursor = cr.query(ContactsContract.Groups.CONTENT_SUMMARY_URI, null,
-				ContactsContract.Groups.DELETED + "=0", null,
+				ContactsContract.Groups.DELETED + "=0" + " and "
+				+ContactsContract.Groups.ACCOUNT_TYPE + " = '" + Constants.ACCOUNT_TYPE + "'", null,
 				ContactsContract.Groups.TITLE);
 
 		String[] fields = new String[] { ContactsContract.Groups.TITLE,
@@ -346,9 +348,12 @@ public class WelcomeActivity extends ListActivity {
 			groupName = m_cursor.getString(m_cursor.getColumnIndex(Groups.TITLE)), 
 			groupOwner = m_cursor.getString(m_cursor.getColumnIndex(Groups.SYNC1)),
 			groupPermission = m_cursor.getString(m_cursor.getColumnIndex(Groups.SYNC2)),
-			accountType = m_cursor.getString(m_cursor.getColumnIndex(Groups.ACCOUNT_TYPE));
+			accountType = m_cursor.getString(m_cursor.getColumnIndex(Groups.ACCOUNT_TYPE)),
+			accountName = m_cursor.getString(m_cursor.getColumnIndex(Groups.ACCOUNT_NAME)),
+			groupServerId = m_cursor.getString(m_cursor.getColumnIndex(Groups.SOURCE_ID));
+			
 
-		Log.i(tag, "Group id: " + groupId + ", name: " + groupName);
+		Log.i(tag, "Group id: " + groupId + ", name: " + groupName+" ,accountName: "+accountName+" ,groupServerId: "+groupServerId+",accountType: "+accountType);
 		Intent i = new Intent(WelcomeActivity.this, GroupActivity.class);
 		i.putExtra("id", groupId);
 		i.putExtra("name", groupName);

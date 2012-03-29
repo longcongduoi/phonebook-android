@@ -174,8 +174,9 @@ public class Test {
     			id = c.getString(c.getColumnIndex(ContactsContract.Groups._ID)),
     			serverId = c.getString(c.getColumnIndex(ContactsContract.Groups.SOURCE_ID)),
     			dirty = c.getString(c.getColumnIndex(Groups.DIRTY)),
-    		    deleted = c.getString(c.getColumnIndex(Groups.DELETED));
-    		Log.i(tag, "Group; name: "+name+", id: "+id+", serverId: "+serverId+ " , deleted: "+deleted+" ,dirty: "+dirty);
+    		    deleted = c.getString(c.getColumnIndex(Groups.DELETED)),
+    		    accountType = c.getString(c.getColumnIndex(Groups.ACCOUNT_TYPE)) ;
+    		Log.i(tag, "Group; name: "+name+", id: "+id+", serverId: "+serverId+ " , deleted: "+deleted+" ,dirty: "+dirty+" , accountType: "+accountType);
     	} while(c.moveToNext());
     }
     

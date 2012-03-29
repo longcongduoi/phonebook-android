@@ -73,13 +73,14 @@ import com.nbos.phonebook.value.PicData;
 public class Cloud {
 	static String tag = "Cloud";
     public static final String
-	DOMAIN = "10.9.8.29", // "phonebook.nbostech.com"
+	DOMAIN =   "10.9.8.172", // "phonebook.nbostech.com",
 	HTTP = "http", // "http"
 	HTTPS = "https",
 	PORT = "8080", // 8080, 80, 443
-	SECURE_PORT = "8443",
+	SECURE_PORT = "443",
+	DEFAULT_PORT = PORT, // SECURE_PORT
 	// BASE_URL = "http://phonebook.nbostech.com/phonebook",
-	BASE_URL = HTTPS +"://" +  DOMAIN + ":" + SECURE_PORT + "/phonebook", // https://10.9.8.29:8443/phonebook",
+	BASE_URL = HTTP +"://" +  DOMAIN + ":" + DEFAULT_PORT + "/phonebook", // https://10.9.8.29:8443/phonebook",
 	AUTH_URI = BASE_URL + "/mobile/index",
 	REG_URL = BASE_URL + "/mobile/register",
 	FACEBOOK_LOGIN_URL = BASE_URL + "/login/facebookMobileLogin",
@@ -558,7 +559,7 @@ public class Cloud {
         {
         	Log.i(tag, "Setting credentials for: "+account+", "+authToken);
         	Credentials credentials = new UsernamePasswordCredentials(account, authToken);
-        	AuthScope as = new AuthScope(DOMAIN, Integer.parseInt(SECURE_PORT));
+        	AuthScope as = new AuthScope(DOMAIN, Integer.parseInt(DEFAULT_PORT));
 
         	((AbstractHttpClient) httpClient).getCredentialsProvider()
                 .setCredentials(as, credentials);

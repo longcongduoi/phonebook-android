@@ -149,7 +149,7 @@ public class AddGroupActivity extends Activity {
 			String accountName = Db.getAccountName(getApplicationContext());
 			if (accountName == null)
 				accountName = "default";
-			if(groupNameChecking(m_cursor, groupName)){
+			
 				Db.createAGroup(getApplicationContext(), groupName, null, null,
 						accountName, 0);
 				Toast toast = Toast.makeText(getApplicationContext(), "The group "
@@ -157,11 +157,7 @@ public class AddGroupActivity extends Activity {
 				toast.show();
 				setResult(RESULT_OK, null);
 				finish();
-			}
-			else{
-				 Toast.makeText(getApplicationContext(),
-						 "enter another name to create group", Toast.LENGTH_LONG) .show();
-			}
+			
 		}
 		
 	};

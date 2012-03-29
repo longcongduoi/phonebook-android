@@ -186,9 +186,12 @@ public class Db {
 
 	public List<Group> getGroups(boolean newOnly, Set<String> syncedGroupServerIds, Map<String, String> contactServerIdsMap) {
 		List<Group> groups = new ArrayList<Group>();
-	    String where = Groups.DELETED + " = 0 ";
+	    String where = Groups.DELETED + " = 0 "+ " and "
+	    +Groups.ACCOUNT_TYPE+ " = '"+Constants.ACCOUNT_TYPE+"'";
+	    
 	    if(newOnly)
-	    	where = Groups.DIRTY + " = 1 ";
+	    	where = Groups.DIRTY + " = 1 "+ " and "
+	    	+Groups.ACCOUNT_TYPE+ " = '"+Constants.ACCOUNT_TYPE+"'";
 	    Cursor groupsCursor = cr.query(Groups.CONTENT_SUMMARY_URI, 
 	    		new String [] {
 	    			Groups.TITLE,
