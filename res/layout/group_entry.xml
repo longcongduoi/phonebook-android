@@ -2,12 +2,12 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="fill_parent" android:id="@+id/groupEntry"
 	android:layout_height="fill_parent">
-	<TextView android:layout_width="wrap_content"
+	<TextView android:layout_width="wrap_content" android:textColor="#000"
 		android:layout_height="wrap_content" android:text="TextView"
 		android:layout_alignParentTop="true" android:id="@+id/groupName"
 		android:textAppearance="?android:attr/textAppearanceLarge"></TextView>
 
-	<TextView android:layout_width="wrap_content"
+	<TextView android:layout_width="wrap_content" android:textColor="#000"
 		android:textAppearance="?android:attr/textAppearanceLarge" 
 		android:layout_height="wrap_content" 
 		android:layout_toRightOf="@+id/groupName" 
@@ -16,20 +16,20 @@
 		android:text="@string/left_brace"></TextView>
 
 	<TextView android:id="@+id/groupCount" android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
+		android:layout_height="wrap_content" android:textColor="#000"
 		android:layout_toRightOf="@+id/countLeftBracket"
 		android:textAppearance="?android:attr/textAppearanceLarge"></TextView>
 
 	<TextView android:layout_width="wrap_content"
 		android:textAppearance="?android:attr/textAppearanceLarge" 
-		android:layout_height="wrap_content" 
+		android:layout_height="wrap_content" android:textColor="#000"
 		android:layout_toRightOf="@+id/groupCount" 
 		android:id="@+id/countRightBracket"
 		android:text="@string/right_brace"></TextView>
 
 	<TextView android:layout_width="wrap_content"
 		android:layout_height="wrap_content" android:layout_below="@+id/groupName"
-		android:text="@string/empty"
+		android:text="@string/empty" android:textColor="#000"
 		android:id="@+id/groupOwner"></TextView>
 
 	<ImageView android:id="@+id/sharing_with_icon"
@@ -42,7 +42,7 @@
 	<TextView android:layout_width="wrap_content"
 		android:layout_height="wrap_content" 
 		android:id="@+id/sharing_with" 
-		android:layout_below="@+id/groupName"
+		android:layout_below="@+id/groupName" android:textColor="#000"
 		android:layout_toRightOf="@+id/sharing_with_icon"
 		android:paddingRight="10dip"></TextView>
 		

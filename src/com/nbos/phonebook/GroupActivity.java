@@ -8,6 +8,7 @@ import java.util.Set;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.ContentUris;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -16,6 +17,7 @@ import android.database.CursorJoiner;
 import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Contacts.People;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.Contacts;
@@ -25,7 +27,6 @@ import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -167,6 +168,7 @@ public class GroupActivity extends ListActivity {
 		super.onCreateContextMenu(menu, v, menuInfo);
 		menu.setHeaderTitle("Menu: " + contactName);
 		int order = 0;
+		menu.add(0, v.getId(), order++, "view");
 		if (hasNumber)
 			menu.add(0, v.getId(), order++, "Call");
 		if(hasEdit)
@@ -198,7 +200,10 @@ public class GroupActivity extends ListActivity {
 			callFromGroup(contactId);
 		} else if (item.getTitle() == "Edit") {
 			showEdit(contactId);
-		} else {
+		} else if(item.getTitle() == "view"){
+			showContact(contactId);
+		}
+		else {
 			return false;
 		}
 		return true;
@@ -214,6 +219,15 @@ public class GroupActivity extends ListActivity {
 		startActivityForResult(i, EDIT_CONTACT);
 	}
 
+	private void showContact(String contactId){
+		
+		Uri contactUri = Uri.parse(ContactsContract.Contacts.CONTENT_URI + "/"
+		+ contactId);
+
+		Intent intent = new Intent(Intent.ACTION_VIEW, contactUri);
+		startActivity(intent);
+	}
+	
 	private String getPhoneNumber(String contactId) {
 		Log.i(tag, "getPhoneNumber(" + contactId + ")");
 		Cursor phones = getContentResolver().query(
@@ -486,6 +500,7 @@ public class GroupActivity extends ListActivity {
 					"Deleted " + numRemoved + " contact(s)", Toast.LENGTH_LONG)
 					.show();
 			setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.group);
+			extraButton.setText("No conatcts selected");
 			showMenu();
 		}
 	};
