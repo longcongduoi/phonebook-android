@@ -8,16 +8,15 @@ import java.util.Set;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.content.ContentUris;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.CursorJoiner;
 import android.database.MatrixCursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Contacts.People;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.Contacts;
@@ -34,6 +33,7 @@ import android.view.Window;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
 import android.widget.FilterQueryProvider;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -89,6 +89,7 @@ public class GroupActivity extends ListActivity {
 		registerForContextMenu(getListView());
 		listView = this.getListView();
 		getListView().setTextFilterEnabled(true);
+		getListView().setCacheColorHint(Color.WHITE);
 
 	}
 
@@ -504,6 +505,14 @@ public class GroupActivity extends ListActivity {
 			showMenu();
 		}
 	};
+	
+	@Override
+	protected void onListItemClick(ListView l, View v, int position, long id) {
+		m_cursor.moveToPosition(position);
+		String contactId = m_cursor.getString(m_cursor
+				.getColumnIndex(ContactsContract.Contacts._ID));
+		callFromGroup(contactId);
+	}
 	
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {

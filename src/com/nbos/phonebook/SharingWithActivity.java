@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.MatrixCursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
@@ -78,6 +79,7 @@ public class SharingWithActivity extends ListActivity {
 		showMenu();
 		listview = getListView();
 		listview.setFastScrollEnabled(true);
+		listview.setCacheColorHint(Color.WHITE);
 		
 	}
 

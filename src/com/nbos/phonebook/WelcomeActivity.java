@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
@@ -79,8 +80,10 @@ public class WelcomeActivity extends ListActivity {
 		deleteButton = (Button)findViewById(R.id.delete_group_button);
 		listView=this.getListView();
 		getListView().setTextFilterEnabled(true);
+		getListView().setCacheColorHint(Color.WHITE);
 		String phoneNumber = getPhoneNumber();
-		Log.i(tag, "phone number: " + phoneNumber);
+		int SDK_INT = android.os.Build.VERSION.SDK_INT;
+		Log.i(tag, "phone number: " + phoneNumber+" ,version: "+SDK_INT);
 		
 		if (!hasAccount()) {
 			final Intent intent = new Intent(getApplicationContext(),

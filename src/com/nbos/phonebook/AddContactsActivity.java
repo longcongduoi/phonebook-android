@@ -169,7 +169,7 @@ public class AddContactsActivity extends ListActivity {
 	ListView mGroupList;
 	boolean mShowInvisible = false;
 
-	@Override
+	/*@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		int currentPosition = this.getListView().getFirstVisiblePosition();
 		m_cursor.moveToPosition(position);
@@ -184,7 +184,7 @@ public class AddContactsActivity extends ListActivity {
 			Db.addToGroup(this.id, rawContactId, getContentResolver());
 		populateContacts();
 		this.setSelection(currentPosition);
-	}
+	}*/
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {

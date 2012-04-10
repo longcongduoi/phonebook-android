@@ -13,4 +13,7 @@
 		android:layout_height="wrap_content" android:layout_width="fill_parent"
 		android:layout_toRightOf="@+id/contact_pic" ></TextView>
 		
+	<ImageView android:src="@android:drawable/sym_action_call" android:id="@+id/call_icon" android:layout_width="50dip"
+	android:layout_height="50dip" android:layout_alignParentRight="true" android:paddingTop="15dip"></ImageView>
+		
 </RelativeLayout>

@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -101,11 +104,20 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements
 		this.c.moveToPosition(position);
 
 		String contactName = this.c.getString(this.c
-				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-
+				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)),
+				contactId = this.c.getString(this.c.getColumnIndex(ContactsContract.Contacts._ID)),
+		 		contactWithOnePhoneNumber = ContactWithSinglePhoneNumber(contactId);
 		// byte[] pic = images.get(pos);//
 		// this.c.getBlob(this.c.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
 		ImageView iv = (ImageView) v.findViewById(R.id.contact_pic);
+		ImageView ci = (ImageView) v.findViewById(R.id.call_icon);
+		if(ci != null)
+		{
+			if(contactWithOnePhoneNumber != null)
+				ci.setVisibility(1);
+			else 
+				ci.setVisibility(-1);
+		}
 		iv.setImageBitmap(Db.getPhoto(context.getContentResolver(),
 				ids.get(position)));
 		iv.setScaleType(ScaleType.FIT_XY);
@@ -158,6 +170,24 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements
 
 	public Object[] getSections() {
 		return alphaIndexer.getSections();
+	}
+	
+	private String ContactWithSinglePhoneNumber(String contactId) {
+		Log.i(tag, "getPhoneNumber(" + contactId + ")");
+		Cursor phones = context.getContentResolver().query(
+				ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+				new String[] { Phone.NUMBER, Phone.TYPE },
+				ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = "
+						+ contactId, null, null);
+		Log.i(tag, "There are " + phones.getCount() + " phone numbers");
+		if (phones.getCount() == 1)
+		{
+			phones.moveToFirst();
+			String phoneNumber = phones.getString(phones
+				.getColumnIndexOrThrow(Phone.NUMBER));
+			return phoneNumber;
+		}
+		return null;
 	}
 
 }
