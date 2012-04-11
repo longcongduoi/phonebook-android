@@ -511,9 +511,32 @@ public class GroupActivity extends ListActivity {
 		m_cursor.moveToPosition(position);
 		String contactId = m_cursor.getString(m_cursor
 				.getColumnIndex(ContactsContract.Contacts._ID));
-		callFromGroup(contactId);
+		Cursor phoneNumbers = getPhoneNumbers(contactId);
+		if(phoneNumbers.getCount() == 1)
+		{
+			phoneNumbers.moveToFirst();
+			String phoneNumber = phoneNumbers.getString(phoneNumbers
+					.getColumnIndexOrThrow(Phone.NUMBER));
+			Intent callIntent = new Intent(Intent.ACTION_CALL);
+			callIntent.setData(Uri.parse("tel:" + phoneNumber));
+			startActivity(callIntent);
+		}
+		else
+			showContact(contactId);
 	}
 	
+	private Cursor getPhoneNumbers(String contactId) {
+		
+		Cursor phones = getContentResolver().query(
+				ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+				new String[] { Phone.NUMBER, Phone.TYPE },
+				ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = "
+						+ contactId, null, null);
+		Log.i(tag, "There are " + phones.getCount() + " phone numbers");
+		return phones;
+	}
+
+
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		
