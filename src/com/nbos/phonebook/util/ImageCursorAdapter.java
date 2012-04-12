@@ -6,13 +6,17 @@ import java.util.List;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnCreateContextMenuListener;
 import android.view.ViewGroup;
 import android.widget.AlphabetIndexer;
 import android.widget.Button;
@@ -104,19 +108,36 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements
 		this.c.moveToPosition(position);
 
 		String contactName = this.c.getString(this.c
-				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)),
-				contactId = this.c.getString(this.c.getColumnIndex(ContactsContract.Contacts._ID)),
-		 		contactWithOnePhoneNumber = ContactWithSinglePhoneNumber(contactId);
+				.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+		final String contactId = this.c.getString(this.c.getColumnIndex(ContactsContract.Contacts._ID));
+		final String contactWithOnePhoneNumber = ContactWithSinglePhoneNumber(contactId);
 		// byte[] pic = images.get(pos);//
 		// this.c.getBlob(this.c.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
 		ImageView iv = (ImageView) v.findViewById(R.id.contact_pic);
 		ImageView ci = (ImageView) v.findViewById(R.id.call_icon);
+		View vs = (View) v.findViewById(R.id.view_separator);
 		if(ci != null)
 		{
 			if(contactWithOnePhoneNumber != null)
-				ci.setVisibility(1);
+			{
+				ci.setFocusable(true);
+				ci.setVisibility(View.VISIBLE);
+				vs.setVisibility(View.VISIBLE);
+				ci.setOnClickListener(new OnClickListener() {
+					
+					public void onClick(View v1) {
+						Intent callIntent = new Intent(Intent.ACTION_CALL);
+						callIntent.setData(Uri.parse("tel:" + contactWithOnePhoneNumber));
+						v1.getContext().startActivity(callIntent);
+					}
+				});
+			}
+			
 			else 
-				ci.setVisibility(-1);
+			{
+				vs.setVisibility(View.GONE);
+				ci.setVisibility(View.GONE);
+			}
 		}
 		iv.setImageBitmap(Db.getPhoto(context.getContentResolver(),
 				ids.get(position)));
@@ -157,6 +178,23 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements
 			checkBox.setChecked(checkedItems.get(position));
 			
 		}
+		if(checkBox == null){
+			v.setOnClickListener(new OnClickListener() {
+				
+				public void onClick(View v) {
+					Uri contactUri = Uri.parse(ContactsContract.Contacts.CONTENT_URI + "/"
+							+ contactId);
+	
+							Intent intent = new Intent(Intent.ACTION_VIEW, contactUri);
+							v.getContext().startActivity(intent);
+				}
+			});
+		
+			v.setOnCreateContextMenuListener(new OnCreateContextMenuListener() {
+	            public void onCreateContextMenu(ContextMenu menu, View v,
+	                            ContextMenuInfo menuInfo) {
+	            }});
+		}
 		return v;
 	}
 
@@ -189,5 +227,13 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements
 		}
 		return null;
 	}
+	
+	private OnClickListener callClickListener = new OnClickListener() {
+		
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			
+		}
+	};
 
 }

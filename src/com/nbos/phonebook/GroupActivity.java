@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -30,10 +31,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
+import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.FilterQueryProvider;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -90,6 +92,7 @@ public class GroupActivity extends ListActivity {
 		listView = this.getListView();
 		getListView().setTextFilterEnabled(true);
 		getListView().setCacheColorHint(Color.WHITE);
+		setListAdapter(adapter);
 
 	}
 
@@ -156,9 +159,9 @@ public class GroupActivity extends ListActivity {
 		AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
 		m_cursor.moveToPosition(info.position);
 		String contactName = m_cursor.getString(m_cursor.getColumnIndex(Contacts.DISPLAY_NAME)), 
-			contactId = m_cursor.getString(m_cursor.getColumnIndex(Contacts._ID)),
-			phoneNumber = getPhoneNumber(contactId);
-		if(phoneNumber != null)
+			contactId = m_cursor.getString(m_cursor.getColumnIndex(Contacts._ID));
+			Cursor phoneNumbers = getPhoneNumber(contactId);
+		if(phoneNumbers.getCount() >0)
 			hasNumber = true;
 		if (owner == null 
 		||(owner != null  && Integer.parseInt(permission) >= BookPermission.EDIT_CONTACTS.ordinal()))
@@ -169,7 +172,7 @@ public class GroupActivity extends ListActivity {
 		super.onCreateContextMenu(menu, v, menuInfo);
 		menu.setHeaderTitle("Menu: " + contactName);
 		int order = 0;
-		menu.add(0, v.getId(), order++, "view");
+		menu.add(0, v.getId(), order++, "View");
 		if (hasNumber)
 			menu.add(0, v.getId(), order++, "Call");
 		if(hasEdit)
@@ -201,7 +204,7 @@ public class GroupActivity extends ListActivity {
 			callFromGroup(contactId);
 		} else if (item.getTitle() == "Edit") {
 			showEdit(contactId);
-		} else if(item.getTitle() == "view"){
+		} else if(item.getTitle() == "View"){
 			showContact(contactId);
 		}
 		else {
@@ -229,7 +232,7 @@ public class GroupActivity extends ListActivity {
 		startActivity(intent);
 	}
 	
-	private String getPhoneNumber(String contactId) {
+	private Cursor getPhoneNumber(String contactId) {
 		Log.i(tag, "getPhoneNumber(" + contactId + ")");
 		Cursor phones = getContentResolver().query(
 				ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
@@ -239,23 +242,45 @@ public class GroupActivity extends ListActivity {
 		Log.i(tag, "There are " + phones.getCount() + " phone numbers");
 		if (phones.getCount() == 0)
 			return null;
-		phones.moveToFirst();
+		/*phones.moveToFirst();
 		String phoneNumber = phones.getString(phones
 				.getColumnIndexOrThrow(Phone.NUMBER));
 		Log.i(tag, "contactId:" + contactId + ", phone number is: "
 				+ phoneNumber);
-		phones.close();
-		return phoneNumber;
+		phones.close();*/
+		return phones;
 	}
 
 	private void callFromGroup(String contactId) {
-		String phoneNumber = getPhoneNumber(contactId);
-		if (phoneNumber == null)
+		Cursor phones = getPhoneNumber(contactId);
+		if (phones.getCount() == 0)
 			return;
-		Log.i(tag, "Calling contactId:" + contactId + ", phone number is: "
-				+ phoneNumber);
-		Intent callIntent = new Intent(Intent.ACTION_CALL);
-		callIntent.setData(Uri.parse("tel:" + phoneNumber));
+		final Intent callIntent = new Intent(Intent.ACTION_CALL);
+		if(phones.getCount() >1)
+		{
+			
+			final CharSequence[] items = new CharSequence[phones.getCount()];
+			phones.moveToFirst();
+			for(int i=0; i<phones.getCount();i++){
+				phones.moveToPosition(i);
+				items[i] = phones.getString(phones.getColumnIndex(Phone.NUMBER));
+			}
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setTitle("Call using");
+			builder.setItems(items, new DialogInterface.OnClickListener() {
+			    public void onClick(DialogInterface dialog, int item) {
+			    	callIntent.setData(Uri.parse("tel:"+ items[item]));
+			    	startActivity(callIntent);
+			    }
+			});
+			AlertDialog alert = builder.create();
+			alert.show();
+			return;
+		}
+		phones.moveToFirst();
+		String phone = phones.getString(phones
+				.getColumnIndexOrThrow(Phone.NUMBER));
+		callIntent.setData(Uri.parse("tel:" + phone));
 		startActivity(callIntent);
 	}
 
@@ -308,14 +333,18 @@ public class GroupActivity extends ListActivity {
 		return true;
 	}*/
 
-	/*
-	 @Override protected void onListItemClick(ListView l, View v, int
-	 position, long id) { m_cursor.moveToPosition(position); String contactId
-	 = m_cursor.getString(m_cursor
+	
+	 @Override 
+	 protected void onListItemClick(ListView l, View v, int
+	 position, long id) { 
+		 m_cursor.moveToPosition(position); 
+		 String contactId = m_cursor.getString(m_cursor
 	 .getColumnIndex(ContactsContract.Contacts._ID)); Log.i(tag,
 	 "position is: " + position + ", contactId: " + contactId + ", name: " +
-	 name); callFromGroup(contactId); }
-	 */
+	 name); 
+	 showContact(contactId); 
+	 }
+	 
 
 	private void queryGroup(int layout) {
 		
@@ -349,7 +378,6 @@ public class GroupActivity extends ListActivity {
 		});
 
 		getListView().setAdapter(adapter);
-
 		Log.i(tag, "There are " + m_cursor.getCount()
 				+ " contacts in this group");
 
@@ -506,36 +534,30 @@ public class GroupActivity extends ListActivity {
 		}
 	};
 	
-	@Override
+	/*@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		m_cursor.moveToPosition(position);
 		String contactId = m_cursor.getString(m_cursor
 				.getColumnIndex(ContactsContract.Contacts._ID));
-		Cursor phoneNumbers = getPhoneNumbers(contactId);
-		if(phoneNumbers.getCount() == 1)
-		{
-			phoneNumbers.moveToFirst();
-			String phoneNumber = phoneNumbers.getString(phoneNumbers
-					.getColumnIndexOrThrow(Phone.NUMBER));
-			Intent callIntent = new Intent(Intent.ACTION_CALL);
-			callIntent.setData(Uri.parse("tel:" + phoneNumber));
-			startActivity(callIntent);
-		}
+		
+		
+		
+			Cursor phoneNumbers = getPhoneNumbers(contactId);
+			if(phoneNumbers.getCount() == 1)
+			{
+				phoneNumbers.moveToFirst();
+				String phoneNumber = phoneNumbers.getString(phoneNumbers
+						.getColumnIndexOrThrow(Phone.NUMBER));
+				Intent callIntent = new Intent(Intent.ACTION_CALL);
+				callIntent.setData(Uri.parse("tel:" + phoneNumber));
+				startActivity(callIntent);
+			}
+		
 		else
 			showContact(contactId);
-	}
+		}
+	*/
 	
-	private Cursor getPhoneNumbers(String contactId) {
-		
-		Cursor phones = getContentResolver().query(
-				ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-				new String[] { Phone.NUMBER, Phone.TYPE },
-				ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = "
-						+ contactId, null, null);
-		Log.i(tag, "There are " + phones.getCount() + " phone numbers");
-		return phones;
-	}
-
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
