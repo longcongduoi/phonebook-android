@@ -202,6 +202,7 @@ public class SharingWithActivity extends ListActivity {
 					"Removed "+numRemoved+" contact(s) from sharing",
 					Toast.LENGTH_LONG).show();
 				populateContacts(layout);
+				keyValue = 0;
 				showMenu();
 			}
 		};

@@ -217,23 +217,18 @@ public class ImageCursorAdapter extends SimpleCursorAdapter implements
 				new String[] { Phone.NUMBER, Phone.TYPE },
 				ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = "
 						+ contactId, null, null);
-		Log.i(tag, "There are " + phones.getCount() + " phone numbers");
-		if (phones.getCount() == 1)
+		if (phones != null && phones.getCount() == 1)
 		{
+			Log.i(tag, "There are " + phones.getCount() + " phone numbers");
 			phones.moveToFirst();
 			String phoneNumber = phones.getString(phones
 				.getColumnIndexOrThrow(Phone.NUMBER));
+			phones.close();
 			return phoneNumber;
 		}
+		phones.close();
 		return null;
-	}
-	
-	private OnClickListener callClickListener = new OnClickListener() {
 		
-		public void onClick(View v) {
-			// TODO Auto-generated method stub
-			
-		}
-	};
+	}
 
 }

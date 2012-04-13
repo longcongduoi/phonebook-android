@@ -92,7 +92,6 @@ public class GroupActivity extends ListActivity {
 		listView = this.getListView();
 		getListView().setTextFilterEnabled(true);
 		getListView().setCacheColorHint(Color.WHITE);
-		setListAdapter(adapter);
 
 	}
 
@@ -489,6 +488,7 @@ public class GroupActivity extends ListActivity {
 	ListView listView;
 	static int keyValue;
 	private void removeContacts() {
+		
 		queryGroup(R.layout.remove_contacts_entry);
 		keyValue=1;
 		childLayout.setVisibility(1);
@@ -496,12 +496,12 @@ public class GroupActivity extends ListActivity {
 		childLayout.setLayoutParams(showMenuParams);
 		menu.setLayoutParams(hideParams);
 		menu.setVisibility(-1);
-		extraButton.setOnClickListener(removeContacts);
+		extraButton.setOnClickListener(removeContactsFromGroup);
 		setTitle(" Remove contacts from "+"'"+name+"'");
 		setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.ic_delete);
 	}
 
-	private Button.OnClickListener removeContacts = new OnClickListener() {
+	private Button.OnClickListener removeContactsFromGroup = new OnClickListener() {
 
 		public void onClick(View v) {
 			int numRemoved = 0;
@@ -519,7 +519,7 @@ public class GroupActivity extends ListActivity {
 			}
 			Db.setGroupDirty(id, getContentResolver());
 			childLayout.setVisibility(-1);
-			//childLayout.setLayoutParams(hideParams);
+			childLayout.setLayoutParams(hideParams);
 			menu.setVisibility(1);
 			menu.setLayoutParams(showMenuParams);
 			getContentResolver().notifyChange(
@@ -530,6 +530,7 @@ public class GroupActivity extends ListActivity {
 					.show();
 			setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.group);
 			extraButton.setText("No conatcts selected");
+			keyValue = 0;
 			showMenu();
 		}
 	};

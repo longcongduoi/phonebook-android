@@ -12,12 +12,13 @@
 		android:textAppearance="?android:attr/textAppearanceLarge" android:textColor="#000"
 		android:layout_height="wrap_content" android:layout_width="fill_parent"
 		android:layout_toRightOf="@+id/contact_pic" ></TextView>
-		<View android:id="@+id/view_separator" android:background="#6C6C6C" 
+		
+		<View android:id="@+id/view_separator" android:background="#000" 
 					 android:layout_centerVertical ="true"
-					 android:layout_marginTop="1dp"
+					 android:layout_marginTop="15dp" 
 					 android:layout_width = "2dp"
-					 android:layout_height="35dp" android:layout_alignLeft="@+id/call_icon"/>
+					 android:layout_height="30dp" android:layout_alignLeft="@+id/call_icon"/>
 					 
-	 <ImageView android:src="@android:drawable/sym_action_call" android:id="@+id/call_icon" android:layout_width="40dip"
-		android:layout_height="40dip" android:layout_alignParentRight="true" android:paddingTop="10dip"></ImageView>
+	 <ImageView android:src="@android:drawable/sym_action_call" android:id="@+id/call_icon" android:layout_width="40dp" android:paddingRight="10dp" android:paddingLeft="5dp"
+		android:layout_height="wrap_content" android:layout_alignParentRight="true" android:layout_centerVertical="true" android:layout_marginTop="15dp"></ImageView>
 </RelativeLayout>
