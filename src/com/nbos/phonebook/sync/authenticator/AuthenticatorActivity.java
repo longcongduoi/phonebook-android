@@ -16,11 +16,17 @@
 
 package com.nbos.phonebook.sync.authenticator;
 
+import java.io.IOException;
+
+import org.apache.http.client.ClientProtocolException;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
@@ -28,17 +34,20 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.ContactsContract;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -87,10 +96,11 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
     /** Was the original caller asking for an entirely new account? */
     protected boolean mRequestNewAccount = false;
 
-    private String mUsername;
+    private String mUsername, fbId;
     private EditText mUsernameEdit;
     String FILENAME = "Androidphonebook_data";
     private SharedPreferences mPrefs;
+    private  View textEntryView;
 
     /**
      * {@inheritDoc}
@@ -349,7 +359,9 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         Log.i(tag, "Facebook session is valid? "+facebook.isSessionValid());
     	if(!facebook.isSessionValid()) {
 	    	facebook.authorize(this, new DialogListener() {
-	            public void onComplete(Bundle values) {}
+	            public void onComplete(Bundle values) {
+	            	Log.i(tag, "values: "+values);
+	            }
 	            public void onFacebookError(FacebookError error) {}
 	            public void onError(DialogError e) {}
 	            public void onCancel() {}
@@ -380,7 +392,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         if(expires != 0) {
             facebook.setAccessExpires(expires);
         }
-        
+        	
         /*
          * Only call authorize if the access_token has expired.
          */
@@ -389,16 +401,54 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         	JSONObject json;
 			try {
 				json = Util.parseJson(facebook.request("me", new Bundle()));
-				String userId = json.getString("id"),
-				userName = json.getString("name");
-				mPhone = mPhoneEdit.getText().toString();
-				new Cloud(getApplicationContext(), userId, userId).loginWithFacebook(countryCode + mPhone);
-				mUsername = userId;
-				mPassword = userId;
-				finishLogin();
+				Log.i(tag, "json: "+json);
+				 fbId = json.getString("id");
+				 String username = json.getString("id");
+				 JSONArray existingUser = new Cloud(getApplicationContext(), fbId, null).findExistingFbUser(fbId, countryCode + mPhone);
+				 
+				 Log.i(tag, "existingUser: "+existingUser.getString(0));
+				 LayoutInflater factory = LayoutInflater.from(this);            
+			     textEntryView = factory.inflate(R.layout.facebook_email_layout, null);
+			     TextView fbUsername = (TextView) textEntryView.findViewById(R.id.facebookLogin_email);
+			     TextView fbPassword = (TextView) textEntryView.findViewById(R.id.facebookLogin_password);
+			     Button fbAccountButton = (Button)textEntryView.findViewById(R.id.facebookLogin);
+			     
+			     
+				 if(existingUser.getString(0).trim().length() == 0)
+				 {
+						Log.i(tag, "email: "+Text.isEmail(username));
+						if(!(Text.isEmail(username)))
+						{
+							AlertDialog.Builder newBuilder = new AlertDialog.Builder(this);
+							newBuilder.setTitle("FbLogin to Phonebook");
+							newBuilder.setView(textEntryView);
+							Button existingFbAccount = (Button) textEntryView.findViewById(R.id.existingAccountfacebookLogin);
+							    existingFbAccount.setVisibility(View.GONE);
+							AlertDialog newAlert = newBuilder.create();
+								newAlert.show();
+						}
+				 }
+				 else
+				 {
+					 fbAccountButton.setVisibility(View.GONE);
+				     fbUsername.setText(existingUser.getString(0));
+				     fbUsername.setEnabled(false);
+				     fbPassword.requestFocus();
+				     
+				     AlertDialog.Builder builder = new AlertDialog.Builder(this);
+						builder.setTitle("FbLogin to Phonebook");
+						builder.setView(textEntryView);
+						AlertDialog alert = builder.create();
+						alert.show();
+				 }
+				//mPhone = mPhoneEdit.getText().toString();
+				//new Cloud(getApplicationContext(), userId, userId).loginWithFacebook(countryCode + mPhone);
+				/*mUsername = userName;
+				mPassword = userId;*/
+				//finishLogin();
 				// mUsernameEdit.setText(userName);
 				// mPasswordEdit.setText(userId);
-				Log.i(tag, "userName: "+userName+" userId: "+userId);
+				Log.i(tag, "userName: "+username+" userId: "+fbId);
 				Log.i(tag,"response:"+json);
 			} catch (Exception e1) {
 				Log.e(tag, "Exception logging on with Facebook: "+e1);
@@ -410,7 +460,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
         }
    }
     
-    @Override
+	@Override
     public void onItemSelected(AdapterView<?> parent,
             View view, int pos, long id) 
     {
@@ -428,5 +478,63 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity implemen
 		// TODO Auto-generated method stub
 		
 	}
+	
+	public void handleRegisteredFbLogin(View v) throws ClientProtocolException, JSONException, IOException{
+		
+        TextView fbUsername = (TextView) textEntryView.findViewById(R.id.facebookLogin_email);
+	    TextView fbPassword = (TextView) textEntryView.findViewById(R.id.facebookLogin_password);
+	    TextView errorMessage =(TextView) textEntryView.findViewById(R.id.errorMessage);
+	    String userName = fbUsername.getText().toString(),
+	    	password = fbPassword.getText().toString();
+	    Log.i(tag, "userName: "+userName+" ,password: "+password);
+	    mPhone = mPhoneEdit.getText().toString();
+	    
+	    if(!Text.isEmail(userName))
+	    {
+	    	errorMessage.setText("Please enter a valid email");
+	    	fbUsername.requestFocus();
+	    	return;
+	    }
+	    
+		JSONObject response = new Cloud(getApplicationContext(), userName, password).loginWithFacebook(countryCode + mPhone, fbId);
+		Log.i(tag, "reponse: "+response);
+		Log.i(tag, "message value: "+response.getString("message"));
+		if(response.getString("message").trim().length() == 0)
+		{
+			mUsername = userName;
+			mPassword = password;
+			finishLogin();
+		}
+		
+		else
+		{
+			errorMessage.setText(response.getString("message"));
+		}
+	}
+	
+	public void loggedIntoExistingFbAccount(View v){
+		TextView fbUsername = (TextView) textEntryView.findViewById(R.id.facebookLogin_email);
+	    TextView fbPassword = (TextView) textEntryView.findViewById(R.id.facebookLogin_password);
+	    String userName = fbUsername.getText().toString(),
+    		password = fbPassword.getText().toString();
+	    mUsername = userName;
+	    mPassword = password;
+	    
+	    showProgress();
+        // Start authenticating...
+        mAuthThread =
+            Net.attemptAuth(mUsername, mPassword, countryCode + mPhone, mHandler,
+                AuthenticatorActivity.this);
+	}
+	
+	
+	@Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+
+    }
+
+	
 }
 

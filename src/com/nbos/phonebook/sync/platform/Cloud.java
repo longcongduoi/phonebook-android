@@ -73,7 +73,7 @@ import com.nbos.phonebook.value.PicData;
 public class Cloud {
 	static String tag = "Cloud";
     public static final String
-	DOMAIN =   "10.9.8.172", // "phonebook.nbostech.com",
+	DOMAIN =   "10.9.8.172", //  "phonebook.nbostech.com",
 	HTTP = "http", // "http"
 	HTTPS = "https",
 	PORT = "8080", // 8080, 80, 443
@@ -84,6 +84,7 @@ public class Cloud {
 	AUTH_URI = BASE_URL + "/mobile/index",
 	REG_URL = BASE_URL + "/mobile/register",
 	FACEBOOK_LOGIN_URL = BASE_URL + "/login/facebookMobileLogin",
+	FACEBOOK_LOGIN_WITH_EXISTING_USER_URL = BASE_URL + "/login/checkFacebookExistingUser",
 	VALIDATION_URI = BASE_URL + "/mobile/validate",
 	NEW_VALIDATION_CODE_URI = BASE_URL + "/mobile/newValidationCode",
 	GET_CONTACT_UPDATES_URI = BASE_URL + "/mobile/contacts",
@@ -100,7 +101,8 @@ public class Cloud {
 	DOWNLOAD_CONTACT_PIC_URI = UNSECURED_URL + "/download/index/",
 	GET_PIC_DATA_URI = BASE_URL + "/mobile/picData",
 	PARAM_USERNAME = "username",
-	// PARAM_PASSWORD = "password",
+	PARAM_PASSWORD = "password",
+	PARAM_UID = "uid",
 	PARAM_PHONE_NUMBER = "ph",
 	PARAM_VALIDATION_CODE = "valid",
 	PARAM_UPDATED = "timestamp";
@@ -132,6 +134,7 @@ public class Cloud {
 		}
 		account = name;
 		authToken = authtoken;
+		Log.i(tag, "authToken: "+authToken);
 	}
 	
 	public String sync(String lastUpdated) throws AuthenticationException, ParseException, JSONException, IOException {
@@ -589,12 +592,16 @@ public class Cloud {
 	}
 
 	
-	public void loginWithFacebook(String phone) throws ClientProtocolException, JSONException, IOException {
+	public JSONObject loginWithFacebook(String phone, String uid) throws ClientProtocolException, JSONException, IOException {
         final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair(PARAM_USERNAME, account));
+        params.add(new BasicNameValuePair(PARAM_PASSWORD, authToken));
+        params.add(new BasicNameValuePair(PARAM_UID, uid));
         params.add(new BasicNameValuePair(PARAM_PHONE_NUMBER, phone));
-        final JSONArray response = new JSONArray(post(FACEBOOK_LOGIN_URL, params));
+        final JSONObject response = new JSONObject(post(FACEBOOK_LOGIN_URL, params));
         Log.i(tag, "response is: "+response);
+        return response;
+       
 	}
 	
 	public Map<String, String> getServerDataIds() {
@@ -620,4 +627,13 @@ public class Cloud {
 		 return serverContactIdsMap;
 	}
 
+	public JSONArray findExistingFbUser(String fbId, String phone) throws ClientProtocolException, JSONException, IOException{
+		 final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+		 params.add(new BasicNameValuePair(PARAM_UID, fbId));
+		 params.add(new BasicNameValuePair(PARAM_PHONE_NUMBER, phone));
+		 final JSONArray response = new JSONArray(post(FACEBOOK_LOGIN_WITH_EXISTING_USER_URL, params));
+		 Log.i(tag, "response is: "+response);
+		 return response;
+	        
+	}
 }

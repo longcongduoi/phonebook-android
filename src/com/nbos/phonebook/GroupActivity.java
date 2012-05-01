@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -22,6 +21,9 @@ import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.QuickContact;
+import android.provider.ContactsContract.RawContacts;
+import android.provider.ContactsContract.RawContactsEntity;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -31,18 +33,18 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
-import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.FilterQueryProvider;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.QuickContactBadge;
 import android.widget.Toast;
 
 import com.nbos.phonebook.database.IntCursorJoiner;
 import com.nbos.phonebook.database.tables.BookTable;
 import com.nbos.phonebook.sync.client.BookPermission;
+import com.nbos.phonebook.sync.platform.PhonebookSyncAdapterColumns;
 import com.nbos.phonebook.util.ImageCursorAdapter;
 import com.nbos.phonebook.value.ContactRow;
 
@@ -159,10 +161,23 @@ public class GroupActivity extends ListActivity {
 		m_cursor.moveToPosition(info.position);
 		String contactName = m_cursor.getString(m_cursor.getColumnIndex(Contacts.DISPLAY_NAME)), 
 			contactId = m_cursor.getString(m_cursor.getColumnIndex(Contacts._ID));
-			Cursor phoneNumbers = getPhoneNumber(contactId);
-		if(phoneNumbers.getCount() >0)
+		Cursor phoneNumbers = getPhoneNumber(contactId);
+		String[] projection = new String[]{Data.MIMETYPE};
+		String where = RawContactsEntity._ID + " = "+contactId;
+		Cursor contactAccountTypeCursor = getContentResolver().query(RawContactsEntity.CONTENT_URI, projection, where, null, RawContacts._ID);
+		String contactAccountMimeType = null;
+		
+		if(contactAccountTypeCursor != null && contactAccountTypeCursor.getCount() != 0)
+		{
+			contactAccountTypeCursor.moveToFirst();
+			contactAccountMimeType = contactAccountTypeCursor.getString(contactAccountTypeCursor.getColumnIndex(Data.MIMETYPE));
+		}
+			
+		Log.i(tag, "mimeType: "+contactAccountMimeType);
+		Log.i(tag, "phoneNumbers: "+phoneNumbers);
+		if(phoneNumbers != null && phoneNumbers.getCount() >0)
 			hasNumber = true;
-		if (owner == null 
+		if ((owner == null &&  contactAccountMimeType!= null && contactAccountMimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE)) 
 		||(owner != null  && Integer.parseInt(permission) >= BookPermission.EDIT_CONTACTS.ordinal()))
 			hasEdit = true;
 		if(!hasNumber && !hasEdit)
@@ -219,7 +234,18 @@ public class GroupActivity extends ListActivity {
 		Intent i = new Intent(GroupActivity.this, EditContactActivity.class);
 		i.setData(Uri.parse(ContactsContract.Contacts.CONTENT_URI + "/"
 				+ contactId));
-		startActivityForResult(i, EDIT_CONTACT);
+		
+		String[] projection = new String[]{Data.MIMETYPE};
+		String where = RawContactsEntity._ID + " = "+contactId;
+		Cursor contactAccountTypeCursor = getContentResolver().query(RawContactsEntity.CONTENT_URI, projection, where, null, RawContacts._ID);
+		contactAccountTypeCursor.moveToFirst();
+		String contactAccountMimeType = contactAccountTypeCursor.getString(contactAccountTypeCursor.getColumnIndex(Data.MIMETYPE)); 
+		
+		Log.i(tag, "mimeType: "+contactAccountMimeType);
+		if(contactAccountMimeType.equals(PhonebookSyncAdapterColumns.MIME_PROFILE))
+			startActivityForResult(i, EDIT_CONTACT);
+		else
+			showContact(contactId);
 	}
 
 	private void showContact(String contactId){
@@ -228,7 +254,7 @@ public class GroupActivity extends ListActivity {
 		+ contactId);
 
 		Intent intent = new Intent(Intent.ACTION_VIEW, contactUri);
-		startActivity(intent);
+	  	startActivity(intent);
 	}
 	
 	private Cursor getPhoneNumber(String contactId) {
@@ -252,7 +278,7 @@ public class GroupActivity extends ListActivity {
 
 	private void callFromGroup(String contactId) {
 		Cursor phones = getPhoneNumber(contactId);
-		if (phones.getCount() == 0)
+		if (phones != null && phones.getCount() == 0)
 			return;
 		final Intent callIntent = new Intent(Intent.ACTION_CALL);
 		if(phones.getCount() >1)
@@ -260,7 +286,8 @@ public class GroupActivity extends ListActivity {
 			
 			final CharSequence[] items = new CharSequence[phones.getCount()];
 			phones.moveToFirst();
-			for(int i=0; i<phones.getCount();i++){
+			for(int i=0; i<phones.getCount();i++)
+			{
 				phones.moveToPosition(i);
 				items[i] = phones.getString(phones.getColumnIndex(Phone.NUMBER));
 			}
@@ -577,6 +604,7 @@ public class GroupActivity extends ListActivity {
 	    else{
 	    	return super.onKeyDown(keyCode, event);
 	    }
+	    
 	    return true;
 	}
 

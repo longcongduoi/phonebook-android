@@ -85,6 +85,7 @@
             android:label="@string/ui_activity_title"
             android:theme="@android:style/Theme.Dialog"
             android:excludeFromRecents="true"
+            android:screenOrientation="portrait"
             >
             <!--
                 No intent-filter here! This activity is only ever launched by

@@ -34,6 +34,7 @@ public class Notify {
 
 		notification.setLatestEventInfo(context, title, text,
 				contentIntent);
+		notification.flags = Notification.FLAG_AUTO_CANCEL;
 
 		notificationManager.notify(NOTE_ID++, notification);
 	}
